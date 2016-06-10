@@ -1,0 +1,4 @@
+app_name: glitr
+
+deploy:
+  version_check: false

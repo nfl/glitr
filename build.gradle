@@ -1,0 +1,150 @@
+description = "GLiTR"
+
+group = 'com.nfl.dm.shield'
+version = '0.1.0-SNAPSHOT'
+
+buildscript {
+    ext {
+        kotlinVersion = '1.0.2'
+    }
+    repositories {
+        maven {
+            url "http://nexus.la3.nfl.com/nexus/content/groups/public"
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.nfl.dm.shield.gradle:shield-plugin:1.0.+'
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+    }
+}
+
+apply plugin: 'com.nfl.dm.shield.gradle'
+apply plugin: 'idea'
+apply plugin: 'kotlin'
+apply plugin: 'groovy'
+
+jacoco {
+    toolVersion = "0.7.5.201505241946"
+}
+
+//noinspection GroovyUnusedAssignment
+sourceCompatibility = 1.8
+//noinspection GroovyUnusedAssignment
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    maven {
+        url "http://nexus.la3.nfl.com/nexus/content/groups/public"
+    }
+    mavenCentral()
+    maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
+}
+
+dependencies {
+    // Kotlin
+    compile("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+    compile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+
+    // NFL dependencies
+    compile("com.nfl.dm.shield:shield-consul-client:0.2.0-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-web:0.0.1-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-core:0.0.1-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-id:0.1.1-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-jwt-io:0.0.6-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-domain-graphql:0.4.7-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-domain-cassandra:0.4.5-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-domain-transport:0.1.2-SNAPSHOT")
+    compile("com.nfl.dm.shield:shield-object-store:0.0.5-SNAPSHOT") {
+        exclude group: 'org.slf4j'
+    }
+
+
+    compile('commons-io:commons-io:2.4')
+
+    // DataStax - Cassandra
+    compile("com.datastax.cassandra:cassandra-driver-core:3.0.0")
+    compile("com.datastax.cassandra:cassandra-driver-extras:3.0.0")
+    compile("com.datastax.cassandra:cassandra-driver-mapping:3.0.0")
+
+    // Misc dependencies
+    compile('com.graphql-java:graphql-java:2016-05-14T23-36-49')
+    compile('org.apache.commons:commons-lang3:3.4')
+    compile('commons-collections:commons-collections:3.2.2')
+    compile('commons-beanutils:commons-beanutils:1.9.2')
+    compile('javax.inject:javax.inject:1') // used for creating prototype scope beans without depending on Spring
+
+    compile("io.reactivex:rxjava:1.1.3")
+    compile("com.googlecode.gentyref:gentyref:1.2.0")
+    compile("me.moocar:logback-gelf:0.12")
+    compile("ma.glasnost.orika:orika-core:1.4.6") {
+        exclude group: 'org.slf4j'
+    }
+    compile("org.antlr:stringtemplate:4.0.2") // string manipulation
+    compile("org.eclipse.jetty:jetty-jmx:9.2.10.v20150310") // instrumentation
+    compile("com.voodoodyne.jackson.jsog:jackson-jsog:1.1")    
+    compile("com.netflix.ribbon:ribbon:2.0.2")
+
+
+    // Jackson dependencies
+    compile("com.fasterxml.jackson.core:jackson-core:2.6.2")
+    compile("com.fasterxml.jackson.core:jackson-databind:2.6.2")
+    compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.6.4") // handles jackson new java8 Date APIs
+
+    // Test dependencies
+    testCompile("com.google.inject:guice:3.0") // weird dependency needed for neo4j tests, to be investigated
+    testCompile("org.mockito:mockito-core:1+")
+
+    // Spock test dependencies
+    testCompile(group: 'junit', name: 'junit', version: '4.12')
+    testCompile('org.spockframework:spock-core:1.0-groovy-2.4')
+    testCompile('org.codehaus.groovy:groovy-all:2.4.4')
+    testCompile("com.blogspot.toomuchcoding:spock-subjects-collaborators-extension:1.1.0") // used for injecting mocks
+}
+
+task testSpock(type: Test) {
+    useJUnit()
+    systemProperty 'consul_hostname', 'la3devconsul01.dm.nfl.com'
+    systemProperty 'consul_folder', project.ext.appName
+}
+
+test.dependsOn 'testSpock'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.13'
+}
+
+sonarqube {
+    //noinspection GroovyAssignabilityCheck
+    properties {
+        //noinspection GroovyAssignabilityCheck
+        property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/testSpock.exec"
+
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+configurations.all {
+    // check for updates every build
+    // noinspection GroovyAssignabilityCheck
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+sourceSets {
+    //tell gradle where the resource folders (used for inclusion in the jar too)
+    main {
+        resources.srcDirs = ["src/main/resources", "generatedsources/"]
+    }
+}
+
+jar {
+    from "LICENSE"
+    manifest {
+        attributes(
+                "Specification-Title": project.name,
+                "Specification-Version": project.version,
+                "Implementation-Version": project.version,
+        )
+    }
+}

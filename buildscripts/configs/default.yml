@@ -2,3 +2,10 @@ app_name: glitr
 
 deploy:
   version_check: false
+
+gradle:
+  spring_boot_enabled: false
+  consul_enabled: false
+  sonar_enabled: true
+  nexus_enabled: true
+  git_versioning_enabled: false

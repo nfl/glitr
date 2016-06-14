@@ -26,13 +26,8 @@ import static com.nfl.dm.shield.graphql.registry.TypeRegistry.getActualTypeArgum
  */
 public class PagingOutputTypeConverter implements Func4<Field, Method, Class, Annotation, GraphQLOutputType> {
 
-    private final RelayHelper relayHelper;
-    private final TypeRegistry typeRegistry;
-
-    public PagingOutputTypeConverter(RelayHelper relayHelper, TypeRegistry typeRegistry) {
-        this.relayHelper = relayHelper;
-        this.typeRegistry = typeRegistry;
-    }
+    private RelayHelper relayHelper;
+    private TypeRegistry typeRegistry;
 
     @Override
     public GraphQLOutputType call(@Nullable Field field, Method method, Class declaringClass, Annotation annotation) {
@@ -66,11 +61,21 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         }
 
         // Build a relay edge
-        GraphQLObjectType edgeType = RelayHelper.edgeType(endEdgeClass.getSimpleName(),
+        GraphQLObjectType edgeType = relayHelper.edgeType(endEdgeClass.getSimpleName(),
                                                     edgeGraphQLOutputType,
                                                     relayHelper.getNodeInterface(),
                                                     Collections.emptyList());
         // Last build the relay connection!
-        return RelayHelper.connectionType(endEdgeClass.getSimpleName(), edgeType, Lists.newArrayList());
+        return relayHelper.connectionType(endEdgeClass.getSimpleName(), edgeType, Lists.newArrayList());
+    }
+
+    public PagingOutputTypeConverter setTypeRegistry(TypeRegistry typeRegistry) {
+        this.typeRegistry = typeRegistry;
+        return this;
+    }
+
+    public PagingOutputTypeConverter setRelayHelper(RelayHelper relayHelper) {
+        this.relayHelper = relayHelper;
+        return this;
     }
 }

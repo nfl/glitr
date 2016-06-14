@@ -15,11 +15,7 @@ import java.lang.reflect.Method;
  */
 public class RelayNodeOutputTypeFunc implements Func4<Field, Method, Class, Annotation, GraphQLOutputType> {
 
-    private final RelayHelper relayHelper;
-
-    public RelayNodeOutputTypeFunc(RelayHelper relayHelper) {
-        this.relayHelper = relayHelper;
-    }
+    private RelayHelper relayHelper;
 
     @Override
     public GraphQLOutputType call(@Nullable Field field, Method method, Class declaringClass, Annotation annotation) {
@@ -27,5 +23,10 @@ public class RelayNodeOutputTypeFunc implements Func4<Field, Method, Class, Anno
             throw new IllegalArgumentException(annotation.annotationType() + " must be " + RelayNode.class.getSimpleName());
         }
         return relayHelper.getNodeInterface();
+    }
+
+    public RelayNodeOutputTypeFunc setRelayHelper(RelayHelper relayHelper) {
+        this.relayHelper = relayHelper;
+        return this;
     }
 }

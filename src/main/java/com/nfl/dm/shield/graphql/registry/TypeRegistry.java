@@ -9,6 +9,7 @@ import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.type.Scalars;
 import com.nfl.dm.shield.util.error.DataFetcherCreationException;
+import graphql.relay.Relay;
 import graphql.schema.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,24 +42,23 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class, GraphQLType> registry = new HashMap<>(); // map to only GraphQLOutputTypes
     private final Map<Class, GraphQLType> inputRegistry = new HashMap<>();  // map to only GraphQLInputTypes (for mutations)
 
-    private final Map<Class, List<Object>> overrides = new HashMap<>();
-    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap = new HashMap<>();
-    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
-    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
-
+    private final Map<Class, List<Object>> overrides;
+    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap;
+    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
+    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
     private GraphQLInterfaceType nodeInterface;
 
-
-    public TypeRegistry setNodeInterface(GraphQLInterfaceType nodeInterface) {
-        this.nodeInterface = nodeInterface;
-        return this;
+    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
+        this.overrides = overrides;
+        this.annotationToDataFetcherProviderMap = annotationToDataFetcherProviderMap;
+        this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
+        this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
+        if (relay != null) {
+            nodeInterface = relay.nodeInterface(this);
+        }
     }
 
     public GraphQLType lookup(Class clazz) {
-        if (nodeInterface == null) {
-            throw new RuntimeException("Initialization failed. NodeInterface isn't set.");
-        }
-
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
         }
@@ -107,22 +107,7 @@ public class TypeRegistry implements TypeResolver {
         return type;
     }
 
-    public void addOverride(Class clazz, Object overrideObject) {
-        overrides.putIfAbsent(clazz, new ArrayList<>());
-        overrides.get(clazz).add(overrideObject);
-    }
 
-    public void addCustomDataFetcherFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, DataFetcher> dataFetcherFunc4) {
-        annotationToDataFetcherProviderMap.putIfAbsent(annotationClass, dataFetcherFunc4);
-    }
-
-    public void addCustomFieldArgumentsFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> argumentsFunc4) {
-        annotationToArgumentsProviderMap.putIfAbsent(annotationClass, argumentsFunc4);
-    }
-
-    public void addCustomFieldOutputTypeFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, GraphQLOutputType> argumentsFunc4) {
-        annotationToGraphQLOutputTypeMap.putIfAbsent(annotationClass, argumentsFunc4);
-    }
 
     /**
      * In short, the method below creates the GraphQLObjectType dynamically for pretty much any pojo class with public
@@ -345,7 +330,7 @@ public class TypeRegistry implements TypeResolver {
                 .description(description)
                 .fields(fields);
 
-        if (isNode) {
+        if (nodeInterface != null && isNode) {
             builder.withInterface(nodeInterface);
         }
 

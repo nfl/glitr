@@ -10,6 +10,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 
 class GraphQLTestUtils {
+
     public static Field getRootFieldFromQuery(String query) {
         Parser parser = new Parser();
         def document = parser.parseDocument(query)

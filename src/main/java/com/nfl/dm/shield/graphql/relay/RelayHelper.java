@@ -19,31 +19,21 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 
 public class RelayHelper {
 
-    private static final Relay relay = new Relay();
+    private Relay relay;
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
 
     private final TypeRegistry typeRegistry;
     private final ObjectMapper objectMapper;
-    private final NodeFetcherService nodeFetcherService;
     private GraphQLInterfaceType nodeInterface;
     private GraphQLFieldDefinition nodeField;
 
 
-    public RelayHelper(TypeRegistry typeRegistry, NodeFetcherService nodeFetcherService, ObjectMapper objectMapper) {
+    public RelayHelper(Relay relay, TypeRegistry typeRegistry, NodeFetcherService nodeFetcherService, ObjectMapper objectMapper) {
+        this.relay = relay;
         this.typeRegistry = typeRegistry;
         this.objectMapper = objectMapper;
-        this.nodeFetcherService = nodeFetcherService;
-
-        init();
-    }
-
-    private void init() {
         this.nodeInterface = relay.nodeInterface(typeRegistry);
         this.nodeField = relay.nodeField(nodeInterface, nodeFetcherService);
-    }
-
-    public static List<GraphQLArgument> getConnectionFieldArguments() {
-        return relay.getConnectionFieldArguments();
     }
 
     public GraphQLInterfaceType getNodeInterface() {
@@ -52,6 +42,10 @@ public class RelayHelper {
 
     public GraphQLFieldDefinition getNodeField() {
         return nodeField;
+    }
+
+    public List<GraphQLArgument> getConnectionFieldArguments() {
+        return relay.getConnectionFieldArguments();
     }
 
     private GraphQLInputObjectField createInputObjectField(Class mtnClass, Class outputClass) {
@@ -85,12 +79,12 @@ public class RelayHelper {
                         validator, mutationFunc));
     }
 
-    public static GraphQLObjectType edgeType(String simpleName, GraphQLOutputType edgeGraphQLOutputType,
+    public GraphQLObjectType edgeType(String simpleName, GraphQLOutputType edgeGraphQLOutputType,
                                              GraphQLInterfaceType nodeInterface, List<GraphQLFieldDefinition> graphQLFieldDefinitions) {
         return relay.edgeType(simpleName, edgeGraphQLOutputType, nodeInterface, graphQLFieldDefinitions);
     }
 
-    public static GraphQLObjectType connectionType(String simpleName, GraphQLObjectType edgeType, List<GraphQLFieldDefinition> graphQLFieldDefinitions) {
+    public GraphQLObjectType connectionType(String simpleName, GraphQLObjectType edgeType, List<GraphQLFieldDefinition> graphQLFieldDefinitions) {
         return relay.connectionType(simpleName, edgeType, graphQLFieldDefinitions);
     }
 
@@ -131,6 +125,4 @@ public class RelayHelper {
         String string = Base64.fromBase64(cursor);
         return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
     }
-
-
 }

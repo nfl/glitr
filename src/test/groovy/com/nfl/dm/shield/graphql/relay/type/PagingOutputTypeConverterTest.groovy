@@ -3,8 +3,9 @@ package com.nfl.dm.shield.graphql.relay.type
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments
 import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull
-import com.nfl.dm.shield.graphql.registry.TypeRegistry
+import com.nfl.dm.shield.graphql.registry.TypeRegistryBuilder
 import com.nfl.dm.shield.graphql.relay.RelayHelper
+import graphql.relay.Relay
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import spock.lang.Specification
@@ -16,9 +17,9 @@ import java.lang.reflect.Method
 
 class PagingOutputTypeConverterTest extends Specification {
 
-    def typeRegistry = new TypeRegistry()
-    def relayHelper = new RelayHelper(typeRegistry, null, new ObjectMapper())
-    def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter(relayHelper, typeRegistry)
+    def typeRegistry = TypeRegistryBuilder.newTypeRegistry().build()
+    def relayHelper = new RelayHelper(new Relay(), typeRegistry, null, new ObjectMapper())
+    def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter().setRelayHelper(relayHelper).setTypeRegistry(typeRegistry)
 
 
     def "simple string"() throws NoSuchFieldException, NoSuchMethodException {

@@ -1,13 +1,12 @@
 package com.nfl.dm.shield.graphql;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments;
 import com.nfl.dm.shield.graphql.registry.RelayNode;
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.registry.TypeRegistryBuilder;
-import com.nfl.dm.shield.graphql.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.NodeFetcherService;
 import com.nfl.dm.shield.graphql.relay.RelayHelper;
+import com.nfl.dm.shield.graphql.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.dm.shield.graphql.relay.type.PagingOutputTypeConverter;
 import com.nfl.dm.shield.graphql.relay.type.RelayNodeOutputTypeFunc;
 import graphql.relay.Relay;
@@ -26,26 +25,23 @@ import java.util.Map;
 
 public class GlitrBuilder {
 
-    private boolean isRelayEnabled = false;
     private NodeFetcherService nodeFetcherService;
-    private ObjectMapper objectMapper;
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
-    private Relay relay = new Relay();
+    private Relay relay = null;
 
     private GlitrBuilder() {
     }
 
-    private GlitrBuilder(NodeFetcherService nodeFetcherService, ObjectMapper objectMapper) {
-        this.nodeFetcherService = nodeFetcherService;
-        this.objectMapper = objectMapper;
-        this.isRelayEnabled = true;
-    }
-
     public GlitrBuilder withRelay(Relay relay) {
         this.relay = relay;
+        return this;
+    }
+
+    public GlitrBuilder withNodeFetcherService(NodeFetcherService nodeFetcherService) {
+        this.nodeFetcherService = nodeFetcherService;
         return this;
     }
 
@@ -94,12 +90,12 @@ public class GlitrBuilder {
         return new GlitrBuilder();
     }
 
-    public static GlitrBuilder newGlitrWithRelaySupport(NodeFetcherService nodeFetcherService, ObjectMapper objectMapper) {
-        return new GlitrBuilder(nodeFetcherService, objectMapper);
+    public static GlitrBuilder newGlitrWithRelaySupport() {
+        return new GlitrBuilder().withRelay(new Relay());
     }
 
     public Glitr build() {
-        if (isRelayEnabled) {
+        if (relay != null) {
             return buildGlitrWithRelaySupport();
         }
         return buildGlitr();
@@ -137,7 +133,7 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setTypeRegistry(typeRegistry);
 
         // instantiate RelayHelper
-        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry, nodeFetcherService, objectMapper);
+        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry, nodeFetcherService);
 
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);

@@ -6,17 +6,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 
 public class JsonUtils {
 
-    private final static Logger logger = LoggerFactory.getLogger(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
-
 
     static {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");
@@ -45,8 +41,11 @@ public class JsonUtils {
         try {
             return mapper.writeValueAsString(o);
         } catch (IOException e) {
-            logger.error(e.getLocalizedMessage(), e);
             throw new IllegalArgumentException("Unable to write value: " + o.toString(), e);
         }
+    }
+
+    public static <T> T convertValue(Object fromValue, Class<T> toValueType) {
+        return mapper.convertValue(fromValue, toValueType);
     }
 }

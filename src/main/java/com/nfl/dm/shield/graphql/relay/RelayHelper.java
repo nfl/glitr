@@ -1,6 +1,5 @@
 package com.nfl.dm.shield.graphql.relay;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.registry.datafetcher.mutation.MutationDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.NodeFetcherService;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 
@@ -23,21 +23,19 @@ public class RelayHelper {
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
 
     private final TypeRegistry typeRegistry;
-    private final ObjectMapper objectMapper;
-    private GraphQLInterfaceType nodeInterface;
     private GraphQLFieldDefinition nodeField;
 
 
-    public RelayHelper(Relay relay, TypeRegistry typeRegistry, NodeFetcherService nodeFetcherService, ObjectMapper objectMapper) {
+    public RelayHelper(Relay relay, TypeRegistry typeRegistry, NodeFetcherService nodeFetcherService) {
+        assertNotNull(typeRegistry, "TypeRegistry can't be null");
+        assertNotNull(typeRegistry.getNodeInterface(), "NodeInterface can't be null");
         this.relay = relay;
         this.typeRegistry = typeRegistry;
-        this.objectMapper = objectMapper;
-        this.nodeInterface = relay.nodeInterface(typeRegistry);
-        this.nodeField = relay.nodeField(nodeInterface, nodeFetcherService);
+        this.nodeField = relay.nodeField(typeRegistry.getNodeInterface(), nodeFetcherService);
     }
 
     public GraphQLInterfaceType getNodeInterface() {
-        return nodeInterface;
+        return typeRegistry.getNodeInterface();
     }
 
     public GraphQLFieldDefinition getNodeField() {
@@ -75,7 +73,7 @@ public class RelayHelper {
         return relay.mutationWithClientMutationId(mtnClass.getSimpleName(), fieldName,
                 Collections.singletonList(field),
                 Collections.singletonList(outputField),
-                new MutationDataFetcher(objectMapper, outputClass, mtnClass,
+                new MutationDataFetcher(outputClass, mtnClass,
                         validator, mutationFunc));
     }
 

@@ -1,13 +1,12 @@
 package com.nfl.dm.shield.graphql.registry
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.nfl.dm.shield.graphql.relay.RelayHelper
-import graphql.relay.Relay
+import com.nfl.dm.shield.graphql.GlitrBuilder
 
 class TypeRegistryIntegrationTest {
 
-    def typeRegistry = TypeRegistryBuilder.newTypeRegistry().build()
-    def relayHelper = new RelayHelper(new Relay(), typeRegistry, null, new ObjectMapper())
+    def glitr = GlitrBuilder.newGlitrWithRelaySupport().build()
+    def typeRegistry = glitr.typeRegistry
+    def relayHelper = glitr.relayHelper
 
 
     def "init registry"() {

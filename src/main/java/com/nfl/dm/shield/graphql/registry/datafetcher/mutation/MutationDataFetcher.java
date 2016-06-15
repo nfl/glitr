@@ -1,7 +1,7 @@
 package com.nfl.dm.shield.graphql.registry.datafetcher.mutation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nfl.dm.shield.graphql.error.NFLGraphQLValidationError;
+import com.nfl.dm.shield.util.JsonUtils;
 import com.nfl.dm.shield.util.validation.ValidationUtil;
 import com.nfl.dm.shield.web.exception.NFLValidationException;
 import graphql.schema.DataFetcher;
@@ -20,32 +20,29 @@ public class MutationDataFetcher implements DataFetcher {
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger(MutationDataFetcher.class);
 
-    private final ObjectMapper jacksonMapper;
-    private final Class referenceClass;
-    private final Class mtnClass;
+    private final Class mutationPayloadClass;
+    private final Class mutationInputClass;
     private final Validator validator;
     private final Func4<Object, Class, Class, DataFetchingEnvironment, Object> mutationFunc;
 
 
-    public MutationDataFetcher(ObjectMapper jacksonMapper,
-                               Class referenceClass, Class mtnClass, Validator validator,
+    public MutationDataFetcher(Class mutationPayloadClass, Class mutationInputClass, Validator validator,
                                Func4<Object, Class, Class, DataFetchingEnvironment, Object> mutationFunc) {
-        this.jacksonMapper = jacksonMapper;
-        this.referenceClass = referenceClass;
-        this.mtnClass = mtnClass;
+        this.mutationPayloadClass = mutationPayloadClass;
+        this.mutationInputClass = mutationInputClass;
         this.validator = validator;
         this.mutationFunc = mutationFunc;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public Object get(DataFetchingEnvironment env) {
         Map<String, Object> inputMap = env.getArgument("input");
         Map<String, Object> input = (Map<String, Object>) inputMap.get(
-                StringUtils.uncapitalize(referenceClass.getSimpleName()));
+                StringUtils.uncapitalize(mutationPayloadClass.getSimpleName()));
 
-        // map fields from input map to mtnClass
-        Object inputPayloadMtn = jacksonMapper.convertValue(input, mtnClass);
+        // map fields from input map to mutationInputClass
+        Object inputPayloadMtn = JsonUtils.convertValue(input, mutationInputClass);
 
         Object mutationOutput;
         // apply some validation on inputPayloadMtn (should validation be in the mutationFunc instead?)
@@ -60,11 +57,11 @@ public class MutationDataFetcher implements DataFetcher {
             }
         }
         // mutate and return output
-        mutationOutput = mutationFunc.call(inputPayloadMtn, mtnClass, referenceClass, env);
+        mutationOutput = mutationFunc.call(inputPayloadMtn, mutationInputClass, mutationPayloadClass, env);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("clientMutationId", inputMap.get("clientMutationId"));
-        result.put(StringUtils.uncapitalize(referenceClass.getSimpleName()), mutationOutput);
+        result.put(StringUtils.uncapitalize(mutationPayloadClass.getSimpleName()), mutationOutput);
         return result;
     }
 }

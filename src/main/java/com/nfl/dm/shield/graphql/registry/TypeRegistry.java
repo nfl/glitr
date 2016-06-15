@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func4;
 
+import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.time.Instant;
@@ -54,8 +55,13 @@ public class TypeRegistry implements TypeResolver {
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
         if (relay != null) {
-            nodeInterface = relay.nodeInterface(this);
+            this.nodeInterface = relay.nodeInterface(this);
         }
+    }
+
+    @Nullable
+    public GraphQLInterfaceType getNodeInterface() {
+        return nodeInterface;
     }
 
     public GraphQLType lookup(Class clazz) {
@@ -339,7 +345,6 @@ public class TypeRegistry implements TypeResolver {
 
 
     public GraphQLInputObjectType createInputObjectType(Class clazz) {
-        // TODO: Maybe setters instead of getters?
         Map<String, Pair<Method, Class>> methods = getMethodMap(clazz);
 
         List<GraphQLInputObjectField> fields = methods.values().stream()

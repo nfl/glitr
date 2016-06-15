@@ -5,7 +5,8 @@ enum class ArgumentType private constructor(postFix: String) {
     QUERY_CONTAINS("CONTAINS"),
     QUERY_CUSTOM(""),
     ORDER_BY(""),
-    ORDER_DIRECTION("");
+    ORDER_DIRECTION(""),
+    INPUT("");
 
     var postFix: String
         internal set

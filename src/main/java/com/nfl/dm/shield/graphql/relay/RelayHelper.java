@@ -1,21 +1,14 @@
 package com.nfl.dm.shield.graphql.relay;
 
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
-import com.nfl.dm.shield.graphql.registry.datafetcher.mutation.MutationDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.NodeFetcherService;
 import graphql.relay.*;
 import graphql.schema.*;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.validation.Validator;
-import rx.functions.Func4;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 
 public class RelayHelper {
 
@@ -46,36 +39,6 @@ public class RelayHelper {
         return relay.getConnectionFieldArguments();
     }
 
-    private GraphQLInputObjectField createInputObjectField(Class mtnClass, Class outputClass) {
-        return newInputObjectField()
-                .type((GraphQLInputType) typeRegistry.lookupInput(mtnClass))
-                .name(StringUtils.uncapitalize(outputClass.getSimpleName())) // TODO: might not what we want for all cases
-                .build();
-    }
-
-    private GraphQLFieldDefinition createMutationOutputFieldDefinition(Class outputClass) {
-        // Fields that identify the object (we lookup it up from the registry)
-        return newFieldDefinition()
-                .name(StringUtils.uncapitalize(outputClass.getSimpleName()))
-                .type((GraphQLOutputType) typeRegistry.lookup(outputClass))
-                .build();
-    }
-
-    public GraphQLFieldDefinition buildMutation(String fieldName,
-                                                Class outputClass,
-                                                Class mtnClass,
-                                                Validator validator,
-                                                Func4<Object, Class, Class, DataFetchingEnvironment, Object> mutationFunc) {
-
-        GraphQLInputObjectField field = this.createInputObjectField(mtnClass, outputClass);
-        GraphQLFieldDefinition outputField = this.createMutationOutputFieldDefinition(outputClass);
-
-        return relay.mutationWithClientMutationId(mtnClass.getSimpleName(), fieldName,
-                Collections.singletonList(field),
-                Collections.singletonList(outputField),
-                new MutationDataFetcher(outputClass, mtnClass,
-                        validator, mutationFunc));
-    }
 
     public GraphQLObjectType edgeType(String simpleName, GraphQLOutputType edgeGraphQLOutputType,
                                              GraphQLInterfaceType nodeInterface, List<GraphQLFieldDefinition> graphQLFieldDefinitions) {

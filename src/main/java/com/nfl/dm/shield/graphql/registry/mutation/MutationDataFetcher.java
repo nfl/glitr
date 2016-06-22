@@ -1,4 +1,4 @@
-package com.nfl.dm.shield.graphql.registry.datafetcher.mutation;
+package com.nfl.dm.shield.graphql.registry.mutation;
 
 import com.nfl.dm.shield.graphql.error.NFLGraphQLValidationError;
 import com.nfl.dm.shield.util.JsonUtils;
@@ -6,13 +6,10 @@ import com.nfl.dm.shield.util.validation.ValidationUtil;
 import com.nfl.dm.shield.web.exception.NFLValidationException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.Validator;
-import rx.functions.Func4;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MutationDataFetcher implements DataFetcher {
@@ -20,15 +17,11 @@ public class MutationDataFetcher implements DataFetcher {
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger(MutationDataFetcher.class);
 
-    private final Class mutationPayloadClass;
     private final Class mutationInputClass;
-    private final Validator validator;
-    private final Func4<Object, Class, Class, DataFetchingEnvironment, Object> mutationFunc;
+    private final Validator validator; //TODO: could we use/create something more generic than org.springframework.validation?
+    private final RelayMutation mutationFunc;
 
-
-    public MutationDataFetcher(Class mutationPayloadClass, Class mutationInputClass, Validator validator,
-                               Func4<Object, Class, Class, DataFetchingEnvironment, Object> mutationFunc) {
-        this.mutationPayloadClass = mutationPayloadClass;
+    public MutationDataFetcher(Class mutationInputClass, Validator validator, RelayMutation mutationFunc) {
         this.mutationInputClass = mutationInputClass;
         this.validator = validator;
         this.mutationFunc = mutationFunc;
@@ -38,13 +31,11 @@ public class MutationDataFetcher implements DataFetcher {
     @SuppressWarnings("unchecked")
     public Object get(DataFetchingEnvironment env) {
         Map<String, Object> inputMap = env.getArgument("input");
-        Map<String, Object> input = (Map<String, Object>) inputMap.get(
-                StringUtils.uncapitalize(mutationPayloadClass.getSimpleName()));
 
         // map fields from input map to mutationInputClass
-        Object inputPayloadMtn = JsonUtils.convertValue(input, mutationInputClass);
+        Object inputPayloadMtn = JsonUtils.convertValue(inputMap, mutationInputClass);
 
-        Object mutationOutput;
+        RelayMutationType mutationOutput;
         // apply some validation on inputPayloadMtn (should validation be in the mutationFunc instead?)
         if (validator != null) {
             try {
@@ -57,11 +48,9 @@ public class MutationDataFetcher implements DataFetcher {
             }
         }
         // mutate and return output
-        mutationOutput = mutationFunc.call(inputPayloadMtn, mutationInputClass, mutationPayloadClass, env);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("clientMutationId", inputMap.get("clientMutationId"));
-        result.put(StringUtils.uncapitalize(mutationPayloadClass.getSimpleName()), mutationOutput);
-        return result;
+        mutationOutput = mutationFunc.call((RelayMutationType)inputPayloadMtn, env);
+        // set back the client mutation id
+        mutationOutput.setClientMutationId((String)inputMap.get("clientMutationId"));
+        return mutationOutput;
     }
 }

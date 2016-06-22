@@ -1,18 +1,14 @@
 package com.nfl.dm.shield.graphql.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
+import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.Arguments;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLDescription;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLIgnore;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.type.Scalars;
 import com.nfl.dm.shield.util.error.DataFetcherCreationException;
 import graphql.relay.Relay;
 import graphql.schema.*;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,12 +44,14 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
     private GraphQLInterfaceType nodeInterface;
+    private Relay relay;
 
     TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
         this.overrides = overrides;
         this.annotationToDataFetcherProviderMap = annotationToDataFetcherProviderMap;
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
+        this.relay = relay;
         if (relay != null) {
             this.nodeInterface = relay.nodeInterface(this);
         }
@@ -62,6 +60,11 @@ public class TypeRegistry implements TypeResolver {
     @Nullable
     public GraphQLInterfaceType getNodeInterface() {
         return nodeInterface;
+    }
+
+    @Override
+    public GraphQLObjectType getType(Object object) {
+        return (GraphQLObjectType)registry.get(object.getClass());
     }
 
     public GraphQLType lookup(Class clazz) {
@@ -91,6 +94,92 @@ public class TypeRegistry implements TypeResolver {
         return type;
     }
 
+
+    public GraphQLObjectType createRelayMutationType(Class clazz) {
+        Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
+
+        if (overrides.containsKey(clazz)) {
+            for (Object override : overrides.get(clazz)) {
+                for (Method method : override.getClass().getMethods()) {
+                    if (!ReflectionUtil.eligibleMethod(method)) {
+                        continue;
+                    }
+                    methods.putIfAbsent(method.getName(), Pair.of(method, override.getClass()));
+                }
+            }
+        }
+
+        List<GraphQLFieldDefinition> fields = methods.values().stream()
+                .map(pair -> {
+                    Method method = pair.getLeft();
+                    Class declaringClass = pair.getRight();
+
+                    // 1. GraphQL Field Name
+                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
+                    // 2. DataFetcher
+                    List<DataFetcher> fetchers = retrieveDataFetchers(clazz, declaringClass, method);
+                    DataFetcher dataFetcher = createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
+                    // 3. Arguments
+                    GraphQLArgument argument = createRelayInputArgument(name, clazz, declaringClass, method);
+                    // 4. OutputType
+                    GraphQLOutputType graphQLOutputType = retrieveGraphQLOutputType(clazz, declaringClass, method);
+                    // 5. Description
+                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+                    // 6. //TODO: static value
+                    // 7. //TODO: deprecation reason
+
+                    return newFieldDefinition()
+                            .name(name)
+                            .description(description)
+                            .type(graphQLOutputType)
+                            .argument(argument)
+                            .dataFetcher(dataFetcher)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        if (fields.size() == 0) {
+            // GraphiQL doesn't like objects with no fields, so add an unused field to be safe.
+            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).staticValue(false).build());
+        }
+
+        // description
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
+
+        GraphQLObjectType.Builder builder = newObject()
+                .name(clazz.getSimpleName())
+                .description(description)
+                .fields(fields);
+
+        return builder.build();
+    }
+
+    private GraphQLArgument createRelayInputArgument(String sanitizedMethodName, Class clazz, Class methodDeclaringClass, Method method) {
+        Argument[] annotatedGetterArguments = ReflectionUtil.getArgumentsFromMethod(method);
+        if (annotatedGetterArguments.length != 1) {
+            throw new IllegalArgumentException("Only one @Argument annotation can be placed on a relay mutation for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+        }
+
+        Argument arg = annotatedGetterArguments[0];
+
+        if (!arg.name().equals("input")) {
+            throw new IllegalArgumentException("@Argument annotation name must be `input` for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+        }
+
+        GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
+
+        if (!arg.nullable()) {
+            inputType = new GraphQLNonNull(inputType);
+        }
+
+        return newArgument()
+                .name(arg.name())
+                .description(arg.description())
+                .type(inputType)
+                .defaultValue(arg.defaultValue())
+                .build();
+    }
+
     public GraphQLType lookupInput(Class clazz) {
         if (inputRegistry.containsKey(clazz)) {
             return inputRegistry.get(clazz);
@@ -113,8 +202,6 @@ public class TypeRegistry implements TypeResolver {
         return type;
     }
 
-
-
     /**
      * In short, the method below creates the GraphQLObjectType dynamically for pretty much any pojo class with public
      * accessors.
@@ -123,7 +210,7 @@ public class TypeRegistry implements TypeResolver {
      *
      *   1. Extract all getter methods of `A` and store them in a map `M`
      *   2. If there are some registered overrides for `A`, for each override method in the override class
-     *   check if its a getter method and add it to the methods map `M` (if not exist already)
+     *   check if its a getter method and add it to the methods map `M` (if does not exist already)
      *   3. For each getter method in `M` lets create a graphQL field definition
      *   4. Each field definition needs a name, an output type, a data fetcher and potential arguments.
      *   (see graphQL spec for details)
@@ -148,12 +235,12 @@ public class TypeRegistry implements TypeResolver {
      */
     private GraphQLObjectType createObjectType(Class clazz) {
         boolean isNode = Arrays.stream(clazz.getMethods()).anyMatch(method -> method.getName().equals("getId"));
-        Map<String, Pair<Method, Class>> methods = getMethodMap(clazz);
+        Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
         if (overrides.containsKey(clazz)) {
             for (Object override : overrides.get(clazz)) {
                 for (Method method : override.getClass().getMethods()) {
-                    if (!eligibleMethod(method)) {
+                    if (!ReflectionUtil.eligibleMethod(method)) {
                         continue;
                     }
                     methods.putIfAbsent(method.getName(), Pair.of(method, override.getClass()));
@@ -166,152 +253,19 @@ public class TypeRegistry implements TypeResolver {
                     Method method = pair.getLeft();
                     Class declaringClass = pair.getRight();
 
-                    String name = sanitizeMethodName(method.getName());
-
-                    // 1. Fetchers
-                    // 2. Arguments
-                    // 3. OutputType
-                    List<DataFetcher> fetchers = new ArrayList<>();
-                    List<GraphQLArgument> arguments = new ArrayList<>();
-                    GraphQLOutputType graphQLOutputType = null;
-
-                    // Override Fetchers
-                    if (overrides.containsKey(clazz)) {
-                        for (Object override : overrides.get(clazz)) {
-                            fetchers.add(new OverrideDataFetcher(name, override));
-                        }
-                    }
-
-                    // we add a default OverrideDataFetcher for override getters in the actual class itself
-                    fetchers.add(new OverrideDataFetcher(name, clazz));
-
-                    // A. inspect annotations on getter
-                    Annotation[] methodAnnotations = method.getDeclaredAnnotations();
-                    for (Annotation annotation: methodAnnotations) {
-                        // Custom Fetchers
-                        if (annotationToDataFetcherProviderMap.containsKey(annotation.annotationType())) {
-                            Func4<Field, Method, Class, Annotation, DataFetcher> customDataFetcherFunc = annotationToDataFetcherProviderMap.get(annotation.annotationType());
-                            DataFetcher dataFetcher = customDataFetcherFunc.call(null, method, declaringClass, annotation);
-                            if (dataFetcher == null) {
-                                continue;
-                            }
-                            fetchers.add(dataFetcher);
-                        }
-
-                        // Custom Arguments
-                        if (annotationToArgumentsProviderMap.containsKey(annotation.annotationType())) {
-                            Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> customArgumentsFunc = annotationToArgumentsProviderMap.get(annotation.annotationType());
-                            List<GraphQLArgument> argumentList = customArgumentsFunc.call(null, method, declaringClass, annotation);
-                            arguments.addAll(argumentList);
-                        }
-
-                        // Custom OutputType
-                        if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
-                            Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
-                            GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(null, method, declaringClass, annotation);
-                            if (outputType != null) {
-                                graphQLOutputType = outputType;
-                                break;
-                            }
-                        }
-                    }
-
-                    // B. inspect annotations on field of same name.
-                    Field field = null;
-                    try {
-                        field = declaringClass.getDeclaredField(name);
-                    } catch (NoSuchFieldException e) {
-                        // that's fine
-                        logger.debug("Field not found: {} for class {} ", name, declaringClass, e);
-                    }
-
-                    if (field != null) {
-                        Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
-                        for (Annotation annotation: fieldAnnotations) {
-                            // Custom Fetchers
-                            if (annotationToDataFetcherProviderMap.containsKey(annotation.annotationType())) {
-                                Func4<Field, Method, Class, Annotation, DataFetcher> customDataFetcherFunc = annotationToDataFetcherProviderMap.get(annotation.annotationType());
-                                DataFetcher dataFetcher = customDataFetcherFunc.call(field, method, declaringClass, annotation);
-                                if (dataFetcher == null) {
-                                    continue;
-                                }
-                                fetchers.add(dataFetcher);
-                            }
-
-                            // Custom Arguments
-                            if (annotationToArgumentsProviderMap.containsKey(annotation.annotationType())) {
-                                Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> customArgumentsFunc = annotationToArgumentsProviderMap.get(annotation.annotationType());
-                                List<GraphQLArgument> argumentList = customArgumentsFunc.call(field, method, declaringClass, annotation);
-                                arguments.addAll(argumentList);
-                            }
-
-                            // Custom OutputType
-                            if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
-                                Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
-                                GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(field, method, declaringClass, annotation);
-                                if (outputType != null) {
-                                    graphQLOutputType = outputType;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    // default fetcher
-                    fetchers.add(new PropertyDataFetcher(name));
-
-                    // Get back a batched or un-batched CompositeDataFetcher depending on the list
-                    DataFetcher dataFetcher = null;
-                    try {
-                        dataFetcher = CompositeDataFetcherFactory.create(fetchers);
-                    } catch (IllegalArgumentException e) {
-                        throw new DataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
-                    }
-
-                    // default argument, argument annotation can be found on either the method or field but method level args take precedence
-                    Argument[] annotatedArguments;
-                    Argument[] annotatedGetterArguments = getArgumentsFromMethod(method);
-                    Argument[] annotatedFieldArguments = getArgumentsFromField(field);
-                    if (annotatedGetterArguments.length == 0) {
-                        annotatedArguments = annotatedFieldArguments;
-                    } else {
-                        annotatedArguments = annotatedGetterArguments;
-                    }
-
-                    if (annotatedGetterArguments.length > 0 && annotatedFieldArguments.length > 0) {
-                        logger.warn("Both Method and Field level @Argument(s) found, ignoring annotations [{}] for Field [{}]", annotatedFieldArguments, field.getName());
-                    }
-
-                    arguments.addAll(Arrays.stream(annotatedArguments)
-                            .map(arg -> {
-                                GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLOutputType(arg.type(), arg.name());
-
-                                if (!arg.nullable() || arg.name().equals("id")) {
-                                    inputType = new GraphQLNonNull(inputType);
-                                }
-
-                                return newArgument()
-                                        .name(arg.name())
-                                        .type(inputType)
-                                        .build();
-                            })
-                            .collect(Collectors.toList()));
-
-                    // default outputType
-                    if (graphQLOutputType == null) {
-                        graphQLOutputType = (GraphQLOutputType) convertToGraphQLOutputType(
-                                GenericTypeReflector.getExactReturnType(method, declaringClass), name);
-
-                        // nullable
-                        boolean nullable = !method.isAnnotationPresent(com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull.class);
-
-                        if (!nullable || name.equals("id")) {
-                            graphQLOutputType = new GraphQLNonNull(graphQLOutputType);
-                        }
-                    }
-
-                    // description
-                    String description = method.isAnnotationPresent(GraphQLDescription.class) ? method.getAnnotation(GraphQLDescription.class).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+                    // 1. GraphQL Field Name
+                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
+                    // 2. DataFetcher
+                    List<DataFetcher> fetchers = retrieveDataFetchers(clazz, declaringClass, method);
+                    DataFetcher dataFetcher = createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
+                    // 3. Arguments
+                    List<GraphQLArgument> arguments = retrieveArguments(clazz, declaringClass, method);
+                    // 4. OutputType
+                    GraphQLOutputType graphQLOutputType = retrieveGraphQLOutputType(clazz, declaringClass, method);
+                    // 5. Description
+                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+                    // 6. //TODO: static value
+                    // 7. //TODO: deprecation reason
 
                     return newFieldDefinition()
                             .name(name)
@@ -329,13 +283,14 @@ public class TypeRegistry implements TypeResolver {
         }
 
         // description
-        String description = clazz.isAnnotationPresent(GraphQLDescription.class) ? ((GraphQLDescription)clazz.getAnnotation(GraphQLDescription.class)).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
 
         GraphQLObjectType.Builder builder = newObject()
                 .name(clazz.getSimpleName())
                 .description(description)
                 .fields(fields);
 
+        // relay is enabled, add Node interface implementation
         if (nodeInterface != null && isNode) {
             builder.withInterface(nodeInterface);
         }
@@ -344,24 +299,222 @@ public class TypeRegistry implements TypeResolver {
     }
 
 
+    private DataFetcher createDataFetchersFromDataFetcherList(List<DataFetcher> fetchers, Class declaringClass, String name) {
+        try {
+            return CompositeDataFetcherFactory.create(fetchers);
+        } catch (IllegalArgumentException e) {
+            throw new DataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
+        }
+    }
+
+    private List<DataFetcher> retrieveDataFetchers(Class clazz, Class declaringClass, Method method) {
+        List<DataFetcher> fetchers = new ArrayList<>();
+
+        String name = ReflectionUtil.sanitizeMethodName(method.getName());
+
+        // Override Fetchers
+        if (overrides.containsKey(clazz)) {
+            for (Object override : overrides.get(clazz)) {
+                fetchers.add(new OverrideDataFetcher(name, override));
+            }
+        }
+
+        // we add a default OverrideDataFetcher for override getters in the actual class itself
+        fetchers.add(new OverrideDataFetcher(name, clazz));
+
+        // A. inspect annotations on getter
+        Annotation[] methodAnnotations = method.getDeclaredAnnotations();
+        for (Annotation annotation: methodAnnotations) {
+            // Custom Fetchers
+            if (annotationToDataFetcherProviderMap.containsKey(annotation.annotationType())) {
+                Func4<Field, Method, Class, Annotation, DataFetcher> customDataFetcherFunc = annotationToDataFetcherProviderMap.get(annotation.annotationType());
+                DataFetcher dataFetcher = customDataFetcherFunc.call(null, method, declaringClass, annotation);
+                if (dataFetcher == null) {
+                    continue;
+                }
+                fetchers.add(dataFetcher);
+            }
+        }
+
+        // B. inspect annotations on field of same name.
+        Field field = null;
+        try {
+            field = declaringClass.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            // that's fine
+            logger.debug("Field not found: {} for class {} ", name, declaringClass, e);
+        }
+
+        if (field != null) {
+            Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
+            for (Annotation annotation: fieldAnnotations) {
+                // Custom Fetchers
+                if (annotationToDataFetcherProviderMap.containsKey(annotation.annotationType())) {
+                    Func4<Field, Method, Class, Annotation, DataFetcher> customDataFetcherFunc = annotationToDataFetcherProviderMap.get(annotation.annotationType());
+                    DataFetcher dataFetcher = customDataFetcherFunc.call(field, method, declaringClass, annotation);
+                    if (dataFetcher == null) {
+                        continue;
+                    }
+                    fetchers.add(dataFetcher);
+                }
+            }
+        }
+
+        // default fetcher
+        fetchers.add(new PropertyDataFetcher(name));
+
+        return fetchers;
+    }
+
+    private List<GraphQLArgument> retrieveArguments(Class clazz, Class declaringClass, Method method) {
+        List<GraphQLArgument> arguments = new ArrayList<>();
+
+        String name = ReflectionUtil.sanitizeMethodName(method.getName());
+
+        // A. inspect annotations on getter
+        Annotation[] methodAnnotations = method.getDeclaredAnnotations();
+        for (Annotation annotation: methodAnnotations) {
+            // Custom Arguments
+            if (annotationToArgumentsProviderMap.containsKey(annotation.annotationType())) {
+                Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> customArgumentsFunc = annotationToArgumentsProviderMap.get(annotation.annotationType());
+                List<GraphQLArgument> argumentList = customArgumentsFunc.call(null, method, declaringClass, annotation);
+                arguments.addAll(argumentList);
+            }
+        }
+
+        // B. inspect annotations on field of same name.
+        Field field = null;
+        try {
+            field = declaringClass.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            // that's fine
+            logger.debug("Field not found: {} for class {} ", name, declaringClass, e);
+        }
+
+        if (field != null) {
+            Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
+            for (Annotation annotation: fieldAnnotations) {
+                // Custom Arguments
+                if (annotationToArgumentsProviderMap.containsKey(annotation.annotationType())) {
+                    Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> customArgumentsFunc = annotationToArgumentsProviderMap.get(annotation.annotationType());
+                    List<GraphQLArgument> argumentList = customArgumentsFunc.call(field, method, declaringClass, annotation);
+                    arguments.addAll(argumentList);
+                }
+            }
+        }
+
+        // default argument, argument annotation can be found on either the method or field but method level args take precedence
+        Argument[] annotatedArguments;
+        Argument[] annotatedGetterArguments = ReflectionUtil.getArgumentsFromMethod(method);
+        Argument[] annotatedFieldArguments = ReflectionUtil.getArgumentsFromField(field);
+        if (annotatedGetterArguments.length == 0) {
+            annotatedArguments = annotatedFieldArguments;
+        } else {
+            annotatedArguments = annotatedGetterArguments;
+        }
+
+        if (annotatedGetterArguments.length > 0 && annotatedFieldArguments.length > 0) {
+            logger.warn("Both Method and Field level @Argument(s) found, ignoring annotations [{}] for Field [{}]", annotatedFieldArguments, field.getName());
+        }
+
+        arguments.addAll(Arrays.stream(annotatedArguments)
+                .map(arg -> {
+                    GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
+
+                    if (!arg.nullable() || arg.name().equals("id")) {
+                        inputType = new GraphQLNonNull(inputType);
+                    }
+
+                    return newArgument()
+                            .name(arg.name())
+                            .description(arg.description())
+                            .type(inputType)
+                            .build();
+                })
+                .collect(Collectors.toList()));
+
+        return arguments;
+    }
+
+
+    public GraphQLOutputType retrieveGraphQLOutputType(Class clazz, Class declaringClass, Method method) {
+        GraphQLOutputType graphQLOutputType = null;
+
+        String name = ReflectionUtil.sanitizeMethodName(method.getName());
+
+        // A. inspect annotations on getter
+        Annotation[] methodAnnotations = method.getDeclaredAnnotations();
+        for (Annotation annotation: methodAnnotations) {
+            // Custom OutputType
+            if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
+                Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
+                GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(null, method, declaringClass, annotation);
+                if (outputType != null) {
+                    graphQLOutputType = outputType;
+                    break;
+                }
+            }
+        }
+
+        // B. inspect annotations on field of same name.
+        Field field = null;
+        try {
+            field = declaringClass.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            // that's fine
+            logger.debug("Field not found: {} for class {} ", name, declaringClass, e);
+        }
+
+        if (field != null) {
+            Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
+            for (Annotation annotation: fieldAnnotations) {
+                // Custom OutputType
+                if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
+                    Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
+                    GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(field, method, declaringClass, annotation);
+                    if (outputType != null) {
+                        graphQLOutputType = outputType;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // default outputType
+        if (graphQLOutputType == null) {
+            graphQLOutputType = (GraphQLOutputType) convertToGraphQLOutputType(
+                    GenericTypeReflector.getExactReturnType(method, declaringClass), name);
+
+            // nullable
+            boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
+
+            if (!nullable || name.equals("id")) {
+                graphQLOutputType = new GraphQLNonNull(graphQLOutputType);
+            }
+        }
+
+        return graphQLOutputType;
+    }
+
+
     public GraphQLInputObjectType createInputObjectType(Class clazz) {
-        Map<String, Pair<Method, Class>> methods = getMethodMap(clazz);
+        Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
         List<GraphQLInputObjectField> fields = methods.values().stream()
                 .map(pair -> {
                     Method method = pair.getLeft();
                     Class declaringClass = pair.getRight();
 
-                    String name = sanitizeMethodName(method.getName());
+                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
                     // TYPE
                     GraphQLInputType graphQLInputType = (GraphQLInputType) convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
 
                     // description
-                    String description = method.isAnnotationPresent(GraphQLDescription.class) ? method.getAnnotation(GraphQLDescription.class).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
 
                     // nullable
-                    boolean nullable = !method.isAnnotationPresent(com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull.class);
+                    boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
 
                     if (!nullable || name.equals("id")) {
                         graphQLInputType = new GraphQLNonNull(graphQLInputType);
@@ -371,48 +524,34 @@ public class TypeRegistry implements TypeResolver {
                             .type(graphQLInputType)
                             .name(name)
                             .description(description)
+                            // TODO: add default value feature, via annotation?
                             .build();
                 })
                 .collect(Collectors.toList());
 
         GraphQLInputObjectType.Builder builder = newInputObject()
-                .name(StringUtils.uncapitalize(clazz.getSimpleName()))
+                .name(clazz.getSimpleName())
+                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .fields(fields);
-
-        // description
-        if (clazz.isAnnotationPresent(GraphQLDescription.class)) {
-            builder.description(((GraphQLDescription)clazz.getAnnotation(GraphQLDescription.class)).value());
-        }
 
         return builder.build();
     }
 
-    private Map<String, Pair<Method, Class>> getMethodMap(Class clazz) {
-        return Arrays.stream(clazz.getMethods())
-                .filter(this::eligibleMethod)
-                .collect(Collectors.toMap(Method::getName, y -> Pair.of(y, y.getDeclaringClass())));
-    }
 
-    /**
-     * See createObjectType comments but DataFetchers are not needed for interfaces.
-     *
-     * @param clazz interface class
-     * @return GraphQLInterfaceType with a type resolver.
-     */
     private GraphQLInterfaceType createInterfaceType(Class clazz) {
         List<GraphQLFieldDefinition> fields = Arrays.stream(clazz.getDeclaredMethods())
-                .filter(this::eligibleMethod)
+                .filter(ReflectionUtil::eligibleMethod)
                 .map(method -> {
-                    String name = sanitizeMethodName(method.getName());
+                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
                     // description
-                    String description = method.isAnnotationPresent(GraphQLDescription.class) ? method.getAnnotation(GraphQLDescription.class).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
 
                     // type
                     GraphQLType type = convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, clazz), null);
 
                     // nullable
-                    boolean nullable = !method.isAnnotationPresent(com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull.class);
+                    boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
 
                     if (!nullable || name.equals("id")) {
                         type = new GraphQLNonNull(type);
@@ -421,13 +560,14 @@ public class TypeRegistry implements TypeResolver {
                     return newFieldDefinition()
                             .name(name)
                             .description(description)
+                            .dataFetcher(CompositeDataFetcherFactory.create(Collections.singletonList(new PropertyDataFetcher(name))))
                             .type((GraphQLOutputType) type)
                             .build();
                 })
                 .collect(Collectors.toList());
 
         // description
-        String description = clazz.isAnnotationPresent(GraphQLDescription.class) ? ((GraphQLDescription)clazz.getAnnotation(GraphQLDescription.class)).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
 
         return newInterface()
                 .name(clazz.getSimpleName())
@@ -440,7 +580,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLList createListOutputTypeFromParametrizedType(Type type) {
         ParameterizedType parameterizedType = (ParameterizedType)type;
 
-        Type typeArgument = getActualTypeArgumentFromType(parameterizedType);
+        Type typeArgument = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
 
         return new GraphQLList(convertToGraphQLOutputType(typeArgument, null));
     }
@@ -455,7 +595,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLList createListInputTypeFromParametrizedType(Type type) {
         ParameterizedType parameterizedType = (ParameterizedType)type;
 
-        Type typeArgument = getActualTypeArgumentFromType(parameterizedType);
+        Type typeArgument = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
 
         return new GraphQLList(convertToGraphQLInputType(typeArgument, null));
     }
@@ -468,7 +608,9 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLEnumType createEnumType(Class clazz) {
-        GraphQLEnumType.Builder builder = newEnum().name(clazz.getSimpleName());
+        GraphQLEnumType.Builder builder = newEnum()
+                .name(clazz.getSimpleName())
+                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz));
 
         for (Object constant : clazz.getEnumConstants()) {
             builder.value(constant.toString(), constant);
@@ -549,68 +691,5 @@ public class TypeRegistry implements TypeResolver {
         }
 
         return lookupInput((Class) type);
-    }
-
-    public static String sanitizeMethodName(String name) {
-        return StringUtils.uncapitalize(
-                name.startsWith("is")
-                        ? name.substring(2)
-                        : name.substring(3));
-    }
-
-    private Boolean eligibleMethod(Method method) {
-        Annotation graphQLIgnore = method.getAnnotation(GraphQLIgnore.class);
-        if (graphQLIgnore != null) {
-            return false;
-        }
-
-        String methodName = method.getName();
-        String fieldName = sanitizeMethodName(methodName);
-
-        Field field;
-        try {
-            field = method.getDeclaringClass().getDeclaredField(fieldName);
-            Annotation fieldAnnotations = field.getAnnotation(GraphQLIgnore.class);
-            if (fieldAnnotations != null) {
-                return false;
-            }
-        } catch (NoSuchFieldException e) {
-            // thats fine
-            logger.debug("Field not found: {}", e);
-        }
-
-        return (methodName.startsWith("is") || methodName.startsWith("get"))
-                && method.getDeclaringClass() != Object.class
-                && (!Map.class.isAssignableFrom(method.getReturnType()));
-    }
-
-    public static Type getActualTypeArgumentFromType(ParameterizedType parameterizedType) {
-        Type[] fieldArgTypes = parameterizedType.getActualTypeArguments();
-
-        if (fieldArgTypes.length > 1) {
-            throw new IllegalArgumentException("Type can only have one generic argument: " + parameterizedType);
-        }
-
-        return fieldArgTypes[0];
-    }
-
-    public static Argument[] getArgumentsFromMethod(Method method) {
-        Argument[] singleAnnotationArguments = method.isAnnotationPresent(Argument.class) ? method.getAnnotationsByType(Argument.class) : new Argument[0];
-        Argument[] groupedAnnotationArguments = method.isAnnotationPresent(Arguments.class) ? method.getAnnotation(Arguments.class).value() : new Argument[0];
-        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
-    }
-
-    public static Argument[] getArgumentsFromField(Field field) {
-        if (field == null) {
-            return new Argument[0];
-        }
-        Argument[] singleAnnotationArguments = field.isAnnotationPresent(Argument.class) ? field.getAnnotationsByType(Argument.class) : new Argument[0];
-        Argument[] groupedAnnotationArguments = field.isAnnotationPresent(Arguments.class) ? field.getAnnotation(Arguments.class).value() : new Argument[0];
-        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
-    }
-
-    @Override
-    public GraphQLObjectType getType(Object object) {
-        return (GraphQLObjectType)registry.get(object.getClass());
     }
 }

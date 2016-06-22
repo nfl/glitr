@@ -1,7 +1,7 @@
 package com.nfl.dm.shield.graphql.error;
 
 import com.nfl.dm.shield.web.response.NFLError;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;

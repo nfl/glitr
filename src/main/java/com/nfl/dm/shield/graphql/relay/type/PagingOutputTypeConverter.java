@@ -3,6 +3,7 @@ package com.nfl.dm.shield.graphql.relay.type;
 import com.google.common.collect.Lists;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.dm.shield.graphql.NodeUtil;
+import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments;
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.relay.RelayHelper;
@@ -19,7 +20,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 
-import static com.nfl.dm.shield.graphql.registry.TypeRegistry.getActualTypeArgumentFromType;
 
 /**
  *  Output type converter function for paging arguments annotations.
@@ -46,7 +46,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         ParameterizedType parameterizedType = (ParameterizedType) returnType;
 
         // e.g: For List<Thing>, we attempt to extract class `Thing`
-        Type endEdgeType = getActualTypeArgumentFromType(parameterizedType);
+        Type endEdgeType = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
         Class endEdgeClass =  NodeUtil.getClassFromType(endEdgeType);
 
         // Find that class from the registry (or lookup if first time)

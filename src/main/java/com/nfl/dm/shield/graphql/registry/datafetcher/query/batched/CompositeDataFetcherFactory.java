@@ -1,12 +1,11 @@
 package com.nfl.dm.shield.graphql.registry.datafetcher.query.batched;
 
+import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.CompositeDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import graphql.execution.batched.Batched;
-import graphql.execution.batched.BatchedDataFetcher;
 import graphql.execution.batched.UnbatchedDataFetcher;
 import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.FieldDataFetcher;
 import graphql.schema.PropertyDataFetcher;
 
@@ -49,7 +48,7 @@ public class CompositeDataFetcherFactory {
         // let's see if there is at least one Batched in the list
         boolean isListContainsBatchedDataFetcher = fetchers.stream()
                 .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
-                .anyMatch(CompositeDataFetcherFactory::isDataFetcherBatched);
+                .anyMatch(ReflectionUtil::isDataFetcherBatched);
 
         if (!isListContainsBatchedDataFetcher) {
             return new CompositeDataFetcher(fetchers);
@@ -58,7 +57,7 @@ public class CompositeDataFetcherFactory {
         // are they all batched?
         boolean isListOnlyBatchedDataFetcher = fetchers.stream()
                 .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
-                .allMatch(CompositeDataFetcherFactory::isDataFetcherBatched);
+                .allMatch(ReflectionUtil::isDataFetcherBatched);
 
 
         if (!isListOnlyBatchedDataFetcher) {
@@ -75,30 +74,5 @@ public class CompositeDataFetcherFactory {
         }).collect(Collectors.toList());
         return new BatchedCompositeDataFetcher(batchedDataFetchers);
 
-    }
-
-
-    /**
-     * Tells whether a given data fetcher supports batching
-     *  {code @Batched} on the get method or instance of {code BatchedDataFetcher}
-     *
-     * @param supplied data fetcher
-     * @return true if batched, false otherwise
-     */
-    public static boolean isDataFetcherBatched(DataFetcher supplied) {
-        if (supplied instanceof BatchedDataFetcher) {
-            return true;
-        }
-
-        try {
-            Method getMethod = supplied.getClass().getMethod("get", DataFetchingEnvironment.class);
-            Batched batched = getMethod.getAnnotation(Batched.class);
-            if (batched != null) {
-                return true;
-            }
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(e);
-        }
-        return false;
     }
 }

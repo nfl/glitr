@@ -1,9 +1,11 @@
 package com.nfl.dm.shield.graphql.data.mutation;
 
+import com.nfl.dm.shield.graphql.data.query.Playable;
+
 import java.time.Instant;
 import java.time.LocalDate;
 
-public class Bitrate {
+public class Bitrate implements Playable{
 
     private Integer kbps;
     private String url;

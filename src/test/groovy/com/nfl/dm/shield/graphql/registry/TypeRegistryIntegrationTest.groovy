@@ -77,6 +77,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.name == Bitrate.class.getSimpleName()
         type.description == "No Description"
         type.fieldDefinitions.name == ["createdDate", "durationNanos", "frames", "grade", "gradeAverage", "kbps", "modifiedDateTime", "url", "valid"]
+        type.interfaces.name == ["Playable"]
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "createdDate"
         fieldDef.description == "No Description"

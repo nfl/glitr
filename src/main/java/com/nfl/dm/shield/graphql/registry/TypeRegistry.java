@@ -99,16 +99,7 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLObjectType createRelayMutationType(Class clazz) {
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
-        if (overrides.containsKey(clazz)) {
-            for (Object override : overrides.get(clazz)) {
-                for (Method method : override.getClass().getMethods()) {
-                    if (!ReflectionUtil.eligibleMethod(method)) {
-                        continue;
-                    }
-                    methods.putIfAbsent(method.getName(), Pair.of(method, override.getClass()));
-                }
-            }
-        }
+        addExtraMethodsToTheSchema(clazz, methods);
 
         List<GraphQLFieldDefinition> fields = methods.values().stream()
                 .map(pair -> {
@@ -235,19 +226,10 @@ public class TypeRegistry implements TypeResolver {
      * @return GraphQLObjectType object exposed via graphQL.
      */
     private GraphQLObjectType createObjectType(Class clazz) {
-        boolean isNode = Arrays.stream(clazz.getMethods()).anyMatch(method -> method.getName().equals("getId"));
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
-        if (overrides.containsKey(clazz)) {
-            for (Object override : overrides.get(clazz)) {
-                for (Method method : override.getClass().getMethods()) {
-                    if (!ReflectionUtil.eligibleMethod(method)) {
-                        continue;
-                    }
-                    methods.putIfAbsent(method.getName(), Pair.of(method, override.getClass()));
-                }
-            }
-        }
+        // add extra methods from outside the inspected class coming from an override object
+        addExtraMethodsToTheSchema(clazz, methods);
 
         List<GraphQLFieldDefinition> fields = methods.values().stream()
                 .map(pair -> {
@@ -286,17 +268,57 @@ public class TypeRegistry implements TypeResolver {
         // description
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
 
+        // implemented interfaces
+        List<GraphQLInterfaceType> graphQLInterfaceTypes = retrieveInterfacesForType(clazz);
+
+
         GraphQLObjectType.Builder builder = newObject()
                 .name(clazz.getSimpleName())
                 .description(description)
+                .withInterfaces(graphQLInterfaceTypes.toArray(new GraphQLInterfaceType[graphQLInterfaceTypes.size()]))
                 .fields(fields);
 
-        // relay is enabled, add Node interface implementation
-        if (nodeInterface != null && isNode) {
+
+        // relay is enabled, add Node interface implementation if one of the eligible methods is named getId
+        if (nodeInterface != null && methods.keySet().stream().anyMatch(name -> name.equals("getId"))) {
             builder.withInterface(nodeInterface);
         }
 
         return builder.build();
+    }
+
+    /**
+     * Look up and inspect interfaces implemented by a specific class.
+     * @param clazz being inspected
+     * @return list of GraphQLInterfaceType
+     */
+    private List<GraphQLInterfaceType> retrieveInterfacesForType(Class clazz) {
+        List<GraphQLInterfaceType>  interfaceTypes = new ArrayList<>();
+        Class<?>[] interfacesForClass = clazz.getInterfaces();
+        for (Class interfaceClass: interfacesForClass) {
+            GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookup(interfaceClass);
+            interfaceTypes.add(graphQLInterfaceType);
+        }
+        return interfaceTypes;
+    }
+
+    /**
+     * We allow defining GraphQL additional fields outside of the inspected class.
+     * In fact, if the getter-method name conflicts with an existing method defined in the inspected class, it won't be added.
+     * @param clazz inspected class
+     * @param methods original set of eligible methods defined in the inspected class
+     */
+    private void addExtraMethodsToTheSchema(Class clazz, Map<String, Pair<Method, Class>> methods) {
+        if (overrides.containsKey(clazz)) {
+            for (Object override : overrides.get(clazz)) {
+                for (Method method : override.getClass().getMethods()) {
+                    if (!ReflectionUtil.eligibleMethod(method)) {
+                        continue;
+                    }
+                    methods.putIfAbsent(method.getName(), Pair.of(method, override.getClass()));
+                }
+            }
+        }
     }
 
 

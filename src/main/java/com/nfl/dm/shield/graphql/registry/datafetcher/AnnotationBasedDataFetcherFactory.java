@@ -2,10 +2,12 @@ package com.nfl.dm.shield.graphql.registry.datafetcher;
 
 import graphql.schema.DataFetcher;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public interface AnnotationBasedDataFetcherFactory {
 
-    DataFetcher create(Field field, Method method, Class declaringClass);
+    DataFetcher create(@Nullable Field field, @Nonnull Method method, Class declaringClass);
 }

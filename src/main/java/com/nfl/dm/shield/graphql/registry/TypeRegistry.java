@@ -373,7 +373,7 @@ public class TypeRegistry implements TypeResolver {
                 // Custom Fetchers
                 if (annotationToDataFetcherFactoryMap.containsKey(annotation.annotationType())) {
                     AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotation.annotationType());
-                    DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(null, method, declaringClass);
+                    DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(field, method, declaringClass);
                     if (dataFetcher != null) {
                         fetchers.add(dataFetcher);
                     }

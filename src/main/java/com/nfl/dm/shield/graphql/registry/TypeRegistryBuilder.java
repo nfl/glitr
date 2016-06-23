@@ -1,7 +1,7 @@
 package com.nfl.dm.shield.graphql.registry;
 
+import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import graphql.relay.Relay;
-import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
 import rx.functions.Func4;
@@ -16,9 +16,10 @@ import java.util.Map;
 
 public class TypeRegistryBuilder {
     private Map<Class, List<Object>> overrides = new HashMap<>();
-    private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
+    private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
+
     private Relay relay = null;
 
     private TypeRegistryBuilder() {
@@ -35,11 +36,6 @@ public class TypeRegistryBuilder {
         return this;
     }
 
-    public TypeRegistryBuilder withAnnotationToDataFetcherProviderMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap) {
-        this.annotationToDataFetcherProviderMap = annotationToDataFetcherProviderMap;
-        return this;
-    }
-
     public TypeRegistryBuilder withAnnotationToArgumentsProviderMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap) {
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         return this;
@@ -50,8 +46,8 @@ public class TypeRegistryBuilder {
         return this;
     }
 
-    public TypeRegistryBuilder addCustomDataFetcherFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, DataFetcher> dataFetcherFunc4) {
-        annotationToDataFetcherProviderMap.putIfAbsent(annotationClass, dataFetcherFunc4);
+    public TypeRegistryBuilder withAnnotationToDataFetcherFactoryMap(Map<Class<? extends  Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap) {
+        this.annotationToDataFetcherFactoryMap = annotationToDataFetcherFactoryMap;
         return this;
     }
 
@@ -76,6 +72,6 @@ public class TypeRegistryBuilder {
     }
 
     public TypeRegistry build() {
-        return new TypeRegistry(overrides, annotationToDataFetcherProviderMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay);
+        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay);
     }
 }

@@ -4,13 +4,13 @@ import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments;
 import com.nfl.dm.shield.graphql.registry.RelayNode;
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.registry.TypeRegistryBuilder;
+import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.NodeFetcherService;
 import com.nfl.dm.shield.graphql.relay.RelayHelper;
 import com.nfl.dm.shield.graphql.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.dm.shield.graphql.relay.type.PagingOutputTypeConverter;
 import com.nfl.dm.shield.graphql.relay.type.RelayNodeOutputTypeFunc;
 import graphql.relay.Relay;
-import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
 import rx.functions.Func4;
@@ -27,7 +27,7 @@ public class GlitrBuilder {
 
     private NodeFetcherService nodeFetcherService;
     private Map<Class, List<Object>> overrides = new HashMap<>();
-    private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap = new HashMap<>();
+    private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Relay relay = null;
@@ -50,11 +50,6 @@ public class GlitrBuilder {
         return this;
     }
 
-    public GlitrBuilder withAnnotationToDataFetcherProviderMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, DataFetcher>> annotationToDataFetcherProviderMap) {
-        this.annotationToDataFetcherProviderMap = annotationToDataFetcherProviderMap;
-        return this;
-    }
-
     public GlitrBuilder withAnnotationToArgumentsProviderMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap) {
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         return this;
@@ -65,8 +60,8 @@ public class GlitrBuilder {
         return this;
     }
 
-    public GlitrBuilder addCustomDataFetcherFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, DataFetcher> dataFetcherFunc4) {
-        annotationToDataFetcherProviderMap.putIfAbsent(annotationClass, dataFetcherFunc4);
+    public GlitrBuilder addCustomDataFetcherFactory(Class<? extends Annotation> annotationClass, AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory) {
+        annotationToDataFetcherFactoryMap.putIfAbsent(annotationClass, annotationBasedDataFetcherFactory);
         return this;
     }
 
@@ -104,8 +99,8 @@ public class GlitrBuilder {
     private Glitr buildGlitr() {
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry()
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
-                .withAnnotationToDataFetcherProviderMap(annotationToDataFetcherProviderMap)
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
+                .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withOverrides(overrides)
                 .build();
         return new Glitr(typeRegistry, null);
@@ -119,8 +114,8 @@ public class GlitrBuilder {
         // instantiate TypeRegistry
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry()
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
-                .withAnnotationToDataFetcherProviderMap(annotationToDataFetcherProviderMap)
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
+                .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withOverrides(overrides)
                 // add the relay extra features
                 .withRelay(relay)

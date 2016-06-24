@@ -3,10 +3,7 @@ package com.nfl.dm.shield.graphql.registry
 import com.nfl.dm.shield.graphql.Glitr
 import com.nfl.dm.shield.graphql.GlitrBuilder
 import com.nfl.dm.shield.graphql.data.mutation.Bitrate
-import com.nfl.dm.shield.graphql.data.query.Node
-import com.nfl.dm.shield.graphql.data.query.NodeAbstractClass
-import com.nfl.dm.shield.graphql.data.query.ProfileType
-import com.nfl.dm.shield.graphql.data.query.QueryType
+import com.nfl.dm.shield.graphql.data.query.*
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.CompositeDataFetcher
 import graphql.schema.*
 import spock.lang.Specification
@@ -46,7 +43,7 @@ class TypeRegistryIntegrationTest extends Specification {
         def GraphQLObjectType fieldDefType2 = (GraphQLObjectType) fieldDef2.type
         fieldDefType2.name == "Video"
         fieldDefType2.description == "No Description"
-        fieldDefType2.fieldDefinitions.size() == 4
+        fieldDefType2.fieldDefinitions.size() == 5
         def input2 = (GraphQLArgument) fieldDef2.arguments[0]
         input2.name == "id"
         input2.description == "No Description"
@@ -76,8 +73,8 @@ class TypeRegistryIntegrationTest extends Specification {
         then:
         type.name == Bitrate.class.getSimpleName()
         type.description == "No Description"
-        type.fieldDefinitions.name == ["createdDate", "durationNanos", "frames", "grade", "gradeAverage", "kbps", "modifiedDateTime", "url", "valid"]
-        type.interfaces.name == ["Playable"]
+        type.fieldDefinitions.name == ["createdDate", "durationNanos", "frames", "grade", "gradeAverage", "id", "kbps", "modifiedDateTime", "url", "valid"]
+        type.interfaces.name as Set == ["Playable", "Node"] as Set
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "createdDate"
         fieldDef.description == "No Description"
@@ -103,21 +100,26 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDef4.type instanceof GraphQLScalarType
         (fieldDef4.type as GraphQLScalarType).name == "Float"
         def fieldDef5 = type.fieldDefinitions[5]
-        fieldDef5.name == "kbps"
+        fieldDef5.name == "id"
         fieldDef5.description == "No Description"
-        fieldDef5.type instanceof GraphQLScalarType
-        (fieldDef5.type as GraphQLScalarType).name == "Int"
-        def fieldDef9 = type.fieldDefinitions[6]
+        fieldDef5.type instanceof GraphQLNonNull
+        ((fieldDef5.type as GraphQLNonNull).wrappedType as GraphQLScalarType).name == "ID"
+        def fieldDef6 = type.fieldDefinitions[6]
+        fieldDef6.name == "kbps"
+        fieldDef6.description == "No Description"
+        fieldDef6.type instanceof GraphQLScalarType
+        (fieldDef6.type as GraphQLScalarType).name == "Int"
+        def fieldDef9 = type.fieldDefinitions[7]
         fieldDef9.name == "modifiedDateTime"
         fieldDef9.description == "No Description"
         fieldDef9.type instanceof GraphQLScalarType
         (fieldDef9.type as GraphQLScalarType).name == "DateTime"
-        def fieldDef6 = type.fieldDefinitions[7]
-        fieldDef6.name == "url"
-        fieldDef6.description == "No Description"
-        fieldDef6.type instanceof GraphQLScalarType
-        (fieldDef6.type as GraphQLScalarType).name == "String"
-        def fieldDef7 = type.fieldDefinitions[8]
+        def fieldDef10 = type.fieldDefinitions[8]
+        fieldDef10.name == "url"
+        fieldDef10.description == "No Description"
+        fieldDef10.type instanceof GraphQLScalarType
+        (fieldDef10.type as GraphQLScalarType).name == "String"
+        def fieldDef7 = type.fieldDefinitions[9]
         fieldDef7.name == "valid"
         fieldDef7.description == "No Description"
         fieldDef7.type instanceof GraphQLScalarType
@@ -150,7 +152,7 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDef.type instanceof GraphQLNonNull
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType
-        wrappedType.name == "String"
+        wrappedType.name == "ID"
         fieldDef.dataFetcher instanceof CompositeDataFetcher
         (fieldDef.dataFetcher as CompositeDataFetcher).fetchers[0] instanceof PropertyDataFetcher
     }
@@ -169,8 +171,32 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDef.type instanceof GraphQLNonNull
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType
-        wrappedType.name == "String"
+        wrappedType.name == "ID"
         fieldDef.dataFetcher instanceof CompositeDataFetcher
         (fieldDef.dataFetcher as CompositeDataFetcher).fetchers[0] instanceof PropertyDataFetcher
+    }
+
+    def "Inspect Interface type that extends another interface"() {
+        setup:
+        Glitr glitr = GlitrBuilder.newGlitr().build()
+        when:
+        GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(Playable.class)
+        then: "Should inherit the fields from the super interfaces"
+        type.name == Playable.simpleName
+        type.fieldDefinitions.name == ["id", "url"]
+    }
+
+
+    def "Inspect Simple Object type that extends an abstract class and interfaces"() {
+        setup:
+        Glitr glitr = GlitrBuilder.newGlitr().build()
+        when:
+        GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(Video.class)
+        then: "Make sure it inherits the fields of the super classes"
+        type.name == Video.class.getSimpleName()
+        type.description == "No Description"
+        type.fieldDefinitions.name == ["bitrateList", "id", "lastModifiedDate", "title", "url"]
+        then: "Make sure it implements the interfaces"
+        type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName,  Node.simpleName, Playable.class.simpleName] as Set
     }
 }

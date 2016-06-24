@@ -271,6 +271,9 @@ public class TypeRegistry implements TypeResolver {
         // implemented interfaces
         List<GraphQLInterfaceType> graphQLInterfaceTypes = retrieveInterfacesForType(clazz);
 
+        // extended abstract classes
+        List<GraphQLInterfaceType> graphQLAbstractClassTypes = retrieveAbstractClassesForType(clazz);
+        graphQLInterfaceTypes.addAll(graphQLAbstractClassTypes);
 
         GraphQLObjectType.Builder builder = newObject()
                 .name(clazz.getSimpleName())
@@ -288,17 +291,48 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
+     * Look up and inspect abstract class extended by a specific class.
+     * @param clazz being inspected
+     * @return list of GraphQLInterfaceType
+     */
+    private List<GraphQLInterfaceType> retrieveAbstractClassesForType(Class clazz) {
+        List<GraphQLInterfaceType> abstractClasses = new ArrayList<>();
+
+        LinkedList<Class> queue = new LinkedList<>();
+        queue.add(clazz);
+        while (!queue.isEmpty()) {
+            Class aClass = queue.poll().getSuperclass();
+            if (aClass == null) {
+                continue;
+            }
+            if (Modifier.isAbstract(aClass.getModifiers())) {
+                abstractClasses.add((GraphQLInterfaceType) lookup(aClass));
+                queue.add(aClass);
+            }
+        }
+        return abstractClasses;
+    }
+
+    /**
      * Look up and inspect interfaces implemented by a specific class.
      * @param clazz being inspected
      * @return list of GraphQLInterfaceType
      */
     private List<GraphQLInterfaceType> retrieveInterfacesForType(Class clazz) {
         List<GraphQLInterfaceType>  interfaceTypes = new ArrayList<>();
-        Class<?>[] interfacesForClass = clazz.getInterfaces();
-        for (Class interfaceClass: interfacesForClass) {
-            GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookup(interfaceClass);
-            interfaceTypes.add(graphQLInterfaceType);
+
+        LinkedList<Class> queue = new LinkedList<>();
+        queue.add(clazz);
+        while (!queue.isEmpty()) {
+            Class aClass = queue.poll();
+            Class<?>[] interfacesForClass = aClass.getInterfaces();
+            queue.addAll(Arrays.asList(interfacesForClass));
+            for (Class interfaceClass: interfacesForClass) {
+                GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookup(interfaceClass);
+                interfaceTypes.add(graphQLInterfaceType);
+            }
         }
+
         return interfaceTypes;
     }
 
@@ -560,8 +594,10 @@ public class TypeRegistry implements TypeResolver {
 
 
     private GraphQLInterfaceType createInterfaceType(Class clazz) {
-        List<GraphQLFieldDefinition> fields = Arrays.stream(clazz.getDeclaredMethods())
+        
+        List<GraphQLFieldDefinition> fields = Arrays.stream(clazz.getMethods())
                 .filter(ReflectionUtil::eligibleMethod)
+                .sorted(Comparator.comparing(Method::getName))
                 .map(method -> {
                     String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
@@ -569,7 +605,7 @@ public class TypeRegistry implements TypeResolver {
                     String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
 
                     // type
-                    GraphQLType type = convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, clazz), null);
+                    GraphQLType type = convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, clazz), name);
 
                     // nullable
                     boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);

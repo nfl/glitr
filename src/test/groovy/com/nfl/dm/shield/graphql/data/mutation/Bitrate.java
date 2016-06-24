@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 public class Bitrate implements Playable{
 
+    private String id;
     private Integer kbps;
     private String url;
     private Integer[] frames;
@@ -51,5 +52,10 @@ public class Bitrate implements Playable{
 
     public Instant getModifiedDateTime() {
         return modifiedDateTime;
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 }

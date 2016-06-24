@@ -4,10 +4,9 @@ import com.nfl.dm.shield.graphql.data.mutation.Bitrate;
 
 import java.util.List;
 
-public class Video {
+public class Video extends AbstractContent implements Playable{
 
     private String id;
-    private String title;
     private String url;
     private List<Bitrate> bitrateList;
 
@@ -19,11 +18,8 @@ public class Video {
         return id;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
     public String getUrl() {
         return url;
     }
+
 }

@@ -4,5 +4,5 @@ import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLDescription;
 
 @GraphQLDescription("Node interface needed for Relay")
 public abstract class NodeAbstractClass {
-    abstract String getId();
+    public abstract String getId();
 }

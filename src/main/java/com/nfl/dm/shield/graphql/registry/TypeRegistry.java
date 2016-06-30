@@ -1,5 +1,6 @@
 package com.nfl.dm.shield.graphql.registry;
 
+import com.google.common.collect.Sets;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static graphql.Scalars.*;
@@ -37,8 +39,8 @@ public class TypeRegistry implements TypeResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
 
-    private final Map<Class, GraphQLType> registry = new HashMap<>(); // map to only GraphQLOutputTypes
-    private final Map<Class, GraphQLType> inputRegistry = new HashMap<>();  // map to only GraphQLInputTypes (for mutations)
+    private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>(); // map to only GraphQLOutputTypes
+    private final Map<Class, GraphQLType> inputRegistry = new ConcurrentHashMap<>();  // map to only GraphQLInputTypes (for mutations)
 
     private final Map<Class, List<Object>> overrides;
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -58,6 +60,15 @@ public class TypeRegistry implements TypeResolver {
         }
     }
 
+    /**
+     * Type Dictionary is used by GraphQLSchema to provide additional types necessary for the type collection
+     * https://github.com/graphql-java/graphql-java/commit/6668d1a7e9279d02d499e36b379475d67b6c57b9
+     * @return set of GraphQLType to be passed to GraphQLSchema
+     */
+    public Set<GraphQLType> getTypeDictionary() {
+        return Sets.union(new HashSet<>(registry.values()), new HashSet<>(inputRegistry.values()));
+    }
+
     @Nullable
     public GraphQLInterfaceType getNodeInterface() {
         return nodeInterface;
@@ -68,7 +79,31 @@ public class TypeRegistry implements TypeResolver {
         return (GraphQLObjectType)registry.get(object.getClass());
     }
 
+    /**
+     * Root class should be passed here so the graph can be inspected in its entirety
+     * @param clazz
+     * @return
+     */
     public GraphQLType lookup(Class clazz) {
+
+        // do a first pass lookup
+        lookupOutput(clazz);
+
+        // go over all the types in the type map and do another pass to resolve the GraphQL type references
+        Set<Map.Entry<Class, GraphQLType>> entries = registry.entrySet();
+        for (Map.Entry<Class, GraphQLType> graphQLTypeEntry : entries) {
+            if (graphQLTypeEntry.getValue() instanceof GraphQLTypeReference) {
+                // remove the type reference to be replace by the resolved GraphQLType
+                registry.remove(graphQLTypeEntry.getKey());
+                // and lookup again
+                lookupOutput(graphQLTypeEntry.getKey());
+            }
+        }
+        // retrieve GraphQLType
+        return registry.get(clazz);
+    }
+
+    private GraphQLType lookupOutput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
         }
@@ -306,7 +341,7 @@ public class TypeRegistry implements TypeResolver {
                 continue;
             }
             if (Modifier.isAbstract(aClass.getModifiers())) {
-                abstractClasses.add((GraphQLInterfaceType) lookup(aClass));
+                abstractClasses.add((GraphQLInterfaceType) lookupOutput(aClass));
                 queue.add(aClass);
             }
         }
@@ -328,7 +363,7 @@ public class TypeRegistry implements TypeResolver {
             Class<?>[] interfacesForClass = aClass.getInterfaces();
             queue.addAll(Arrays.asList(interfacesForClass));
             for (Class interfaceClass: interfacesForClass) {
-                GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookup(interfaceClass);
+                GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookupOutput(interfaceClass);
                 interfaceTypes.add(graphQLInterfaceType);
             }
         }
@@ -537,8 +572,7 @@ public class TypeRegistry implements TypeResolver {
 
         // default outputType
         if (graphQLOutputType == null) {
-            graphQLOutputType = (GraphQLOutputType) convertToGraphQLOutputType(
-                    GenericTypeReflector.getExactReturnType(method, declaringClass), name);
+            graphQLOutputType = (GraphQLOutputType) convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
 
             // nullable
             boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
@@ -605,7 +639,12 @@ public class TypeRegistry implements TypeResolver {
                     String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
 
                     // type
-                    GraphQLType type = convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, clazz), name);
+                    Type fieldType = GenericTypeReflector.getExactReturnType(method, clazz);
+                    GraphQLType type = convertToGraphQLOutputType(fieldType, name, true);
+
+                    if (type instanceof GraphQLTypeReference) {
+                        registry.putIfAbsent((Class) fieldType, type);
+                    }
 
                     // nullable
                     boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
@@ -629,24 +668,24 @@ public class TypeRegistry implements TypeResolver {
         return newInterface()
                 .name(clazz.getSimpleName())
                 .description(description)
-                .typeResolver(object -> (GraphQLObjectType) lookup(object.getClass()))
+                .typeResolver(object -> (GraphQLObjectType) lookupOutput(object.getClass()))
                 .fields(fields)
                 .build();
     }
 
-    private GraphQLList createListOutputTypeFromParametrizedType(Type type) {
+    private GraphQLList createListOutputTypeFromParametrizedType(Type type, boolean fromInterface) {
         ParameterizedType parameterizedType = (ParameterizedType)type;
 
         Type typeArgument = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
 
-        return new GraphQLList(convertToGraphQLOutputType(typeArgument, null));
+        return new GraphQLList(convertToGraphQLOutputType(typeArgument, null, fromInterface));
     }
 
-    private GraphQLList createListOutputTypeFromArrayType(Type type) {
+    private GraphQLList createListOutputTypeFromArrayType(Type type, boolean fromInterface) {
 
         Class componentType = ((Class)type).getComponentType();
 
-        return new GraphQLList(convertToGraphQLOutputType(componentType, null));
+        return new GraphQLList(convertToGraphQLOutputType(componentType, null, fromInterface));
     }
 
     private GraphQLList createListInputTypeFromParametrizedType(Type type) {
@@ -677,6 +716,10 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLType convertToGraphQLOutputType(Type type, String name) {
+        return convertToGraphQLOutputType(type, name, false);
+    }
+
+    public GraphQLType convertToGraphQLOutputType(Type type, String name, boolean fromInterface) {
         // id is magical, always return this.
         if (name != null && name.equals("id")) {
             return GraphQLID;
@@ -700,19 +743,21 @@ public class TypeRegistry implements TypeResolver {
             Type containerType = parameterizedType.getRawType();
 
             if (Collection.class.isAssignableFrom((Class)containerType)) {
-                return createListOutputTypeFromParametrizedType(type);
+                return createListOutputTypeFromParametrizedType(type, fromInterface);
             } else if (containerType == rx.Observable.class) {
                 Type[] fieldArgTypes = parameterizedType.getActualTypeArguments();
 
-                return convertToGraphQLOutputType(fieldArgTypes[0], name);
+                return convertToGraphQLOutputType(fieldArgTypes[0], name, fromInterface);
             } else {
                 throw new IllegalArgumentException("Unable to convert type " + type.getTypeName() + " to GraphQLOutputType");
             }
         } else if (((Class) type).isArray()) {
-            return createListOutputTypeFromArrayType(type);
+            return createListOutputTypeFromArrayType(type, fromInterface);
+        } else if (fromInterface) { // to avoid circular references we will process the Interface field type later
+            return new GraphQLTypeReference(((Class) type).getSimpleName());
         }
 
-        return lookup((Class) type);
+        return lookupOutput((Class) type);
     }
 
     public GraphQLType convertToGraphQLInputType(Type type, String name) {

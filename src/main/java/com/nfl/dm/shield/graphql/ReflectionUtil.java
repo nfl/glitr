@@ -82,6 +82,12 @@ public class ReflectionUtil {
         return fieldArgTypes[0];
     }
 
+    public static Argument[] getArgumentsFromAnnotations(Map<Class, Annotation> annotationMap) {
+        Argument[] singleAnnotationArguments = annotationMap.containsKey(Argument.class) ? new Argument[] {(Argument)annotationMap.get(Argument.class)}  : new Argument[0];
+        Argument[] groupedAnnotationArguments = annotationMap.containsKey(Arguments.class) ? ((Arguments)annotationMap.get(Arguments.class)).value() : new Argument[0];
+        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
+    }
+
     public static Argument[] getArgumentsFromMethod(Method method) {
         Argument[] singleAnnotationArguments = method.isAnnotationPresent(Argument.class) ? method.getAnnotationsByType(Argument.class) : new Argument[0];
         Argument[] groupedAnnotationArguments = method.isAnnotationPresent(Arguments.class) ? method.getAnnotation(Arguments.class).value() : new Argument[0];

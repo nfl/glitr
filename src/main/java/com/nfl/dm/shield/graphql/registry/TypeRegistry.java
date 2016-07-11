@@ -414,6 +414,18 @@ public class TypeRegistry implements TypeResolver {
         // we add a default OverrideDataFetcher for override getters in the actual class itself
         fetchers.add(new OverrideDataFetcher(name, clazz));
 
+        DataFetcher annotationDataFetcher = getAnnotationDataFetcherFromMethodOrField(declaringClass, method, name);
+        if (annotationDataFetcher != null) {
+            fetchers.add(annotationDataFetcher);
+        }
+        // default fetcher
+        fetchers.add(new PropertyDataFetcher(name));
+
+        return fetchers;
+    }
+
+    private DataFetcher getAnnotationDataFetcherFromMethodOrField(Class declaringClass, Method method, String fieldName) {
+
         // A. inspect annotations on getter
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
         for (Annotation annotation: methodAnnotations) {
@@ -422,18 +434,19 @@ public class TypeRegistry implements TypeResolver {
                 AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotation.annotationType());
                 DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(null, method, declaringClass, annotation);
                 if (dataFetcher != null) {
-                    fetchers.add(dataFetcher);
+                    return dataFetcher;
                 }
             }
         }
 
         // B. inspect annotations on field of same name.
-        Field field = null;
+        Field field;
         try {
-            field = declaringClass.getDeclaredField(name);
+            field = declaringClass.getDeclaredField(fieldName);
         } catch (NoSuchFieldException e) {
             // that's fine
-            logger.debug("Field not found: {} for class {} ", name, declaringClass, e);
+            logger.debug("Field not found: {} for class {} ", fieldName, declaringClass, e);
+            return null;
         }
 
         if (field != null) {
@@ -444,16 +457,14 @@ public class TypeRegistry implements TypeResolver {
                     AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotation.annotationType());
                     DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(field, method, declaringClass, annotation);
                     if (dataFetcher != null) {
-                        fetchers.add(dataFetcher);
+                        return dataFetcher;
                     }
                 }
             }
         }
 
-        // default fetcher
-        fetchers.add(new PropertyDataFetcher(name));
-
-        return fetchers;
+        //No custom annotations found.
+        return null;
     }
 
     private List<GraphQLArgument> retrieveArguments(Class clazz, Class declaringClass, Method method) {

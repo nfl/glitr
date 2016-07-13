@@ -15,7 +15,8 @@ class TypeRegistryMutationIntegrationTest extends Specification {
 
     def "Inspect mutationType generated schema"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr()
+                .withQueryRoot(new QueryType()).build()
         when:
         GraphQLObjectType mutationType = (GraphQLObjectType) glitr.typeRegistry.createRelayMutationType(MutationType.class)
 
@@ -65,15 +66,11 @@ class TypeRegistryMutationIntegrationTest extends Specification {
     def "Perform a mutation against mutationType"() {
         setup:
         Glitr glitr = GlitrBuilder.newGlitrWithRelaySupport()
-                .addOverride(MutationType.class, new MutationType())
+                .withQueryRoot(new QueryType())
+                .withMutationRoot(new MutationType())
                 .build()
-        GraphQLObjectType mutationType = (GraphQLObjectType) glitr.typeRegistry.createRelayMutationType(MutationType.class)
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query((GraphQLObjectType) glitr.typeRegistry.lookup(QueryType.class))
-                .mutation(mutationType)
-                .build();
 
-        GraphQL graphQL =  new GraphQL(schema);
+        GraphQL graphQL =  new GraphQL(glitr.getSchema());
         when:
         def data = graphQL.execute("""
             mutation {

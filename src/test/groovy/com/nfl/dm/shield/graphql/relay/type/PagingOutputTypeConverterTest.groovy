@@ -1,6 +1,7 @@
 package com.nfl.dm.shield.graphql.relay.type
 
 import com.nfl.dm.shield.graphql.GlitrBuilder
+import com.nfl.dm.shield.graphql.data.query.QueryType
 import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments
 import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -14,7 +15,7 @@ import java.lang.reflect.Method
 
 class PagingOutputTypeConverterTest extends Specification {
 
-    def glitr = GlitrBuilder.newGlitrWithRelaySupport().build()
+    def glitr = GlitrBuilder.newGlitrWithRelaySupport().withQueryRoot(new QueryType()).build()
     def typeRegistry = glitr.typeRegistry
     def relayHelper = glitr.relayHelper
     def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter().setRelayHelper(relayHelper).setTypeRegistry(typeRegistry)

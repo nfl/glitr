@@ -12,7 +12,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect queryType"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitrWithRelaySupport().build()
+        Glitr glitr = GlitrBuilder.newGlitrWithRelaySupport().withQueryRoot(new QueryType()).build()
         when:
         GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(QueryType.class)
         then:
@@ -67,7 +67,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect Simple Object type"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(Bitrate.class)
         then:
@@ -128,7 +128,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect Enum type"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLEnumType type = (GraphQLEnumType) glitr.typeRegistry.lookup(ProfileType.class)
         then:
@@ -140,7 +140,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect Interface type"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(Node.class)
         then:
@@ -159,7 +159,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect AbstractClass type"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(NodeAbstractClass.class)
         then:
@@ -178,7 +178,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect Interface type that extends another interface"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(Playable.class)
         then: "Should inherit the fields from the super interfaces"
@@ -189,7 +189,7 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect Simple Object type that extends an abstract class and interfaces"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(Video.class)
         then: "Make sure it inherits the fields of the super classes"

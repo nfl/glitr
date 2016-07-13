@@ -2,6 +2,7 @@ package com.nfl.dm.shield.graphql.data.circularReference
 
 import com.nfl.dm.shield.graphql.Glitr
 import com.nfl.dm.shield.graphql.GlitrBuilder
+import com.nfl.dm.shield.graphql.data.query.QueryType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
@@ -12,7 +13,7 @@ class CircularReferenceTest extends Specification {
 
     def "Inspect AbstractClass that has a field circular reference"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLType type = glitr.typeRegistry.lookup(AbstractRead.class)
         then: "Make sure an interface is created"
@@ -28,7 +29,7 @@ class CircularReferenceTest extends Specification {
 
     def "Inspect Interface that has a field circular reference"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitr().build()
+        Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
         GraphQLType type = glitr.typeRegistry.lookup(Readable.class)
         then: "Make sure an interface is created"

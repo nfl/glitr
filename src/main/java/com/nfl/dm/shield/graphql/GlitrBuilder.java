@@ -12,7 +12,9 @@ import com.nfl.dm.shield.graphql.relay.type.PagingOutputTypeConverter;
 import com.nfl.dm.shield.graphql.relay.type.RelayNodeOutputTypeFunc;
 import graphql.relay.Relay;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 import rx.functions.Func4;
 
 import java.lang.annotation.Annotation;
@@ -32,11 +34,24 @@ public class GlitrBuilder {
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Relay relay = null;
 
+    private Object queryRoot = null;
+    private Object mutationRoot = null;
+
     private GlitrBuilder() {
     }
 
     public GlitrBuilder withRelay(Relay relay) {
         this.relay = relay;
+        return this;
+    }
+
+    public GlitrBuilder withQueryRoot(Object queryRoot) {
+        this.queryRoot = queryRoot;
+        return this;
+    }
+
+    public GlitrBuilder withMutationRoot(Object mutationRoot) {
+        this.mutationRoot = mutationRoot;
         return this;
     }
 
@@ -90,6 +105,16 @@ public class GlitrBuilder {
     }
 
     public Glitr build() {
+        if (queryRoot == null) {
+            throw new RuntimeException("A query entry point must be defined.");
+        }
+
+        // add overrides for root endpoints
+        this.addOverride(queryRoot.getClass(), queryRoot);
+        if (mutationRoot != null) {
+            this.addOverride(mutationRoot.getClass(), mutationRoot);
+        }
+
         if (relay != null) {
             return buildGlitrWithRelaySupport();
         }
@@ -97,13 +122,28 @@ public class GlitrBuilder {
     }
 
     private Glitr buildGlitr() {
+
+        // create TypeRegistry
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry()
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withOverrides(overrides)
                 .build();
-        return new Glitr(typeRegistry, null);
+
+        // create GraphQL Schema
+        GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot.getClass());
+        GraphQLObjectType mutationType = null;
+        if (mutationRoot != null) {
+            mutationType = typeRegistry.createRelayMutationType(mutationRoot.getClass());
+        }
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .mutation(mutationType)
+                .build(typeRegistry.getTypeDictionary());
+
+        return new Glitr(typeRegistry, null, schema);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
@@ -134,6 +174,18 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setRelayHelper(relayHelper);
         relayNodeOutputTypeFunc.setRelayHelper(relayHelper);
 
-        return new Glitr(typeRegistry, relayHelper);
+        // create GraphQL Schema
+        GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot.getClass());
+        GraphQLObjectType mutationType = null;
+        if (mutationRoot != null) {
+            mutationType = typeRegistry.createRelayMutationType(mutationRoot.getClass());
+        }
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .mutation(mutationType)
+                .build(typeRegistry.getTypeDictionary());
+
+        return new Glitr(typeRegistry, relayHelper, schema);
     }
 }

@@ -49,10 +49,10 @@ public class RelayHelper {
         return relay.connectionType(simpleName, edgeType, graphQLFieldDefinitions);
     }
 
-    public static graphql.relay.Connection buildConnection(Iterable<?> col, int start, int totalCount) {
+    public static graphql.relay.Connection buildConnection(Iterable<?> col, int skipItems, int totalCount) {
 
         List<Edge> edges = new ArrayList<>();
-        int ix = start;
+        int ix = skipItems + 1;
 
         for (Object object : col) {
             edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));
@@ -67,8 +67,8 @@ public class RelayHelper {
             pageInfo.setEndCursor(lastEdge.getCursor());
         }
 
-        pageInfo.setHasPreviousPage(start > 0 && totalCount > 0);
-        pageInfo.setHasNextPage(start + edges.size() < totalCount);
+        pageInfo.setHasPreviousPage(skipItems > 0 && totalCount > 0);
+        pageInfo.setHasNextPage(skipItems + edges.size() + 1 < totalCount);
 
         graphql.relay.Connection connection = new graphql.relay.Connection();
         connection.setEdges(edges);

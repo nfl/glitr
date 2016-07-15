@@ -12,4 +12,9 @@ import kotlin.reflect.KClass
 @Retention
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 @Repeatable
-annotation class Argument(val name: String, val type: KClass<*>, val argumentType: ArgumentType = ArgumentType.QUERY, val customQueryFragmentProvider: String = "", val nullable: Boolean = true, val defaultValue: String = "No Default Value", val description: String = "No Description")
+annotation class Argument(
+        val name: String,
+        val type: KClass<*>,
+        val nullable: Boolean = true,
+        val defaultValue: String = "No Default Value",
+        val description: String = "No Description")

@@ -52,7 +52,7 @@ public class RelayHelper {
     public static graphql.relay.Connection buildConnection(Iterable<?> col, int skipItems, int totalCount) {
 
         List<Edge> edges = new ArrayList<>();
-        int ix = skipItems + 1;
+        int ix = skipItems;
 
         for (Object object : col) {
             edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));

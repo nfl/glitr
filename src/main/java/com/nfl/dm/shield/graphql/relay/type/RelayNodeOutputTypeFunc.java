@@ -17,6 +17,7 @@ public class RelayNodeOutputTypeFunc implements Func4<Field, Method, Class, Anno
 
     private RelayHelper relayHelper;
 
+
     @Override
     public GraphQLOutputType call(@Nullable Field field, Method method, Class declaringClass, Annotation annotation) {
         if (annotation.annotationType() != RelayNode.class) {

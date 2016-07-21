@@ -16,6 +16,7 @@ public class Scalars {
     private static final String SHIELD_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String SHIELD_LOCAL_DATE_PATTERN = "yyyy-MM-dd";
 
+
     /**
      * {@code GraphQLDateTime} represents a date time as `2014-08-20T18:00:00.000Z`
      * See the docs for more details. https://api.nfl.com/docs/global/playbook/index.html
@@ -61,7 +62,6 @@ public class Scalars {
             return Instant.parse(encodedDateTime);
         }
     });
-
 
     /**
      * {@code GraphQLDate} represents a date as `2014-08-20` without any timezone information.

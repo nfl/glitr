@@ -37,6 +37,7 @@ public class GlitrBuilder {
     private Object queryRoot = null;
     private Object mutationRoot = null;
 
+
     private GlitrBuilder() {
     }
 
@@ -122,7 +123,6 @@ public class GlitrBuilder {
     }
 
     private Glitr buildGlitr() {
-
         // create TypeRegistry
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry()
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)

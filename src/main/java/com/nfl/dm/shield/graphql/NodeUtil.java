@@ -28,7 +28,6 @@ public class NodeUtil {
                 return null;
             }
         }
-
         return null;
     }
 

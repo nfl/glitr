@@ -21,6 +21,7 @@ public class MutationDataFetcher implements DataFetcher {
     private final Validator validator; //TODO: could we use/create something more generic than org.springframework.validation?
     private final RelayMutation mutationFunc;
 
+
     public MutationDataFetcher(Class mutationInputClass, Validator validator, RelayMutation mutationFunc) {
         this.mutationInputClass = mutationInputClass;
         this.validator = validator;

@@ -22,6 +22,7 @@ public class ReflectionUtil {
 
     private final static Logger logger = LoggerFactory.getLogger(ReflectionUtil.class);
 
+
     /**
      * Determines if the given method is eligible for inclusion in the GraphQL Schema
      * @param method to inspect
@@ -63,7 +64,6 @@ public class ReflectionUtil {
                 .filter(ReflectionUtil::eligibleMethod)
                 .collect(Collectors.toMap(Method::getName, y -> Pair.of(y, y.getDeclaringClass()))));
     }
-
 
     public static String sanitizeMethodName(String name) {
         return StringUtils.uncapitalize(

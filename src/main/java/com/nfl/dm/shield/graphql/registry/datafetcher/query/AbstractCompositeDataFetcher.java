@@ -16,6 +16,7 @@ public abstract class AbstractCompositeDataFetcher implements DataFetcher {
 
     protected DataFetcher[] fetchers;
 
+
     public AbstractCompositeDataFetcher(DataFetcher[] fetchers) {
         this.fetchers = fetchers;
     }

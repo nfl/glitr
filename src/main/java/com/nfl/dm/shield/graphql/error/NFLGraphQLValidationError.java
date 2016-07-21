@@ -11,6 +11,7 @@ public class NFLGraphQLValidationError extends NFLGraphQLError {
 
     protected List<NFLGraphQLError> errors;
 
+
     public NFLGraphQLValidationError() {
         super(HttpStatus.BAD_REQUEST);
     }

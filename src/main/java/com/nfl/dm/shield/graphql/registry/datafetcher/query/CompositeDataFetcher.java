@@ -11,6 +11,7 @@ public class CompositeDataFetcher extends AbstractCompositeDataFetcher {
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger(CompositeDataFetcher.class);
 
+
     public CompositeDataFetcher(DataFetcher[] fetchers) {
         super(fetchers);
     }

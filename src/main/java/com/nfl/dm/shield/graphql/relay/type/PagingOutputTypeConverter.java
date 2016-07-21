@@ -20,7 +20,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 
-
 /**
  *  Output type converter function for paging arguments annotations.
  */
@@ -28,6 +27,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
 
     private RelayHelper relayHelper;
     private TypeRegistry typeRegistry;
+
 
     @Override
     public GraphQLOutputType call(@Nullable Field field, Method method, Class declaringClass, Annotation annotation) {

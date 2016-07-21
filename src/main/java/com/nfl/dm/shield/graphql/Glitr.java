@@ -15,6 +15,7 @@ public class Glitr {
     private RelayHelper relayHelper;
     private GraphQLSchema schema;
 
+
     Glitr(TypeRegistry typeRegistry, @Nullable RelayHelper relayHelper, GraphQLSchema schema) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(schema, "GraphQLSchema can't be null");

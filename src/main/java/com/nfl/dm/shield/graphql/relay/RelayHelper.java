@@ -39,7 +39,6 @@ public class RelayHelper {
         return relay.getConnectionFieldArguments();
     }
 
-
     public GraphQLObjectType edgeType(String simpleName, GraphQLOutputType edgeGraphQLOutputType,
                                              GraphQLInterfaceType nodeInterface, List<GraphQLFieldDefinition> graphQLFieldDefinitions) {
         return relay.edgeType(simpleName, edgeGraphQLOutputType, nodeInterface, graphQLFieldDefinitions);
@@ -50,7 +49,6 @@ public class RelayHelper {
     }
 
     public static graphql.relay.Connection buildConnection(Iterable<?> col, int skipItems, int totalCount) {
-
         List<Edge> edges = new ArrayList<>();
         int ix = skipItems;
 
@@ -79,7 +77,6 @@ public class RelayHelper {
     public static String createCursor(int offset) {
         return Base64.toBase64(DUMMY_CURSOR_PREFIX + Integer.toString(offset));
     }
-
 
     public static int getOffsetFromCursor(String cursor, int defaultValue) {
         if (cursor == null) return defaultValue;

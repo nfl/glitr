@@ -19,6 +19,7 @@ public abstract class NFLGraphQLError extends RuntimeException implements graphq
     private ErrorType errorType;
     private List<SourceLocation> locations;
 
+
     public NFLGraphQLError(HttpStatus httpStatus) {
         this.httpStatus = httpStatus;
     }

@@ -7,7 +7,7 @@ import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
-import com.nfl.dm.shield.graphql.registry.type.Scalars;
+import com.nfl.dm.shield.graphql.registry.type.*;
 import com.nfl.dm.shield.util.error.DataFetcherCreationException;
 import graphql.relay.Relay;
 import graphql.schema.*;
@@ -18,7 +18,10 @@ import rx.functions.Func4;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -28,11 +31,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Scalars.*;
 import static graphql.schema.GraphQLArgument.newArgument;
-import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
-import static graphql.schema.GraphQLInputObjectType.newInputObject;
-import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class TypeRegistry implements TypeResolver {
@@ -50,6 +49,13 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLInterfaceType nodeInterface;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private Relay relay;
+
+    private GraphQLTypeFactory graphQLTypeFactory = new GraphQLTypeFactory()
+            .withOutputTypeFactory(new GraphQLEnumTypeFactory(), JavaType.ENUM)
+            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this), JavaType.INTERFACE)
+            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this), JavaType.ABSTRACT_CLASS)
+            .withOutputTypeFactory(new GraphQLObjectTypeFactory(this), JavaType.CLASS)
+            .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
     TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<?extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
@@ -82,31 +88,29 @@ public class TypeRegistry implements TypeResolver {
         return (GraphQLObjectType)registry.get(object.getClass());
     }
 
+    public Map<Class, GraphQLType> getRegistry() {
+        return registry;
+    }
+
     /**
      * Root class should be passed here so the graph can be inspected in its entirety
      */
     public GraphQLType lookup(Class clazz) {
         // do a first pass lookup
         lookupOutput(clazz);
-
         // go over all the types in the type map and do another pass to resolve the GraphQL type references
-        Set<Map.Entry<Class, GraphQLType>> entries = registry.entrySet();
-        // remove the type reference to be replace by the resolved GraphQLType
-        // and lookup again
-        entries.stream()
+        // remove the type reference to be replaced by the resolved GraphQLType and lookup again
+        registry.entrySet().stream()
                 .filter(graphQLTypeEntry -> graphQLTypeEntry.getValue() instanceof GraphQLTypeReference)
                 .forEach(graphQLTypeEntry -> {
-                    // remove the type reference to be replace by the resolved GraphQLType
                     registry.remove(graphQLTypeEntry.getKey());
-                    // and lookup again
                     lookupOutput(graphQLTypeEntry.getKey());
                 });
 
-        // retrieve GraphQLType
         return registry.get(clazz);
     }
 
-    private GraphQLType lookupOutput(Class clazz) {
+    public GraphQLType lookupOutput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
         }
@@ -114,14 +118,7 @@ public class TypeRegistry implements TypeResolver {
         // put a type reference in while building the type to work around circular references
         registry.put(clazz, new GraphQLTypeReference(clazz.getSimpleName()));
 
-        GraphQLOutputType type;
-        if (clazz.isEnum()) {
-            type = createEnumType(clazz);
-        } else if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-            type = createInterfaceType(clazz);
-        } else {
-            type = createObjectType(clazz);
-        }
+        GraphQLOutputType type = graphQLTypeFactory.createGraphQLOutputType(clazz);
 
         if (type != null) {
             registry.put(clazz, type);
@@ -131,6 +128,23 @@ public class TypeRegistry implements TypeResolver {
 
         return type;
     }
+
+    public GraphQLType lookupInput(Class clazz) {
+        if (inputRegistry.containsKey(clazz)) {
+            return inputRegistry.get(clazz);
+        }
+
+        GraphQLInputType type = graphQLTypeFactory.createGraphQLInputType(clazz);
+
+        if (type != null) {
+            inputRegistry.put(clazz, type);
+        } else {
+            throw new IllegalArgumentException("Unable to create GraphQLInputType for: " + clazz.getCanonicalName());
+        }
+
+        return type;
+    }
+
 
     public GraphQLObjectType createRelayMutationType(Class clazz) {
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
@@ -181,6 +195,14 @@ public class TypeRegistry implements TypeResolver {
         return builder.build();
     }
 
+    public static DataFetcher createDataFetchersFromDataFetcherList(List<DataFetcher> fetchers, Class declaringClass, String name) {
+        try {
+            return CompositeDataFetcherFactory.create(fetchers);
+        } catch (IllegalArgumentException e) {
+            throw new DataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
+        }
+    }
+
     private GraphQLArgument createRelayInputArgument(Class methodDeclaringClass, Method method) {
         Argument[] annotatedGetterArguments = ReflectionUtil.getArgumentsFromMethod(method);
         if (annotatedGetterArguments.length != 1) {
@@ -206,178 +228,13 @@ public class TypeRegistry implements TypeResolver {
                 .build();
     }
 
-    public GraphQLType lookupInput(Class clazz) {
-        if (inputRegistry.containsKey(clazz)) {
-            return inputRegistry.get(clazz);
-        }
-
-        GraphQLInputType type;
-        if (clazz.isEnum()) {
-            type = createEnumType(clazz);
-        } else {
-            type = createInputObjectType(clazz);
-        }
-
-        if (type != null) {
-            inputRegistry.put(clazz, type);
-        } else {
-            throw new IllegalArgumentException("Unable to create GraphQLInputType for: " + clazz.getCanonicalName());
-        }
-
-        return type;
-    }
-
-    /**
-     * In short, the method below creates the GraphQLObjectType dynamically for pretty much any pojo class with public
-     * accessors.
-     *
-     * In details on how, given a top level class `A`:
-     *
-     *   1. Extract all getter methods of `A` and store them in a map `M`
-     *   2. If there are some registered overrides for `A`, for each override method in the override class
-     *   check if its a getter method and add it to the methods map `M` (if does not exist already)
-     *   3. For each getter method in `M` lets create a graphQL field definition
-     *   4. Each field definition needs a name, an output type, a data fetcher and potential arguments.
-     *   (see graphQL spec for details)
-     *   The way the data is fetched is dictated by the application. Given the generic nature of the method,
-     *   we register a bunch of data fetchers and a single data fetcher call CompositeDataFetcher will try them one by one on each field
-     *   until one works.
-     *   (if the number of registered overrides grow, it might hinder performance, could we optimize that part?)
-     *   5. Name and output type are deemed trivial and left as an exercise for the reader.
-     *   6. Let's go first over the data fetchers:
-     *   The overrideDataFetcher from the registered overrides is added first, then the overrideDataFetcher for
-     *   calling the getter right away on the class is added and finally if `A` is a node (i.e has an id)
-     *   the FieldViaNodeDataFetcher is added. The FieldViaNodeDataFetcher is here to expand child objects of `A`.
-     *   Example: Person.address where Person is our top level class and address is of complex type Address and need to be fetched.
-     *   If the top level class isn't a node then we just add finally the graphQL stock PropertyDataFetcher.
-     *   7. Now the arguments:
-     *   Arguments are always explicitly provided by adding @Argument on top of the getter. It the current method has it,
-     *   the graphQLInputType is constructed to be later added to the field definition. In case of iterable data structures,
-     *   we also look for @ForwardPagingArguments to provide paging functionality.
-     *   8. All the field definitions are then added at the end to the GraphQLObjectType.
-     * @param clazz top level class to be introspected
-     * @return GraphQLObjectType object exposed via graphQL.
-     */
-    private GraphQLObjectType createObjectType(Class clazz) {
-        Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
-
-        // add extra methods from outside the inspected class coming from an override object
-        addExtraMethodsToTheSchema(clazz, methods);
-
-        List<GraphQLFieldDefinition> fields = methods.values().stream()
-                .map(pair -> {
-                    Method method = pair.getLeft();
-                    Class declaringClass = pair.getRight();
-
-                    // 1. GraphQL Field Name
-                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
-                    // 2. DataFetcher
-                    List<DataFetcher> fetchers = retrieveDataFetchers(clazz, declaringClass, method);
-                    DataFetcher dataFetcher = createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
-                    // 3. Arguments
-                    List<GraphQLArgument> arguments = retrieveArguments(declaringClass, method);
-                    // 4. OutputType
-                    GraphQLOutputType graphQLOutputType = retrieveGraphQLOutputType(declaringClass, method);
-                    // 5. Description
-                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-                    // 6. //TODO: static value
-                    // 7. //TODO: deprecation reason
-
-                    return newFieldDefinition()
-                            .name(name)
-                            .description(description)
-                            .dataFetcher(dataFetcher)
-                            .type(graphQLOutputType)
-                            .argument(arguments)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        if (fields.size() == 0) {
-            // GraphiQL doesn't like objects with no fields, so add an unused field to be safe.
-            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).staticValue(false).build());
-        }
-
-        // description
-        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
-
-        // implemented interfaces
-        List<GraphQLInterfaceType> graphQLInterfaceTypes = retrieveInterfacesForType(clazz);
-
-        // extended abstract classes
-        List<GraphQLInterfaceType> graphQLAbstractClassTypes = retrieveAbstractClassesForType(clazz);
-        graphQLInterfaceTypes.addAll(graphQLAbstractClassTypes);
-
-        GraphQLObjectType.Builder builder = newObject()
-                .name(clazz.getSimpleName())
-                .description(description)
-                .withInterfaces(graphQLInterfaceTypes.toArray(new GraphQLInterfaceType[graphQLInterfaceTypes.size()]))
-                .fields(fields);
-
-        // relay is enabled, add Node interface implementation if one of the eligible methods is named getId
-        if (nodeInterface != null && methods.keySet().stream().anyMatch(name -> name.equals("getId"))) {
-            builder.withInterface(nodeInterface);
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Look up and inspect abstract class extended by a specific class.
-     * @param clazz being inspected
-     * @return list of GraphQLInterfaceType
-     */
-    private List<GraphQLInterfaceType> retrieveAbstractClassesForType(Class clazz) {
-        List<GraphQLInterfaceType> abstractClasses = new ArrayList<>();
-
-        LinkedList<Class> queue = new LinkedList<>();
-        queue.add(clazz);
-
-        while (!queue.isEmpty()) {
-            Class aClass = queue.poll().getSuperclass();
-            if (aClass == null) {
-                continue;
-            }
-            if (Modifier.isAbstract(aClass.getModifiers())) {
-                abstractClasses.add((GraphQLInterfaceType) lookupOutput(aClass));
-                queue.add(aClass);
-            }
-        }
-
-        return abstractClasses;
-    }
-
-    /**
-     * Look up and inspect interfaces implemented by a specific class.
-     * @param clazz being inspected
-     * @return list of GraphQLInterfaceType
-     */
-    private List<GraphQLInterfaceType> retrieveInterfacesForType(Class clazz) {
-        List<GraphQLInterfaceType>  interfaceTypes = new ArrayList<>();
-
-        LinkedList<Class> queue = new LinkedList<>();
-        queue.add(clazz);
-
-        while (!queue.isEmpty()) {
-            Class aClass = queue.poll();
-            Class<?>[] interfacesForClass = aClass.getInterfaces();
-            queue.addAll(Arrays.asList(interfacesForClass));
-            for (Class interfaceClass: interfacesForClass) {
-                GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) lookupOutput(interfaceClass);
-                interfaceTypes.add(graphQLInterfaceType);
-            }
-        }
-
-        return interfaceTypes;
-    }
-
     /**
      * We allow defining GraphQL additional fields outside of the inspected class.
      * In fact, if the getter-method name conflicts with an existing method defined in the inspected class, it won't be added.
      * @param clazz inspected class
      * @param methods original set of eligible methods defined in the inspected class
      */
-    private void addExtraMethodsToTheSchema(Class clazz, Map<String, Pair<Method, Class>> methods) {
+    public void addExtraMethodsToTheSchema(Class clazz, Map<String, Pair<Method, Class>> methods) {
         if (overrides.containsKey(clazz)) {
             for (Object override : overrides.get(clazz)) {
                 for (Method method : override.getClass().getMethods()) {
@@ -390,15 +247,7 @@ public class TypeRegistry implements TypeResolver {
         }
     }
 
-    private DataFetcher createDataFetchersFromDataFetcherList(List<DataFetcher> fetchers, Class declaringClass, String name) {
-        try {
-            return CompositeDataFetcherFactory.create(fetchers);
-        } catch (IllegalArgumentException e) {
-            throw new DataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
-        }
-    }
-
-    private List<DataFetcher> retrieveDataFetchers(Class clazz, Class declaringClass, Method method) {
+    public List<DataFetcher> retrieveDataFetchers(Class clazz, Class declaringClass, Method method) {
         List<DataFetcher> fetchers = new ArrayList<>();
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
@@ -464,7 +313,7 @@ public class TypeRegistry implements TypeResolver {
         return null;
     }
 
-    private List<GraphQLArgument> retrieveArguments(Class declaringClass, Method method) {
+    public List<GraphQLArgument> retrieveArguments(Class declaringClass, Method method) {
         List<GraphQLArgument> arguments = new ArrayList<>();
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
@@ -592,89 +441,7 @@ public class TypeRegistry implements TypeResolver {
         return graphQLOutputType;
     }
 
-    public GraphQLInputObjectType createInputObjectType(Class clazz) {
-        Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
-        List<GraphQLInputObjectField> fields = methods.values().stream()
-                .map(pair -> {
-                    Method method = pair.getLeft();
-                    Class declaringClass = pair.getRight();
-                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
-
-                    // type
-                    GraphQLInputType graphQLInputType = (GraphQLInputType) convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
-
-                    // description
-                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-
-                    // nullable
-                    boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
-
-                    if (!nullable || name.equals("id")) {
-                        graphQLInputType = new GraphQLNonNull(graphQLInputType);
-                    }
-
-                    return newInputObjectField()
-                            .type(graphQLInputType)
-                            .name(name)
-                            .description(description)
-                            // TODO: add default value feature, via annotation?
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        GraphQLInputObjectType.Builder builder = newInputObject()
-                .name(clazz.getSimpleName())
-                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
-                .fields(fields);
-
-        return builder.build();
-    }
-
-    private GraphQLInterfaceType createInterfaceType(Class clazz) {
-        List<GraphQLFieldDefinition> fields = Arrays.stream(clazz.getMethods())
-                .filter(ReflectionUtil::eligibleMethod)
-                .sorted(Comparator.comparing(Method::getName))
-                .map(method -> {
-                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
-
-                    // description
-                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-
-                    // type
-                    Type fieldType = GenericTypeReflector.getExactReturnType(method, clazz);
-                    GraphQLType type = convertToGraphQLOutputType(fieldType, name, true);
-
-                    if (type instanceof GraphQLTypeReference) {
-                        registry.putIfAbsent((Class) fieldType, type);
-                    }
-
-                    // nullable
-                    boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
-
-                    if (!nullable || name.equals("id")) {
-                        type = new GraphQLNonNull(type);
-                    }
-
-                    return newFieldDefinition()
-                            .name(name)
-                            .description(description)
-                            .dataFetcher(CompositeDataFetcherFactory.create(Collections.singletonList(new PropertyDataFetcher(name))))
-                            .type((GraphQLOutputType) type)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        // description
-        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(clazz);
-
-        return newInterface()
-                .name(clazz.getSimpleName())
-                .description(description)
-                .typeResolver(object -> (GraphQLObjectType) lookupOutput(object.getClass()))
-                .fields(fields)
-                .build();
-    }
 
     private GraphQLList createListOutputTypeFromParametrizedType(Type type, boolean fromInterface) {
         ParameterizedType parameterizedType = (ParameterizedType)type;
@@ -696,18 +463,6 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLList createListInputTypeFromArrayType(Type type) {
         Class componentType = ((Class)type).getComponentType();
         return new GraphQLList(convertToGraphQLInputType(componentType, null));
-    }
-
-    private GraphQLEnumType createEnumType(Class clazz) {
-        GraphQLEnumType.Builder builder = newEnum()
-                .name(clazz.getSimpleName())
-                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz));
-
-        for (Object constant : clazz.getEnumConstants()) {
-            builder.value(constant.toString(), constant);
-        }
-
-        return builder.build();
     }
 
     public GraphQLType convertToGraphQLOutputType(Type type, String name) {

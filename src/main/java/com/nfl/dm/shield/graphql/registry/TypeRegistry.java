@@ -1,6 +1,5 @@
 package com.nfl.dm.shield.graphql.registry;
 
-import com.google.common.collect.Sets;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
@@ -38,8 +37,7 @@ public class TypeRegistry implements TypeResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
 
-    private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>(); // map to only GraphQLOutputTypes
-    private final Map<Class, GraphQLType> inputRegistry = new ConcurrentHashMap<>();  // map to only GraphQLInputTypes (for mutations)
+    private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
 
     private final Map<Class, List<Object>> overrides;
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -75,7 +73,7 @@ public class TypeRegistry implements TypeResolver {
      * @return set of GraphQLType to be passed to GraphQLSchema
      */
     public Set<GraphQLType> getTypeDictionary() {
-        return Sets.union(new HashSet<>(registry.values()), new HashSet<>(inputRegistry.values()));
+        return new HashSet<>(registry.values());
     }
 
     @Nullable
@@ -87,6 +85,7 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLObjectType getType(Object object) {
         return (GraphQLObjectType)registry.get(object.getClass());
     }
+
 
     public Map<Class, GraphQLType> getRegistry() {
         return registry;
@@ -130,14 +129,14 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLType lookupInput(Class clazz) {
-        if (inputRegistry.containsKey(clazz)) {
-            return inputRegistry.get(clazz);
+        if (registry.containsKey(clazz)) {
+            return registry.get(clazz);
         }
 
         GraphQLInputType type = graphQLTypeFactory.createGraphQLInputType(clazz);
 
         if (type != null) {
-            inputRegistry.put(clazz, type);
+            registry.put(clazz, type);
         } else {
             throw new IllegalArgumentException("Unable to create GraphQLInputType for: " + clazz.getCanonicalName());
         }

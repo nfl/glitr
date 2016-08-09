@@ -1,7 +1,7 @@
 description = "GLiTR"
 
 group = 'com.nfl.dm.shield'
-version = '0.9.5-SNAPSHOT'
+version = '0.10.0-SNAPSHOT'
 
 buildscript {
     ext {
@@ -48,7 +48,6 @@ dependencies {
     compile("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
 
     // NFL dependencies
-    compile("com.nfl.dm.shield:shield-web:0.0.1-SNAPSHOT")
     compile("com.nfl.dm.shield:shield-core:0.0.1-SNAPSHOT")
 
     compile('commons-io:commons-io:2.4')
@@ -73,6 +72,8 @@ dependencies {
     compile("org.eclipse.jetty:jetty-jmx:9.2.10.v20150310") // instrumentation
     compile("com.voodoodyne.jackson.jsog:jackson-jsog:1.1")    
 
+    // Validation Dependencies
+    compile("javax.validation:validation-api:1.1.0.Final")
 
     // Jackson dependencies
     compile("com.fasterxml.jackson.core:jackson-core:2.6.2")

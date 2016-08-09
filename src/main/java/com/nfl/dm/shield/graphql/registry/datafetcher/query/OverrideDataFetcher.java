@@ -1,6 +1,6 @@
 package com.nfl.dm.shield.graphql.registry.datafetcher.query;
 
-import com.nfl.dm.shield.graphql.error.NFLGraphQLError;
+import com.nfl.dm.shield.graphql.exception.GlitrException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.apache.commons.lang3.StringUtils;
@@ -55,10 +55,8 @@ public class OverrideDataFetcher implements DataFetcher {
             return overrideMethod.invoke(obj, environment);
         } catch (InvocationTargetException e) {
             logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} obj={} and environment={}", overrideMethod, obj, environment, e);
-            // If the override method threw a NFLGraphQLError, it needs to bubbled up
-            if (e.getTargetException() instanceof NFLGraphQLError) {
-                throw (NFLGraphQLError) e.getTargetException();
-            }
+            // If the override method threw a RuntimeException, it needs to bubbled up
+            throw new GlitrException("Overwrite method exception", e.getTargetException());
         } catch (Exception e) {
             // TODO All other exception are ignored ???
             logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} obj={} and environment={}", overrideMethod, obj, environment, e);

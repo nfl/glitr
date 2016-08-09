@@ -7,7 +7,8 @@ import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcher
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.type.*;
-import com.nfl.dm.shield.util.error.DataFetcherCreationException;
+import com.nfl.dm.shield.graphql.registry.type.Scalars;
+import com.nfl.dm.shield.graphql.exception.GlitrDataFetcherCreationException;
 import graphql.relay.Relay;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -198,7 +199,7 @@ public class TypeRegistry implements TypeResolver {
         try {
             return CompositeDataFetcherFactory.create(fetchers);
         } catch (IllegalArgumentException e) {
-            throw new DataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
+            throw new GlitrDataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
         }
     }
 

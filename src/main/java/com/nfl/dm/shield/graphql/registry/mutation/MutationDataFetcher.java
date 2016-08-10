@@ -2,15 +2,15 @@ package com.nfl.dm.shield.graphql.registry.mutation;
 
 import com.nfl.dm.shield.graphql.exception.GlitrValidationException;
 import com.nfl.dm.shield.util.JsonUtils;
+import com.nfl.dm.shield.util.ValidationUtil;
+import com.nfl.dm.shield.web.exception.NFLValidationException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.validation.Validator;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
 import java.util.Map;
-import java.util.Set;
 
 public class MutationDataFetcher implements DataFetcher {
 
@@ -51,9 +51,10 @@ public class MutationDataFetcher implements DataFetcher {
             return;
         }
 
-        Set<ConstraintViolation<Object>> violations = validator.validate(inputPayloadMtn);
-        if (!violations.isEmpty()) {
-            throw new GlitrValidationException("Error validating input mutation.", violations);
+        try {
+            ValidationUtil.validOrThrowException(inputPayloadMtn, validator);
+        } catch (NFLValidationException e) {
+            throw new GlitrValidationException("Error validating input mutation.", e.getErrors());
         }
     }
 }

@@ -1,18 +1,19 @@
 package com.nfl.dm.shield.graphql.exception;
 
-import javax.validation.ConstraintViolation;
-import java.util.Set;
+import com.nfl.dm.shield.web.response.NFLError;
+
+import java.util.List;
 
 public class GlitrValidationException extends GlitrException {
 
-    private final Set<ConstraintViolation<Object>> violations;
+    private final List<NFLError> violations;
 
-    public GlitrValidationException(String message, Set<ConstraintViolation<Object>> violations) {
+    public GlitrValidationException(String message, List<NFLError> violations) {
         super(message);
         this.violations = violations;
     }
 
-    public Set<ConstraintViolation<Object>> getViolations() {
+    public List<NFLError> getViolations() {
         return violations;
     }
 }

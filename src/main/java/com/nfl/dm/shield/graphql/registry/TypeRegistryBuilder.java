@@ -2,6 +2,7 @@ package com.nfl.dm.shield.graphql.registry;
 
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import graphql.relay.Relay;
+import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
 import rx.functions.Func4;
@@ -19,6 +20,7 @@ public class TypeRegistryBuilder {
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
+    private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
 
     private Relay relay = null;
 
@@ -51,6 +53,11 @@ public class TypeRegistryBuilder {
         return this;
     }
 
+    public TypeRegistryBuilder withAnnotationToDataFetcherMap(Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap) {
+        this.annotationToDataFetcherMap = annotationToDataFetcherMap;
+        return this;
+    }
+
     public TypeRegistryBuilder addCustomFieldArgumentsFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>> argumentsFunc4) {
         annotationToArgumentsProviderMap.putIfAbsent(annotationClass, argumentsFunc4);
         return this;
@@ -72,6 +79,6 @@ public class TypeRegistryBuilder {
     }
 
     public TypeRegistry build() {
-        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay);
+        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToDataFetcherMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay);
     }
 }

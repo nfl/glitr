@@ -44,6 +44,7 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
     private final Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap;
+    private final Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap;
 
     private GraphQLInterfaceType nodeInterface;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
@@ -57,9 +58,10 @@ public class TypeRegistry implements TypeResolver {
             .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
-    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<?extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
+    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
         this.overrides = overrides;
         this.annotationToDataFetcherFactoryMap = annotationToDataFetcherFactoryMap;
+        this.annotationToDataFetcherMap = annotationToDataFetcherMap;
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
         this.relay = relay;
@@ -276,12 +278,15 @@ public class TypeRegistry implements TypeResolver {
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
         for (Annotation annotation: methodAnnotations) {
             // Custom Fetchers
-            if (annotationToDataFetcherFactoryMap.containsKey(annotation.annotationType())) {
-                AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotation.annotationType());
+            Class annotationType = annotation.annotationType();
+            if (annotationToDataFetcherFactoryMap.containsKey(annotationType)) {
+                AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotationType);
                 DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(null, method, declaringClass, annotation);
                 if (dataFetcher != null) {
                     return dataFetcher;
                 }
+            } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+                return annotationToDataFetcherMap.get(annotationType);
             }
         }
 
@@ -299,12 +304,15 @@ public class TypeRegistry implements TypeResolver {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
             for (Annotation annotation: fieldAnnotations) {
                 // Custom Fetchers
-                if (annotationToDataFetcherFactoryMap.containsKey(annotation.annotationType())) {
-                    AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotation.annotationType());
+                Class annotationType = annotation.annotationType();
+                if (annotationToDataFetcherFactoryMap.containsKey(annotationType)) {
+                    AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory = annotationToDataFetcherFactoryMap.get(annotationType);
                     DataFetcher dataFetcher = annotationBasedDataFetcherFactory.create(field, method, declaringClass, annotation);
                     if (dataFetcher != null) {
                         return dataFetcher;
                     }
+                } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+                    return annotationToDataFetcherMap.get(annotationType);
                 }
             }
         }

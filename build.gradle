@@ -1,7 +1,7 @@
 description = "GLiTR"
 
 group = 'com.nfl.dm.shield'
-version = '0.10.2-SNAPSHOT'
+version = '0.10.3-SNAPSHOT'
 
 buildscript {
     ext {

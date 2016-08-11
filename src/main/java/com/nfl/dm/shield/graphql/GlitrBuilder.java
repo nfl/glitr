@@ -11,10 +11,7 @@ import com.nfl.dm.shield.graphql.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.dm.shield.graphql.relay.type.PagingOutputTypeConverter;
 import com.nfl.dm.shield.graphql.relay.type.RelayNodeOutputTypeFunc;
 import graphql.relay.Relay;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.*;
 import rx.functions.Func4;
 
 import java.lang.annotation.Annotation;
@@ -30,6 +27,7 @@ public class GlitrBuilder {
     private NodeFetcherService nodeFetcherService;
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
+    private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Relay relay = null;
@@ -78,6 +76,11 @@ public class GlitrBuilder {
 
     public GlitrBuilder addCustomDataFetcherFactory(Class<? extends Annotation> annotationClass, AnnotationBasedDataFetcherFactory annotationBasedDataFetcherFactory) {
         annotationToDataFetcherFactoryMap.putIfAbsent(annotationClass, annotationBasedDataFetcherFactory);
+        return this;
+    }
+
+    public GlitrBuilder addCustomDataFetcher(Class<? extends Annotation> annotationClass, DataFetcher dataFetcher) {
+        annotationToDataFetcherMap.putIfAbsent(annotationClass, dataFetcher);
         return this;
     }
 
@@ -156,6 +159,7 @@ public class GlitrBuilder {
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
+                .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
                 // add the relay extra features
                 .withRelay(relay)

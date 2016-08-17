@@ -3,12 +3,12 @@ package com.nfl.dm.shield.graphql.registry;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.dm.shield.graphql.ReflectionUtil;
 import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
+import com.nfl.dm.shield.graphql.exception.GlitrException;
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.type.*;
 import com.nfl.dm.shield.graphql.registry.type.Scalars;
-import com.nfl.dm.shield.graphql.exception.GlitrDataFetcherCreationException;
 import graphql.relay.Relay;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -201,7 +201,7 @@ public class TypeRegistry implements TypeResolver {
         try {
             return CompositeDataFetcherFactory.create(fetchers);
         } catch (IllegalArgumentException e) {
-            throw new GlitrDataFetcherCreationException(e.getMessage() + " For " + declaringClass +"."+ name);
+            throw new GlitrException(e.getMessage() + " For " + declaringClass + "." + name);
         }
     }
 

@@ -1,7 +1,7 @@
 package com.nfl.dm.shield.graphql.registry;
 
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
-import graphql.relay.Relay;
+import com.nfl.dm.shield.graphql.relay.Relay;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;

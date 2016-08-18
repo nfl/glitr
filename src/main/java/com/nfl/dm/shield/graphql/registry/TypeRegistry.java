@@ -9,7 +9,7 @@ import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.type.*;
 import com.nfl.dm.shield.graphql.registry.type.Scalars;
-import graphql.relay.Relay;
+import com.nfl.dm.shield.graphql.relay.Relay;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;

@@ -6,11 +6,12 @@ import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.registry.TypeRegistryBuilder;
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.NodeFetcherService;
+import com.nfl.dm.shield.graphql.relay.Relay;
 import com.nfl.dm.shield.graphql.relay.RelayHelper;
+import com.nfl.dm.shield.graphql.relay.RelayImpl;
 import com.nfl.dm.shield.graphql.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.dm.shield.graphql.relay.type.PagingOutputTypeConverter;
 import com.nfl.dm.shield.graphql.relay.type.RelayNodeOutputTypeFunc;
-import graphql.relay.Relay;
 import graphql.schema.*;
 import rx.functions.Func4;
 
@@ -105,7 +106,7 @@ public class GlitrBuilder {
     }
 
     public static GlitrBuilder newGlitrWithRelaySupport() {
-        return new GlitrBuilder().withRelay(new Relay());
+        return new GlitrBuilder().withRelay(new RelayImpl());
     }
 
     public Glitr build() {

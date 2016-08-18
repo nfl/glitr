@@ -45,6 +45,9 @@ class RelayHelperTest extends Specification {
         assert (connection.pageInfo.hasPreviousPage == hasPrev)
         assert (connection.edges.size() == resultSize)
 
+        def pageInfoWithTotal = (PageInfoWithTotal) connection.pageInfo
+        assert pageInfoWithTotal.total == totalCount
+
         if (resultSize > 0) {
             assert (connection.pageInfo.startCursor?.value == graphql.relay.Base64.toBase64("simple-cursor${toSkip}"))
             assert (connection.pageInfo.endCursor?.value == graphql.relay.Base64.toBase64("simple-cursor${toSkip + resultSize - 1}"))

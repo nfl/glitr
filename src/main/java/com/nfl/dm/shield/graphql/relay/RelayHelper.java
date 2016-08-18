@@ -56,21 +56,22 @@ public class RelayHelper {
             edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));
         }
 
-        PageInfo pageInfo = new PageInfo();
+        PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal();
 
         if (edges.size() > 0) {
             Edge firstEdge = edges.get(0);
             Edge lastEdge = edges.get(edges.size() - 1);
-            pageInfo.setStartCursor(firstEdge.getCursor());
-            pageInfo.setEndCursor(lastEdge.getCursor());
+            pageInfoWithTotal.setStartCursor(firstEdge.getCursor());
+            pageInfoWithTotal.setEndCursor(lastEdge.getCursor());
         }
 
-        pageInfo.setHasPreviousPage(skipItems > 0 && totalCount > 0);
-        pageInfo.setHasNextPage(skipItems + edges.size() + 1 < totalCount);
+        pageInfoWithTotal.setHasPreviousPage(skipItems > 0 && totalCount > 0);
+        pageInfoWithTotal.setHasNextPage(skipItems + edges.size() + 1 < totalCount);
+        pageInfoWithTotal.setTotal(totalCount);
 
         graphql.relay.Connection connection = new graphql.relay.Connection();
         connection.setEdges(edges);
-        connection.setPageInfo(pageInfo);
+        connection.setPageInfo(pageInfoWithTotal);
         return connection;
     }
 

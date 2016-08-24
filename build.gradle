@@ -1,7 +1,7 @@
 description = "GLiTR"
 
 group = 'com.nfl.dm.shield'
-version = '0.10.6-SNAPSHOT'
+version = '0.10.7-SNAPSHOT'
 
 buildscript {
     ext {
@@ -111,7 +111,8 @@ sonarqube {
     properties {
         //noinspection GroovyAssignabilityCheck
         property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/testSpock.exec"
-
+        //noinspection GroovyAssignabilityCheck
+        property "sonar.coverage.exclusions", "**/*Exception.java"
     }
 }
 

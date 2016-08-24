@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 public class TypeRegistryBuilder {
+
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
@@ -24,8 +25,8 @@ public class TypeRegistryBuilder {
 
     private Relay relay = null;
 
-    private TypeRegistryBuilder() {
 
+    private TypeRegistryBuilder() {
     }
 
     public TypeRegistryBuilder withRelay(Relay relay) {

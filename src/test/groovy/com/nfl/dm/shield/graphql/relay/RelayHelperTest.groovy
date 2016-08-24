@@ -10,8 +10,8 @@ class RelayHelperTest extends Specification {
     def typeRegistry = glitr.typeRegistry
     def relayHelper = glitr.relayHelper
 
-    //TODO: once finalized logic add tests
 
+    @SuppressWarnings("GroovyPointlessBoolean")
     def "test build connection pagination"() {
         expect:
         testPaging(toSkip, totalCount, hasNextPage, hasPrevPage, resultSize)

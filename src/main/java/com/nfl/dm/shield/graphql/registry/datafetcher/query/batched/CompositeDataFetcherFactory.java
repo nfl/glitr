@@ -44,7 +44,6 @@ public class CompositeDataFetcherFactory {
                     return f;
         }).collect(Collectors.toList());
 
-
         // let's see if there is at least one Batched in the list
         boolean isListContainsBatchedDataFetcher = fetchers.stream()
                 .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
@@ -59,7 +58,6 @@ public class CompositeDataFetcherFactory {
                 .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
                 .allMatch(ReflectionUtil::isDataFetcherBatched);
 
-
         if (!isListOnlyBatchedDataFetcher) {
             throw new IllegalArgumentException("Both Batched and Simple data fetchers detected in passed list. " +
                                                        "Batched data fetchers can't mix with simple ones" + fetchers);
@@ -73,6 +71,5 @@ public class CompositeDataFetcherFactory {
             return f;
         }).collect(Collectors.toList());
         return new BatchedCompositeDataFetcher(batchedDataFetchers);
-
     }
 }

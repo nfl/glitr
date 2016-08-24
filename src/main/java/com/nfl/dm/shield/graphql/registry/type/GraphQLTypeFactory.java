@@ -19,7 +19,6 @@ public class GraphQLTypeFactory {
         Map<JavaType, DelegateTypeFactory> factories = Arrays
                 .stream(types)
                 .collect(Collectors.toMap(type -> type, type -> factory));
-
         delegateFactories.putAll(factories);
         return this;
     }
@@ -28,11 +27,9 @@ public class GraphQLTypeFactory {
         Map<JavaType, DelegateTypeFactory> factories = Arrays
                 .stream(types)
                 .collect(Collectors.toMap(type -> type, type -> factory));
-
         delegateInputFactories.putAll(factories);
         return this;
     }
-
 
     /**
      * Creates a GraphQLType given a class
@@ -44,7 +41,6 @@ public class GraphQLTypeFactory {
         return (GraphQLOutputType) delegateFactories.get(javaType).create(clazz);
     }
 
-
     /**
      * Creates a GraphQLType given type and a class
      * @param clazz to be evaluated
@@ -52,14 +48,11 @@ public class GraphQLTypeFactory {
      */
     public GraphQLInputType createGraphQLInputType(Class clazz) {
         JavaType javaType = getJavaTypeFromClass(clazz);
-
         if (javaType == JavaType.ENUM) {
             return (GraphQLInputType) delegateFactories.get(JavaType.ENUM).create(clazz);
         }
-
         return (GraphQLInputType) delegateInputFactories.get(javaType).create(clazz);
     }
-
 
     public static JavaType getJavaTypeFromClass(Class clazz) {
         JavaType javaType;

@@ -47,15 +47,23 @@ public class NodeUtil {
         }
 
         Boolean isNode;
-        PropertyDescriptor propertyDescriptor = Arrays.stream(PropertyUtils.getPropertyDescriptors(clazz)).filter(pd -> pd.getName().equals(fieldName)).findAny().get();
+        Optional<PropertyDescriptor> classPropertyDescriptor = Arrays.stream(PropertyUtils.getPropertyDescriptors(clazz))
+                .filter(pd -> pd.getName().equals(fieldName))
+                .findAny();
 
-        //TODO: Improve this to support List types.
-        Class<?> type = propertyDescriptor.getPropertyType();
-        Optional<PropertyDescriptor> optional = Arrays.stream(PropertyUtils.getPropertyDescriptors(type)).filter(pd -> pd.getName().equals("id")).findAny();
+        if (classPropertyDescriptor.isPresent()) {
+            //TODO: improve this to support List types.
+            Class<?> type = classPropertyDescriptor.get().getPropertyType();
+            Optional<PropertyDescriptor> propertyDescriptor = Arrays.stream(PropertyUtils.getPropertyDescriptors(type))
+                    .filter(pd -> pd.getName().equals("id"))
+                    .findAny();
 
-        isNode = optional.isPresent();
-        fieldHasIdMap.put(key, isNode);
-        return isNode;
+            isNode = propertyDescriptor.isPresent();
+            fieldHasIdMap.put(key, isNode);
+            return isNode;
+        }
+
+        return false;
     }
 
     public static  String getClassName(Type type) {

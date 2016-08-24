@@ -7,6 +7,7 @@ public class GlitrValidationException extends GlitrException {
 
     private final Set<ConstraintViolation<Object>> violations;
 
+
     public GlitrValidationException(String message, Set<ConstraintViolation<Object>> violations) {
         super(message);
         this.violations = violations;

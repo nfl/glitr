@@ -18,6 +18,7 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
 
     private final TypeRegistry typeRegistry;
 
+
     public GraphQLInputObjectTypeFactory(TypeRegistry typeRegistry) {
         this.typeRegistry = typeRegistry;
     }
@@ -31,31 +32,7 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 
         List<GraphQLInputObjectField> fields = methods.values().stream()
-                .map(pair -> {
-                    Method method = pair.getLeft();
-                    Class declaringClass = pair.getRight();
-                    String name = ReflectionUtil.sanitizeMethodName(method.getName());
-
-                    // type
-                    GraphQLInputType graphQLInputType = (GraphQLInputType) typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
-
-                    // description
-                    String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-
-                    // nullable
-                    boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
-
-                    if (!nullable || name.equals("id")) {
-                        graphQLInputType = new GraphQLNonNull(graphQLInputType);
-                    }
-
-                    return newInputObjectField()
-                            .type(graphQLInputType)
-                            .name(name)
-                            .description(description)
-                            // TODO: add default value feature, via annotation?
-                            .build();
-                })
+                .map(this::getGraphQLInputObjectField)
                 .collect(Collectors.toList());
 
         GraphQLInputObjectType.Builder builder = newInputObject()
@@ -64,5 +41,26 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
                 .fields(fields);
 
         return builder.build();
+    }
+
+    private GraphQLInputObjectField getGraphQLInputObjectField(Pair<Method, Class> pair) {
+        Method method = pair.getLeft();
+        Class declaringClass = pair.getRight();
+
+        String name = ReflectionUtil.sanitizeMethodName(method.getName());
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+        GraphQLInputType graphQLInputType = (GraphQLInputType) typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
+
+        boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
+        if (!nullable || name.equals("id")) {
+            graphQLInputType = new GraphQLNonNull(graphQLInputType);
+        }
+
+        return newInputObjectField()
+                .type(graphQLInputType)
+                .name(name)
+                .description(description)
+                // TODO: add default value feature, via annotation?
+                .build();
     }
 }

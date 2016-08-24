@@ -41,6 +41,7 @@ public class RelayImpl extends graphql.relay.Relay implements Relay {
                     .build())
             .build();
 
+
     @Override
     public GraphQLObjectType connectionType(String name, GraphQLObjectType edgeType, List<GraphQLFieldDefinition> connectionFields) {
         return newObject()

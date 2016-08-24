@@ -29,12 +29,10 @@ public abstract class AbstractCompositeDataFetcher implements DataFetcher {
     public Object get(DataFetchingEnvironment environment) {
         for (DataFetcher fetcher : fetchers) {
             Object result = fetcher.get(environment);
-
             if (result != null) {
                 return result;
             }
         }
-
         return null;
     }
 

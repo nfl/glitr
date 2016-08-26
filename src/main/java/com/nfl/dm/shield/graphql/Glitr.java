@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import static graphql.Assert.assertNotNull;
 
-
 public class Glitr {
 
     private TypeRegistry typeRegistry;

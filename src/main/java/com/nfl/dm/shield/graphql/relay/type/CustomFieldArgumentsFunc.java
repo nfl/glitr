@@ -1,7 +1,7 @@
 package com.nfl.dm.shield.graphql.relay.type;
 
 import com.googlecode.gentyref.GenericTypeReflector;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrForwardPagingArguments;
 import graphql.schema.GraphQLArgument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +45,8 @@ public class CustomFieldArgumentsFunc implements Func4<Field, Method, Class, Ann
             Type containerType = parameterizedType.getRawType();
             if (Collection.class.isAssignableFrom((Class) containerType)) {
                 List<GraphQLArgument> arguments = new ArrayList<>();
-                arguments.add(newArgument().name(ForwardPagingArguments.FIRST).type(GraphQLInt).build());
-                arguments.add(newArgument().name(ForwardPagingArguments.AFTER).type(GraphQLString).build());
+                arguments.add(newArgument().name(GlitrForwardPagingArguments.FIRST).type(GraphQLInt).build());
+                arguments.add(newArgument().name(GlitrForwardPagingArguments.AFTER).type(GraphQLString).build());
                 return arguments;
             }
         }

@@ -2,7 +2,7 @@ package com.nfl.dm.shield.graphql.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.dm.shield.graphql.ReflectionUtil;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.Argument;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrArgument;
 import com.nfl.dm.shield.graphql.exception.GlitrException;
 import com.nfl.dm.shield.graphql.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.dm.shield.graphql.registry.datafetcher.query.OverrideDataFetcher;
@@ -34,6 +34,10 @@ import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+/**
+ * The heart of GLiTR, the class is responsible for the creation of the GraphQL schema by using reflection to
+ * recursively inspect the passed domain
+ */
 public class TypeRegistry implements TypeResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
@@ -71,10 +75,10 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
-     * Type Dictionary is used by GraphQLSchema to provide additional types necessary for the type collection
-     * https://github.com/graphql-java/graphql-java/commit/6668d1a7e9279d02d499e36b379475d67b6c57b9
+     * Type Dictionary provides a way to pass a set of types into the schema when building it, which will be added into
+     * the set of available types when replacing type references
      *
-     * @return set of GraphQLType to be passed to GraphQLSchema
+     * @return set of {@link GraphQLType} to be passed to {@link GraphQLSchema}
      */
     public Set<GraphQLType> getTypeDictionary() {
         return new HashSet<>(registry.values());
@@ -96,6 +100,9 @@ public class TypeRegistry implements TypeResolver {
 
     /**
      * Root class should be passed here so the graph can be inspected in its entirety
+     *
+     * @param clazz top level Class from which to begin introspection
+     * @return GraphQLType
      */
     public GraphQLType lookup(Class clazz) {
         // do a first pass lookup
@@ -112,6 +119,13 @@ public class TypeRegistry implements TypeResolver {
         return registry.get(clazz);
     }
 
+    /**
+     * Check if the given class if found the registry, if not, first create it ({@link GraphQLOutputType}), next add it
+     * to the registry
+     *
+     * @param clazz class on which to preform introspection
+     * @return {@link GraphQLType}
+     */
     public GraphQLType lookupOutput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
@@ -131,6 +145,13 @@ public class TypeRegistry implements TypeResolver {
         return type;
     }
 
+    /**
+     * Check if the given class if found the registry, if not, first create it ({@link GraphQLInputType}), next add it
+     * to the registry
+     *
+     * @param clazz class on which to preform input introspection
+     * @return {@link GraphQLType}
+     */
     public GraphQLType lookupInput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
@@ -198,14 +219,14 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLArgument createRelayInputArgument(Class methodDeclaringClass, Method method) {
-        Argument[] annotatedGetterArguments = ReflectionUtil.getArgumentsFromMethod(method);
-        if (annotatedGetterArguments.length != 1) {
-            throw new IllegalArgumentException("Only one @Argument annotation can be placed on a relay mutation for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+        GlitrArgument[] annotatedGetterGlitrArguments = ReflectionUtil.getArgumentsFromMethod(method);
+        if (annotatedGetterGlitrArguments.length != 1) {
+            throw new IllegalArgumentException("Only one @GlitrArgument annotation can be placed on a relay mutation for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
         }
 
-        Argument arg = annotatedGetterArguments[0];
+        GlitrArgument arg = annotatedGetterGlitrArguments[0];
         if (!arg.name().equals("input")) {
-            throw new IllegalArgumentException("@Argument annotation name must be `input` for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+            throw new IllegalArgumentException("@GlitrArgument annotation name must be `input` for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
         }
 
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
@@ -222,8 +243,8 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
-     * We allow defining GraphQL additional fields outside of the inspected class.
-     * In fact, if the getter-method name conflicts with an existing method defined in the inspected class, it won't be added.
+     * We allow defining GraphQL additional fields outside of the inspected class. In fact, if the getter-method name
+     * conflicts with an existing method defined in the inspected class, it won't be added.
      *
      * @param clazz inspected class
      * @param methods original set of eligible methods defined in the inspected class
@@ -266,13 +287,13 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private DataFetcher getAnnotationDataFetcherFromMethodOrField(Class declaringClass, Method method, String fieldName) {
-        // A. inspect annotations on getter
+        // inspect annotations on getter
         DataFetcher dataFetcherFromGetter = getDataFetcherFromAnnotationsOnGetter(declaringClass, method);
         if (dataFetcherFromGetter != null) {
             return dataFetcherFromGetter;
         }
 
-        // B. inspect annotations on field of same name
+        // inspect annotations on field of same name
         Field field = getFieldByName(declaringClass, fieldName);
         if (field == null) {
             return null;
@@ -329,11 +350,11 @@ public class TypeRegistry implements TypeResolver {
         List<GraphQLArgument> arguments = new ArrayList<>();
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
-        // A. inspect annotations on getter
+        // inspect annotations on getter
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
         arguments.addAll(getGraphQLArgumentsFromAnnotations(null, method, declaringClass, methodAnnotations));
 
-        // B. inspect annotations on field of same name
+        // inspect annotations on field of same name
         Field field = getFieldByName(declaringClass, name);
         if (field != null) {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
@@ -341,22 +362,22 @@ public class TypeRegistry implements TypeResolver {
         }
 
         // default argument, argument annotation can be found on either the method or field but method level args take precedence
-        Argument[] annotatedArguments;
-        Argument[] annotatedGetterArguments = ReflectionUtil.getArgumentsFromMethod(method);
-        Argument[] annotatedFieldArguments = ReflectionUtil.getArgumentsFromField(field);
+        GlitrArgument[] annotatedGlitrArguments;
+        GlitrArgument[] annotatedGetterGlitrArguments = ReflectionUtil.getArgumentsFromMethod(method);
+        GlitrArgument[] annotatedFieldGlitrArguments = ReflectionUtil.getArgumentsFromField(field);
 
-        if (annotatedGetterArguments.length == 0) {
-            annotatedArguments = annotatedFieldArguments;
+        if (annotatedGetterGlitrArguments.length == 0) {
+            annotatedGlitrArguments = annotatedFieldGlitrArguments;
         } else {
-            annotatedArguments = annotatedGetterArguments;
+            annotatedGlitrArguments = annotatedGetterGlitrArguments;
         }
 
-        if (annotatedGetterArguments.length > 0 && annotatedFieldArguments.length > 0) {
+        if (annotatedGetterGlitrArguments.length > 0 && annotatedFieldGlitrArguments.length > 0) {
             String fieldName = (field != null) ? field.getName() : "null";
-            logger.warn("Both Method and Field level @Argument(s) found, ignoring annotations [{}] for Field [{}]", annotatedFieldArguments, fieldName);
+            logger.warn("Both Method and Field level @GlitrArgument(s) found, ignoring annotations [{}] for Field [{}]", annotatedFieldGlitrArguments, fieldName);
         }
 
-        arguments.addAll(Arrays.stream(annotatedArguments)
+        arguments.addAll(Arrays.stream(annotatedGlitrArguments)
                 .map(this::getGraphQLArgument)
                 .collect(Collectors.toList()));
 
@@ -375,7 +396,7 @@ public class TypeRegistry implements TypeResolver {
         return argumentList;
     }
 
-    private GraphQLArgument getGraphQLArgument(Argument arg) {
+    private GraphQLArgument getGraphQLArgument(GlitrArgument arg) {
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
 
         if (!arg.nullable() || arg.name().equals("id")) {
@@ -400,7 +421,7 @@ public class TypeRegistry implements TypeResolver {
         if (graphQLOutputType == null) {
             graphQLOutputType = (GraphQLOutputType) convertToGraphQLOutputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
 
-            // nullable
+            // is this an optional field
             boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
 
             if (!nullable || name.equals("id")) {

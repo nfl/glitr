@@ -17,6 +17,9 @@ import java.util.stream.Collectors;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 
+/**
+ * Factory implementation for the creation of {@link GraphQLInterfaceType}
+ */
 public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
 
     private final TypeRegistry typeRegistry;
@@ -31,6 +34,12 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
         return createInterfaceType(clazz);
     }
 
+    /**
+     * Creates the {@link GraphQLInterfaceType} dynamically for the given interface
+     *
+     * @param clazz class to be introspected
+     * @return {@link GraphQLInterfaceType} object exposed via graphQL
+     */
     private GraphQLInterfaceType createInterfaceType(Class clazz) {
         List<GraphQLFieldDefinition> fields = Arrays.stream(clazz.getMethods())
                 .filter(ReflectionUtil::eligibleMethod)

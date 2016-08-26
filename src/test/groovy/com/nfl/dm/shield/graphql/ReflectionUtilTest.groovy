@@ -1,10 +1,11 @@
 package com.nfl.dm.shield.graphql
 
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLIgnore
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrIgnore
 import spock.lang.Specification
 
 class ReflectionUtilTest extends Specification {
 
+    @SuppressWarnings("GroovyPointlessBoolean")
     def "test getMethodMap logic"() {
         expect:
         ReflectionUtil.getMethodMap(Video.class).keySet().contains(methodName) == eligible
@@ -14,12 +15,13 @@ class ReflectionUtilTest extends Specification {
         "getId"                                         || true
         "isValid"                                       || true
         "nonGetterMethod"                               || false
-        "getTitleWithGraphQLIgnoreOnField"              || false
-        "getTitleWithGraphQLIgnoreOnGetter"             || false
-        "getTitleWithGraphQLIgnoreOnBothFieldAndGetter" || false
+        "getTitleWithGlitrIgnoreOnField"                || false
+        "getTitleWithGlitrIgnoreOnGetter"               || false
+        "getTitleWithGlitrIgnoreOnBothFieldAndGetter"   || false
         "getMap"                                        || false
     }
 
+    @SuppressWarnings("GroovyPointlessBoolean")
     def "test eligibleMethod logic"() {
         expect:
         ReflectionUtil.eligibleMethod(Video.getMethod(methodName)) == eligible
@@ -30,9 +32,9 @@ class ReflectionUtilTest extends Specification {
         "getId"                                         || true
         "isValid"                                       || true
         "nonGetterMethod"                               || false
-        "getTitleWithGraphQLIgnoreOnField"              || false
-        "getTitleWithGraphQLIgnoreOnGetter"             || false
-        "getTitleWithGraphQLIgnoreOnBothFieldAndGetter" || false
+        "getTitleWithGlitrIgnoreOnField"                || false
+        "getTitleWithGlitrIgnoreOnGetter"               || false
+        "getTitleWithGlitrIgnoreOnBothFieldAndGetter"   || false
         "getMap"                                        || false
     }
 
@@ -55,25 +57,25 @@ class ReflectionUtilTest extends Specification {
             return null
         }
 
-        @GraphQLIgnore
-        private titleWithGraphQLIgnoreOnField;
+        @GlitrIgnore
+        private titleWithGlitrIgnoreOnField;
 
-        def getTitleWithGraphQLIgnoreOnField() {
+        def getTitleWithGlitrIgnoreOnField() {
             return title
         }
 
-        private titleWithGraphQLIgnoreOnGetter;
+        private titleWithGlitrIgnoreOnGetter;
 
-        @GraphQLIgnore
-        def getTitleWithGraphQLIgnoreOnGetter() {
+        @GlitrIgnore
+        def getTitleWithGlitrIgnoreOnGetter() {
             return title
         }
 
-        @GraphQLIgnore
-        private titleWithGraphQLIgnoreOnBothFieldAndGetter;
+        @GlitrIgnore
+        private titleWithGlitrIgnoreOnBothFieldAndGetter;
 
-        @GraphQLIgnore
-        def getTitleWithGraphQLIgnoreOnBothFieldAndGetter() {
+        @GlitrIgnore
+        def getTitleWithGlitrIgnoreOnBothFieldAndGetter() {
             return title
         }
 

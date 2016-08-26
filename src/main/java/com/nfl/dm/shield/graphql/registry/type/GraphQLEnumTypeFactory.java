@@ -6,6 +6,9 @@ import graphql.schema.GraphQLType;
 
 import static graphql.schema.GraphQLEnumType.newEnum;
 
+/**
+ * Factory implementation for the creation of {@link GraphQLEnumType}
+ */
 public class GraphQLEnumTypeFactory implements DelegateTypeFactory {
 
     @Override
@@ -13,6 +16,12 @@ public class GraphQLEnumTypeFactory implements DelegateTypeFactory {
         return createEnumType(clazz);
     }
 
+    /**
+     * Creates the {@link GraphQLEnumType} dynamically for the given enum
+     *
+     * @param clazz enum class to be introspected
+     * @return {@link GraphQLEnumType} object exposed via graphQL
+     */
     public static GraphQLEnumType createEnumType(Class clazz) {
         GraphQLEnumType.Builder builder = newEnum()
                 .name(clazz.getSimpleName())

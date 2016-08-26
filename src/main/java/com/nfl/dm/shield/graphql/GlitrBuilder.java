@@ -1,6 +1,6 @@
 package com.nfl.dm.shield.graphql;
 
-import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrForwardPagingArguments;
 import com.nfl.dm.shield.graphql.registry.RelayNode;
 import com.nfl.dm.shield.graphql.registry.TypeRegistry;
 import com.nfl.dm.shield.graphql.registry.TypeRegistryBuilder;
@@ -164,9 +164,9 @@ public class GlitrBuilder {
                 .withOverrides(overrides)
                 // add the relay extra features
                 .withRelay(relay)
-                .addCustomFieldOutputTypeFunc(ForwardPagingArguments.class, pagingOutputTypeConverter)
+                .addCustomFieldOutputTypeFunc(GlitrForwardPagingArguments.class, pagingOutputTypeConverter)
                 .addCustomFieldOutputTypeFunc(RelayNode.class, relayNodeOutputTypeFunc)
-                .addCustomFieldArgumentsFunc(ForwardPagingArguments.class, customFieldArgumentsFunc)
+                .addCustomFieldArgumentsFunc(GlitrForwardPagingArguments.class, customFieldArgumentsFunc)
                 .build();
 
         // init TypeRegistry on the converters

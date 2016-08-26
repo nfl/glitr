@@ -2,8 +2,8 @@ package com.nfl.dm.shield.graphql.relay.type
 
 import com.nfl.dm.shield.graphql.GlitrBuilder
 import com.nfl.dm.shield.graphql.data.query.QueryType
-import com.nfl.dm.shield.graphql.domain.graph.annotation.ForwardPagingArguments
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrForwardPagingArguments
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import spock.lang.Specification
@@ -29,7 +29,7 @@ class PagingOutputTypeConverterTest extends Specification {
         field = MyTestClass.class.getField("simpleString");
         method = MyTestClass.class.getDeclaredMethod("getSimpleString");
         declaringClass = MyTestClass.class;
-        annotation = MyTestClass.class.getField("simpleString").getAnnotation(ForwardPagingArguments.class);
+        annotation = MyTestClass.class.getField("simpleString").getAnnotation(GlitrForwardPagingArguments.class);
         expected = "has to be of type ParametrizedType";
     }
 
@@ -53,7 +53,7 @@ class PagingOutputTypeConverterTest extends Specification {
         field = MyTestClass.class.getField("arrayOfStrings");
         method = MyTestClass.class.getDeclaredMethod("getArrayOfStrings");
         declaringClass = MyTestClass.class;
-        annotation = MyTestClass.class.getField("arrayOfStrings").getAnnotation(ForwardPagingArguments.class);
+        annotation = MyTestClass.class.getField("arrayOfStrings").getAnnotation(GlitrForwardPagingArguments.class);
         expected = "has to be of type ParametrizedType"
     }
 
@@ -65,7 +65,7 @@ class PagingOutputTypeConverterTest extends Specification {
         field = MyTestClass.class.getField("collOfStrings");
         method = MyTestClass.class.getDeclaredMethod("getCollOfStrings");
         declaringClass = MyTestClass.class;
-        annotation = MyTestClass.class.getField("collOfStrings").getAnnotation(ForwardPagingArguments.class);
+        annotation = MyTestClass.class.getField("collOfStrings").getAnnotation(GlitrForwardPagingArguments.class);
         expected = GraphQLObjectType.class
     }
 
@@ -77,7 +77,7 @@ class PagingOutputTypeConverterTest extends Specification {
         field = MyTestClass.class.getField("listOfStrings");
         method = MyTestClass.class.getDeclaredMethod("getListOfStrings");
         declaringClass = MyTestClass.class;
-        annotation = MyTestClass.class.getField("listOfStrings").getAnnotation(ForwardPagingArguments.class);
+        annotation = MyTestClass.class.getField("listOfStrings").getAnnotation(GlitrForwardPagingArguments.class);
         expected = GraphQLObjectType.class
     }
 
@@ -89,7 +89,7 @@ class PagingOutputTypeConverterTest extends Specification {
         field = MyTestClass.class.getField("nonNullListOfStrings");
         method = MyTestClass.class.getDeclaredMethod("getNonNullListOfStrings");
         declaringClass = MyTestClass.class;
-        annotation = MyTestClass.class.getField("nonNullListOfStrings").getAnnotation(ForwardPagingArguments.class);
+        annotation = MyTestClass.class.getField("nonNullListOfStrings").getAnnotation(GlitrForwardPagingArguments.class);
         expected = GraphQLObjectType.class
     }
 
@@ -104,18 +104,18 @@ class PagingOutputTypeConverterTest extends Specification {
     }
 
     public class MyTestClass {
-        @ForwardPagingArguments
+        @GlitrForwardPagingArguments
         public List<String> listOfStrings;
-        @ForwardPagingArguments
-        @GraphQLNonNull
+        @GlitrForwardPagingArguments
+        @GlitrNonNull
         public List<String> nonNullListOfStrings;
-        @ForwardPagingArguments
+        @GlitrForwardPagingArguments
         public Collection<String> collOfStrings;
-        @ForwardPagingArguments
+        @GlitrForwardPagingArguments
         @NotNull
-        @GraphQLNonNull
+        @GlitrNonNull
         public String simpleString;
-        @ForwardPagingArguments
+        @GlitrForwardPagingArguments
         public String[] arrayOfStrings;
 
         public Collection<String> getCollOfStrings() {

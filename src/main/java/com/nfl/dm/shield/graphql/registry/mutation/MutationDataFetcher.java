@@ -12,6 +12,9 @@ import javax.validation.Validator;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * DataFetcher used when GraphQL operation is a mutation
+ */
 public class MutationDataFetcher implements DataFetcher {
 
     @SuppressWarnings("unused")
@@ -35,14 +38,13 @@ public class MutationDataFetcher implements DataFetcher {
 
         // map fields from input map to mutationInputClass
         Object inputPayloadMtn = JsonUtils.convertValue(inputMap, mutationInputClass);
-
-        RelayMutationType mutationOutput;
         // apply some validation on inputPayloadMtn (should validation be in the mutationFunc instead?)
         validate(inputPayloadMtn);
         // mutate and return output
-        mutationOutput = mutationFunc.call((RelayMutationType) inputPayloadMtn, env);
-        // set back the client mutation id
+        RelayMutationType mutationOutput = mutationFunc.call((RelayMutationType) inputPayloadMtn, env);
+        // set the client mutation id
         mutationOutput.setClientMutationId((String) inputMap.get("clientMutationId"));
+
         return mutationOutput;
     }
 

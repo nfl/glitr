@@ -17,10 +17,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Create a CompositeDataFetcher based on the supplied DataFetchers.
+ *
  * The logic is as follows:
- * If all the data fetchers are batched (exclude PropertyDataFetcher or OverrideDataFetcher) then it will create a BatchedCompositeDataFetcher
- * If all the data fetchers are non batched then it will create a CompositeDataFetcher
- * If both types of data fetchers are detected, IllegalArgumentException is thrown.
+ *
+ *      If all the data fetchers are batched (excluding {@code PropertyDataFetcher} and {@code OverrideDataFetcher})
+ *          Create a {@code BatchedCompositeDataFetcher}
+ *
+ *      If all the data fetchers are non batched
+ *          Create a {@code CompositeDataFetcher}
+ *
+ *      If both types of data fetchers are detected
+ *          Throw {@code IllegalArgumentException}
  */
 public class CompositeDataFetcherFactory {
 
@@ -29,8 +36,7 @@ public class CompositeDataFetcherFactory {
 
         // convert OverrideDataFetcher to batched one if the overrideMethod is @Batched
         List<DataFetcher> fetchers = supplied.stream()
-                // filter out all the OverrideDataFetchers that have a null overrideMethod - reason is type registry adds
-                // default overrideDF
+                // filter out all the OverrideDataFetchers that have a null overrideMethod since type registry adds a default overrideDF
                 .filter(f -> !(f instanceof OverrideDataFetcher) || ((OverrideDataFetcher)f).getOverrideMethod() != null)
                 .map(f -> {
                     if (f instanceof OverrideDataFetcher) {
@@ -60,7 +66,7 @@ public class CompositeDataFetcherFactory {
 
         if (!isListOnlyBatchedDataFetcher) {
             throw new IllegalArgumentException("Both Batched and Simple data fetchers detected in passed list. " +
-                                                       "Batched data fetchers can't mix with simple ones" + fetchers);
+                                                       "Batched data fetchers can't mix with simple ones. " + fetchers);
         }
 
         // convert PropertyDataFetcher to batched one

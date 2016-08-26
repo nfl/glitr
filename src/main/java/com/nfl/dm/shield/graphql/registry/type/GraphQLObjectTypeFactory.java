@@ -15,6 +15,9 @@ import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+/**
+ * Factory implementation for the creation of {@link GraphQLObjectType}
+ */
 public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
 
     private final TypeRegistry typeRegistry;
@@ -30,11 +33,10 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
     }
 
     /**
-     * The method below creates the GraphQLObjectType dynamically for pretty much any pojo class with public
-     * accessors.
+     * Creates the {@link GraphQLObjectType} dynamically for pretty much any pojo class with public accessors
      *
-     * @param clazz top level class to be introspected
-     * @return GraphQLObjectType object exposed via graphQL.
+     * @param clazz class to be introspected
+     * @return {@link GraphQLObjectType} object exposed via graphQL
      */
     private GraphQLObjectType createObjectType(Class clazz) {
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
@@ -48,7 +50,11 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
 
         if (fields.size() == 0) {
             // GraphiQL doesn't like objects with no fields, so add an unused field to be safe.
-            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).staticValue(false).build());
+            fields.add(newFieldDefinition()
+                    .name("unused_fields_dead_object")
+                    .type(GraphQLBoolean)
+                    .staticValue(false)
+                    .build());
         }
 
         // implemented interfaces
@@ -73,10 +79,10 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
     }
 
     /**
-     * Look up and inspect abstract class extended by a specific class.
+     * Look up and inspect abstract class extended by a specific class
      *
      * @param clazz being inspected
-     * @return list of GraphQLInterfaceType
+     * @return list of {@link GraphQLInterfaceType}
      */
     public List<GraphQLInterfaceType> retrieveAbstractClassesForType(Class clazz) {
         List<GraphQLInterfaceType> abstractClasses = new ArrayList<>();
@@ -99,10 +105,10 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
     }
 
     /**
-     * Look up and inspect interfaces implemented by a specific class.
+     * Look up and inspect interfaces implemented by a specific class
      *
      * @param clazz being inspected
-     * @return list of GraphQLInterfaceType
+     * @return list of {@link GraphQLInterfaceType}
      */
     public List<GraphQLInterfaceType> retrieveInterfacesForType(Class clazz) {
         List<GraphQLInterfaceType>  interfaceTypes = new ArrayList<>();

@@ -26,11 +26,11 @@ public class ReflectionUtil {
     /**
      * Determines if the given method is eligible for inclusion in the GraphQL Schema
      * @param method to inspect
-     * @return true if the method name starts with `get` or `is` and false otherwise or if the method or the corresponding field is annotated with GraphQLIgnore
+     * @return true if the method name starts with `get` or `is` and false otherwise or if the method or the corresponding field is annotated with GlitrIgnore
      */
     public static Boolean eligibleMethod(Method method) {
-        Annotation graphQLIgnore = method.getAnnotation(GraphQLIgnore.class);
-        if (graphQLIgnore != null) {
+        Annotation glitrIgnore = method.getAnnotation(GlitrIgnore.class);
+        if (glitrIgnore != null) {
             return false;
         }
 
@@ -40,7 +40,7 @@ public class ReflectionUtil {
         Field field;
         try {
             field = method.getDeclaringClass().getDeclaredField(fieldName);
-            Annotation fieldAnnotations = field.getAnnotation(GraphQLIgnore.class);
+            Annotation fieldAnnotations = field.getAnnotation(GlitrIgnore.class);
             if (fieldAnnotations != null) {
                 return false;
             }
@@ -62,7 +62,7 @@ public class ReflectionUtil {
     public static Map<String, Pair<Method, Class>> getMethodMap(Class clazz) {
         return new TreeMap<>(Arrays.stream(clazz.getMethods())
                 .filter(ReflectionUtil::eligibleMethod)
-                .collect(Collectors.toMap(Method::getName, y -> Pair.of(y, y.getDeclaringClass()))));
+                .collect(Collectors.toMap(Method::getName, eligibleMethod -> Pair.of(eligibleMethod, eligibleMethod.getDeclaringClass()))));
     }
 
     public static String sanitizeMethodName(String name) {
@@ -82,25 +82,25 @@ public class ReflectionUtil {
         return fieldArgTypes[0];
     }
 
-    public static Argument[] getArgumentsFromAnnotations(Map<Class, Annotation> annotationMap) {
-        Argument[] singleAnnotationArguments = annotationMap.containsKey(Argument.class) ? new Argument[] {(Argument)annotationMap.get(Argument.class)}  : new Argument[0];
-        Argument[] groupedAnnotationArguments = annotationMap.containsKey(Arguments.class) ? ((Arguments)annotationMap.get(Arguments.class)).value() : new Argument[0];
-        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
+    public static GlitrArgument[] getArgumentsFromAnnotations(Map<Class, Annotation> annotationMap) {
+        GlitrArgument[] singleAnnotationGlitrArguments = annotationMap.containsKey(GlitrArgument.class) ? new GlitrArgument[] {(GlitrArgument)annotationMap.get(GlitrArgument.class)}  : new GlitrArgument[0];
+        GlitrArgument[] groupedAnnotationGlitrArguments = annotationMap.containsKey(GlitrArguments.class) ? ((GlitrArguments)annotationMap.get(GlitrArguments.class)).value() : new GlitrArgument[0];
+        return ArrayUtils.addAll(singleAnnotationGlitrArguments, groupedAnnotationGlitrArguments);
     }
 
-    public static Argument[] getArgumentsFromMethod(Method method) {
-        Argument[] singleAnnotationArguments = method.isAnnotationPresent(Argument.class) ? method.getAnnotationsByType(Argument.class) : new Argument[0];
-        Argument[] groupedAnnotationArguments = method.isAnnotationPresent(Arguments.class) ? method.getAnnotation(Arguments.class).value() : new Argument[0];
-        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
+    public static GlitrArgument[] getArgumentsFromMethod(Method method) {
+        GlitrArgument[] singleAnnotationGlitrArguments = method.isAnnotationPresent(GlitrArgument.class) ? method.getAnnotationsByType(GlitrArgument.class) : new GlitrArgument[0];
+        GlitrArgument[] groupedAnnotationGlitrArguments = method.isAnnotationPresent(GlitrArguments.class) ? method.getAnnotation(GlitrArguments.class).value() : new GlitrArgument[0];
+        return ArrayUtils.addAll(singleAnnotationGlitrArguments, groupedAnnotationGlitrArguments);
     }
 
-    public static Argument[] getArgumentsFromField(Field field) {
+    public static GlitrArgument[] getArgumentsFromField(Field field) {
         if (field == null) {
-            return new Argument[0];
+            return new GlitrArgument[0];
         }
-        Argument[] singleAnnotationArguments = field.isAnnotationPresent(Argument.class) ? field.getAnnotationsByType(Argument.class) : new Argument[0];
-        Argument[] groupedAnnotationArguments = field.isAnnotationPresent(Arguments.class) ? field.getAnnotation(Arguments.class).value() : new Argument[0];
-        return ArrayUtils.addAll(singleAnnotationArguments, groupedAnnotationArguments);
+        GlitrArgument[] singleAnnotationGlitrArguments = field.isAnnotationPresent(GlitrArgument.class) ? field.getAnnotationsByType(GlitrArgument.class) : new GlitrArgument[0];
+        GlitrArgument[] groupedAnnotationGlitrArguments = field.isAnnotationPresent(GlitrArguments.class) ? field.getAnnotation(GlitrArguments.class).value() : new GlitrArgument[0];
+        return ArrayUtils.addAll(singleAnnotationGlitrArguments, groupedAnnotationGlitrArguments);
     }
 
     /**
@@ -129,14 +129,14 @@ public class ReflectionUtil {
 
     /**
      * Retrieves the GraphQL documentation description value if present on an element
-     * @param element that may be annotated with the GraphQLDescription
-     * @return GraphQLDescription.value if present or GraphQLDescription.DEFAULT_DESCRIPTION otherwise
+     * @param element that may be annotated with the GlitrDescription
+     * @return GlitrDescription.value if present or GlitrDescription.DEFAULT_DESCRIPTION otherwise
      */
     public static String getDescriptionFromAnnotatedElement(AnnotatedElement element) {
-        return element.isAnnotationPresent(GraphQLDescription.class) ? element.getAnnotation(GraphQLDescription.class).value() : GraphQLDescription.DEFAULT_DESCRIPTION;
+        return element.isAnnotationPresent(GlitrDescription.class) ? element.getAnnotation(GlitrDescription.class).value() : GlitrDescription.DEFAULT_DESCRIPTION;
     }
 
     public static boolean isAnnotatedElementNullable(AnnotatedElement element) {
-        return !element.isAnnotationPresent(GraphQLNonNull.class);
+        return !element.isAnnotationPresent(GlitrNonNull.class);
     }
 }

@@ -1,10 +1,14 @@
 package com.nfl.dm.shield.graphql.registry.mutation;
 
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrNonNull;
 
+/**
+ * Relay requires the notion of an Id passed by the client and is returned back to allow identification and
+ * association of mutations
+ */
 public abstract class RelayMutationType {
 
-    @GraphQLNonNull
+    @GlitrNonNull
     private String clientMutationId;
 
 

@@ -1,16 +1,16 @@
 package com.nfl.dm.shield.graphql.data.mutation;
 
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLDescription;
-import com.nfl.dm.shield.graphql.domain.graph.annotation.GraphQLNonNull;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrDescription;
+import com.nfl.dm.shield.graphql.domain.graph.annotation.GlitrNonNull;
 import com.nfl.dm.shield.graphql.registry.mutation.RelayMutationType;
 
-@GraphQLDescription("Relay mutation input")
+@GlitrDescription("Relay mutation input")
 public class VideoMutationInput extends RelayMutationType {
 
     private VideoMutationIn videoMutation;
 
-    @GraphQLDescription("Info meta data needed")
-    @GraphQLNonNull
+    @GlitrDescription("Info meta data needed")
+    @GlitrNonNull
     public VideoMutationIn getVideoMutation() {
         return videoMutation;
     }

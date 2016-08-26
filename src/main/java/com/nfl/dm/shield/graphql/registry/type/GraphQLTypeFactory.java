@@ -9,12 +9,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ *
+ */
 public class GraphQLTypeFactory {
 
     private final Map<JavaType, DelegateTypeFactory> delegateFactories = new HashMap<>();
     private final Map<JavaType, DelegateTypeFactory> delegateInputFactories = new HashMap<>();
 
 
+    /**
+     * Add a {@link DelegateTypeFactory} (mapped by {@link JavaType} as the key) to delegateFactories
+     *
+     * @param factory {@link DelegateTypeFactory} that can create output types
+     * @param types {@link JavaType}(s) to be resolved by given factory
+     * @return {@link GraphQLTypeFactory}
+     */
     public GraphQLTypeFactory withOutputTypeFactory(final DelegateTypeFactory factory, JavaType... types) {
         Map<JavaType, DelegateTypeFactory> factories = Arrays
                 .stream(types)
@@ -23,6 +33,13 @@ public class GraphQLTypeFactory {
         return this;
     }
 
+    /**
+     * Add a {@link DelegateTypeFactory} (mapped by {@link JavaType} as the key) to delegateInputFactories
+     *
+     * @param factory {@link DelegateTypeFactory} that can create input types
+     * @param types {@link JavaType}(s) to be resolved by given factory
+     * @return {@link GraphQLTypeFactory}
+     */
     public GraphQLTypeFactory withInputTypeFactory(final DelegateTypeFactory factory, JavaType... types) {
         Map<JavaType, DelegateTypeFactory> factories = Arrays
                 .stream(types)
@@ -32,9 +49,10 @@ public class GraphQLTypeFactory {
     }
 
     /**
-     * Creates a GraphQLType given a class
+     * Creates a {@link GraphQLOutputType} by inspecting the given a class
+     *
      * @param clazz to be evaluated
-     * @return GraphQLType
+     * @return {@link GraphQLOutputType}
      */
     public GraphQLOutputType createGraphQLOutputType(Class clazz) {
         JavaType javaType = getJavaTypeFromClass(clazz);
@@ -42,9 +60,10 @@ public class GraphQLTypeFactory {
     }
 
     /**
-     * Creates a GraphQLType given type and a class
+     * Creates a {@link GraphQLInputType} by inspecting the given a class
+     *
      * @param clazz to be evaluated
-     * @return GraphQLType
+     * @return {@link GraphQLInputType}}
      */
     public GraphQLInputType createGraphQLInputType(Class clazz) {
         JavaType javaType = getJavaTypeFromClass(clazz);

@@ -19,7 +19,7 @@ public class Scalars {
 
     /**
      * {@code GraphQLDateTime} represents a date time as `2014-08-20T18:00:00.000Z`
-     * See the docs for more details. https://api.nfl.com/docs/global/playbook/index.html
+     * ISO-8601 compliant and in UTC
      */
     public static final GraphQLScalarType GraphQLDateTime = new GraphQLScalarType("DateTime", "DateTime is represented in UTC with the following template: 2014-08-20T18:00:00.000Z", new Coercing() {
 
@@ -51,6 +51,7 @@ public class Scalars {
 
         /**
          * Always parse to {@code Instant}.
+         *
          * @param input date time string representation
          * @return date as an {@code Instant}
          */
@@ -104,6 +105,7 @@ public class Scalars {
 
         /**
          * Always parse to {@code LocalDate}.
+         *
          * @param input date time string representation
          * @return date as an {@code LocalDate}
          */

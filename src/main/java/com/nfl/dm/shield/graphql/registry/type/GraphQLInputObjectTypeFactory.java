@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInputObjectType.newInputObject;
 
+/**
+ * Factory implementation for the creation of {@link GraphQLInputObjectType}
+ */
 public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
 
     private final TypeRegistry typeRegistry;
@@ -28,6 +31,12 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
         return createInputObjectType(clazz);
     }
 
+    /**
+     * Creates the {@link GraphQLInputObjectType} dynamically for the given class
+     *
+     * @param clazz class to be introspected
+     * @return {@link GraphQLInputObjectType} object exposed via graphQL
+     */
     public GraphQLInputObjectType createInputObjectType(Class clazz) {
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
 

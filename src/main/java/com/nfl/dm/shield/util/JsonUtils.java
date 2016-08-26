@@ -14,6 +14,7 @@ public class JsonUtils {
 
     private static ObjectMapper mapper = new ObjectMapper();
 
+
     static {
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ");
         mapper.registerModule(new JavaTimeModule().addSerializer(new ZonedDateTimeSerializer(dateTimeFormatter)));

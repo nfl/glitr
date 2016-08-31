@@ -32,7 +32,7 @@ Example for gradle:
 compile("com.nfl.dm.shield:glitr:x.y.z")
 ```
 
-Change history and version numbers => [CHANGELOG.md](https://github.com/NFL/glitr/blob/master/CHANGELOG.md)
+Change history can be found here: [CHANGELOG.md](https://github.com/NFL/glitr/blob/master/CHANGELOG.md)
 
 ## Build
 
@@ -158,7 +158,7 @@ See the [Wiki](https://github.com/NFL/glitr/wiki/) for full documentation, examp
 
 See the [Javadoc](https://github.com/NFL/glitr/javadoc) for the API.
 
-See [hystrix-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
+See [glitr-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
 
 ## Contact Info
 

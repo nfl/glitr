@@ -1,3 +1,5 @@
+<img src="http://static.nfl.com/static/content/public/static/img/logos/nfl-engineering-light.svg" width="300" />
+
 # GLiTR: GraphQL Lightweight Type Registry
 
 [![][travis img]][travis]
@@ -30,19 +32,19 @@ Example for gradle:
 compile("com.nfl.dm.shield:glitr:x.y.z")
 ```
 
-Change history and version numbers => [CHANGELOG.md](https://github.com/NFL/GLiTR/blob/master/CHANGELOG.md)
+Change history and version numbers => [CHANGELOG.md](https://github.com/NFL/glitr/blob/master/CHANGELOG.md)
 
 ## Build
 
 To build:
 
 ```
-$ git clone git@github.com:NFL/GLiTR.git
-$ cd GLiTR/
+$ git clone git@github.com:NFL/glitr.git
+$ cd glitr/
 $ ./gradlew build
 ```
 
-Futher details on building can be found on the [Getting Started](https://github.com/NFL/GLiTR/wiki/Getting-Started) page of the wiki.
+Futher details on building can be found on the [Getting Started](https://github.com/NFL/glitr/wiki/Getting-Started) page of the wiki.
 
 ## How to use it
 
@@ -152,16 +154,16 @@ public class SomeMutationInput extends RelayMutationType {
 
 ## Full Documentation
 
-See the [Wiki](https://github.com/NFL/GLiTR/wiki/) for full documentation, examples, operational details and other information.
+See the [Wiki](https://github.com/NFL/glitr/wiki/) for full documentation, examples, operational details and other information.
 
-See the [Javadoc](https://github.com/NFL/GLiTR/javadoc) for the API.
+See the [Javadoc](https://github.com/NFL/glitr/javadoc) for the API.
 
-See [hystrix-examples](https://github.com/NFL/GLiTR/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
+See [hystrix-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
 
 ## Contact Info
 
 - Twitter: [@nflengineers](http://twitter.com/nflengineers)
-- [GitHub Issues](https://github.com/NFL/GLiTR/issues)
+- [GitHub Issues](https://github.com/NFL/glitr/issues)
 
 
 ## LICENSE

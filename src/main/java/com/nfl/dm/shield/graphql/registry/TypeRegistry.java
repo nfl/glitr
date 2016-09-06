@@ -153,7 +153,7 @@ public class TypeRegistry implements TypeResolver {
      * @return {@link GraphQLType}
      */
     public GraphQLType lookupInput(Class clazz) {
-        if (registry.containsKey(clazz)) {
+        if (registry.containsKey(clazz) && !(registry.get(clazz) instanceof GraphQLTypeReference)) {
             return registry.get(clazz);
         }
 

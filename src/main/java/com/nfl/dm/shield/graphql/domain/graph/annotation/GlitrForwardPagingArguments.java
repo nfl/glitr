@@ -3,7 +3,7 @@ package com.nfl.dm.shield.graphql.domain.graph.annotation;
 import java.lang.annotation.*;
 
 /**
- * Indicates that annotated selection is pagable
+ * Indicates that annotated selection is pageable
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

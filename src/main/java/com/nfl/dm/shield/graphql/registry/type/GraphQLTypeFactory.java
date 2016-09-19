@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- *
+ * Top level factory, responsible for holding the delegate factories
  */
 public class GraphQLTypeFactory {
 

@@ -5,7 +5,7 @@ import com.nfl.glitr.registry.RelayNode;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.TypeRegistryBuilder;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
-import com.nfl.glitr.registry.datafetcher.query.NodeFetcherService;
+import com.nfl.glitr.registry.datafetcher.query.RelayNodeDataFetcher;
 import com.nfl.glitr.relay.Relay;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.RelayImpl;
@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class GlitrBuilder {
 
-    private NodeFetcherService nodeFetcherService;
+    private RelayNodeDataFetcher relayNodeDataFetcher;
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
@@ -55,8 +55,8 @@ public class GlitrBuilder {
         return this;
     }
 
-    public GlitrBuilder withNodeFetcherService(NodeFetcherService nodeFetcherService) {
-        this.nodeFetcherService = nodeFetcherService;
+    public GlitrBuilder withRelayNodeDataFetcher(RelayNodeDataFetcher relayNodeDataFetcher) {
+        this.relayNodeDataFetcher = relayNodeDataFetcher;
         return this;
     }
 
@@ -132,6 +132,7 @@ public class GlitrBuilder {
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
+                .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
                 .build();
 
@@ -173,7 +174,7 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setTypeRegistry(typeRegistry);
 
         // instantiate RelayHelper
-        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry, nodeFetcherService);
+        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry, relayNodeDataFetcher);
 
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);

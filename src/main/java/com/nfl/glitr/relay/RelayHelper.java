@@ -1,7 +1,7 @@
 package com.nfl.glitr.relay;
 
 import com.nfl.glitr.registry.TypeRegistry;
-import com.nfl.glitr.registry.datafetcher.query.NodeFetcherService;
+import com.nfl.glitr.registry.datafetcher.query.RelayNodeDataFetcher;
 import graphql.relay.*;
 import graphql.schema.*;
 
@@ -19,12 +19,12 @@ public class RelayHelper {
     private GraphQLFieldDefinition nodeField;
 
 
-    public RelayHelper(Relay relay, TypeRegistry typeRegistry, NodeFetcherService nodeFetcherService) {
+    public RelayHelper(Relay relay, TypeRegistry typeRegistry, RelayNodeDataFetcher relayNodeDataFetcher) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(typeRegistry.getNodeInterface(), "NodeInterface can't be null");
         this.relay = relay;
         this.typeRegistry = typeRegistry;
-        this.nodeField = relay.nodeField(typeRegistry.getNodeInterface(), nodeFetcherService);
+        this.nodeField = relay.nodeField(typeRegistry.getNodeInterface(), relayNodeDataFetcher);
     }
 
     public GraphQLInterfaceType getNodeInterface() {

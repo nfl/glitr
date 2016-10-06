@@ -2,6 +2,7 @@ package com.nfl.glitr.graphql.registry.type;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.graphql.ReflectionUtil;
+import com.nfl.glitr.graphql.exception.GlitrException;
 import com.nfl.glitr.graphql.registry.TypeRegistry;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,7 +59,14 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
 
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-        GraphQLInputType graphQLInputType = (GraphQLInputType) typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
+
+        GraphQLType graphQLType = typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
+        if (!(graphQLType instanceof GraphQLInputType)) {
+            throw new GlitrException("Failed to create GraphQLInputType [" + graphQLType.getName() + "] in class [" + declaringClass.getName() + "]. " +
+                    "This is most often the result of a GraphQLOutputType of the same name already existing as input types require unique names. " +
+                    "Please make sure the name used for this input does not match that of another domain class.");
+        }
+        GraphQLInputType graphQLInputType = (GraphQLInputType) graphQLType;
 
         boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
         if (!nullable || name.equals("id")) {

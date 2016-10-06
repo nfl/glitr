@@ -13,9 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReflectionUtil {
@@ -60,7 +58,12 @@ public class ReflectionUtil {
      * @return method map
      */
     public static Map<String, Pair<Method, Class>> getMethodMap(Class clazz) {
-        return new TreeMap<>(Arrays.stream(clazz.getMethods())
+        List<Method> methods = Arrays.asList(clazz.getMethods());
+        methods.stream()
+                .filter(method -> Collections.frequency(methods, method.getName()) > 1)
+                .forEach(duplicateMethodName -> { throw new IllegalArgumentException("Method name duplicate for the given field [" + duplicateMethodName.getName() + "] in class [" + clazz.getSimpleName() + "]"); });
+
+        return new TreeMap<>(methods.stream()
                 .filter(ReflectionUtil::eligibleMethod)
                 .collect(Collectors.toMap(Method::getName, eligibleMethod -> Pair.of(eligibleMethod, eligibleMethod.getDeclaringClass()))));
     }

@@ -70,7 +70,8 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
                 .fields(fields);
 
         // relay is enabled, add Node interface implementation if one of the eligible methods is named getId
-        if (typeRegistry.getNodeInterface() != null && methods.keySet().stream().anyMatch(name -> name.equals("getId"))) {
+        if (typeRegistry.getNodeInterface() != null && methods.keySet().stream().anyMatch(name -> name.equals("getId"))
+                && !typeRegistry.isExplicitRelayNodeScanEnabled()) {
             builder.withInterface(typeRegistry.getNodeInterface());
         }
 

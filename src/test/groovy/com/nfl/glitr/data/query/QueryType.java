@@ -2,7 +2,7 @@ package com.nfl.glitr.data.query;
 
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
-import com.nfl.glitr.registry.RelayNode;
+import com.nfl.glitr.relay.*;
 
 import java.util.List;
 
@@ -18,7 +18,6 @@ public class QueryType {
         return null;
     }
 
-    @RelayNode
     @GlitrArgument(name = "id", type = String.class, nullable = false)
-    public Object getNode() { return null; }
+    public com.nfl.glitr.relay.Node getNode() { return null; }
 }

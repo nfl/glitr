@@ -24,6 +24,7 @@ public class TypeRegistryBuilder {
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
 
     private Relay relay = null;
+    private boolean explicitRelayNodeScanEnabled = false;
 
 
     private TypeRegistryBuilder() {
@@ -75,11 +76,16 @@ public class TypeRegistryBuilder {
         return this;
     }
 
+    public TypeRegistryBuilder withExplicitRelayNodeScan() {
+        this.explicitRelayNodeScanEnabled = true;
+        return this;
+    }
+
     public static TypeRegistryBuilder newTypeRegistry() {
         return new TypeRegistryBuilder();
     }
 
     public TypeRegistry build() {
-        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToDataFetcherMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay);
+        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToDataFetcherMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay, explicitRelayNodeScanEnabled);
     }
 }

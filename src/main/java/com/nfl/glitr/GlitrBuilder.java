@@ -1,7 +1,6 @@
 package com.nfl.glitr;
 
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
-import com.nfl.glitr.registry.RelayNode;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.TypeRegistryBuilder;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
@@ -11,7 +10,6 @@ import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.RelayImpl;
 import com.nfl.glitr.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
-import com.nfl.glitr.relay.type.RelayNodeOutputTypeFunc;
 import graphql.schema.*;
 import rx.functions.Func4;
 
@@ -153,7 +151,6 @@ public class GlitrBuilder {
 
     private Glitr buildGlitrWithRelaySupport() {
         PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter();
-        RelayNodeOutputTypeFunc relayNodeOutputTypeFunc = new RelayNodeOutputTypeFunc();
         CustomFieldArgumentsFunc customFieldArgumentsFunc = new CustomFieldArgumentsFunc();
 
         // instantiate TypeRegistry
@@ -166,7 +163,6 @@ public class GlitrBuilder {
                 // add the relay extra features
                 .withRelay(relay)
                 .addCustomFieldOutputTypeFunc(GlitrForwardPagingArguments.class, pagingOutputTypeConverter)
-                .addCustomFieldOutputTypeFunc(RelayNode.class, relayNodeOutputTypeFunc)
                 .addCustomFieldArgumentsFunc(GlitrForwardPagingArguments.class, customFieldArgumentsFunc)
                 .build();
 
@@ -178,7 +174,6 @@ public class GlitrBuilder {
 
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);
-        relayNodeOutputTypeFunc.setRelayHelper(relayHelper);
 
         // create GraphQL Schema
         GraphQLObjectType mutationType = null;

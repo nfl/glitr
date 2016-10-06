@@ -2,7 +2,7 @@ package com.nfl.glitr.data.query;
 
 import com.nfl.glitr.annotation.GlitrDescription;
 
-@GlitrDescription("Node interface needed for Relay")
-public interface Node {
+@GlitrDescription("Identifiable interface needed for Relay")
+public interface Identifiable {
     String getId();
 }

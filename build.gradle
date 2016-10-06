@@ -1,7 +1,7 @@
 description = "GLiTR"
 
 group = 'com.nfl.glitr'
-version = '1.0.3-SNAPSHOT'
+version = '1.1.0-SNAPSHOT'
 
 buildscript {
     repositories {

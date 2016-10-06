@@ -52,6 +52,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLInterfaceType nodeInterface;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private Relay relay;
+    private boolean explicitRelayNodeScanEnabled;
 
     private GraphQLTypeFactory graphQLTypeFactory = new GraphQLTypeFactory()
             .withOutputTypeFactory(new GraphQLEnumTypeFactory(), JavaType.ENUM)
@@ -61,7 +62,7 @@ public class TypeRegistry implements TypeResolver {
             .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
-    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay) {
+    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay, boolean explicitRelayNodeScanEnabled) {
         this.overrides = overrides;
         this.annotationToDataFetcherFactoryMap = annotationToDataFetcherFactoryMap;
         this.annotationToDataFetcherMap = annotationToDataFetcherMap;
@@ -71,6 +72,7 @@ public class TypeRegistry implements TypeResolver {
         if (relay != null) {
             this.nodeInterface = relay.nodeInterface(this);
         }
+        this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
     }
 
     /**
@@ -95,6 +97,10 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<Class, GraphQLType> getRegistry() {
         return registry;
+    }
+
+    public boolean isExplicitRelayNodeScanEnabled() {
+        return explicitRelayNodeScanEnabled;
     }
 
     /**

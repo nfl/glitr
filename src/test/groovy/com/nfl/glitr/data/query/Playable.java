@@ -1,6 +1,6 @@
 package com.nfl.glitr.data.query;
 
-public interface Playable extends Node {
+public interface Playable extends Identifiable {
 
     String getUrl();
 }

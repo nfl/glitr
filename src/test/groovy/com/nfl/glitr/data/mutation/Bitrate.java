@@ -5,7 +5,7 @@ import com.nfl.glitr.data.query.Playable;
 import java.time.Instant;
 import java.time.LocalDate;
 
-public class Bitrate implements Playable{
+public class Bitrate implements Playable {
 
     private String id;
     private Integer kbps;

@@ -5,8 +5,9 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.mutation.Bitrate
 import com.nfl.glitr.data.query.AbstractContent
 import com.nfl.glitr.data.query.AbstractTimestamped
-import com.nfl.glitr.data.query.Node
-import com.nfl.glitr.data.query.NodeAbstractClass
+
+import com.nfl.glitr.data.query.IdentifiableAbstractClass
+import com.nfl.glitr.data.query.Identifiable
 import com.nfl.glitr.data.query.Playable
 import com.nfl.glitr.data.query.ProfileType
 import com.nfl.glitr.data.query.QueryType
@@ -26,7 +27,7 @@ class TypeRegistryIntegrationTest extends Specification {
         then:
         type.name == QueryType.class.getSimpleName()
         type.description == "No Description"
-        // Relay Node field
+        // Relay Identifiable field
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "node"
         fieldDef.description == "No Description"
@@ -82,7 +83,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.name == Bitrate.class.getSimpleName()
         type.description == "No Description"
         type.fieldDefinitions.name == ["createdDate", "durationNanos", "frames", "grade", "gradeAverage", "id", "kbps", "modifiedDateTime", "url", "valid"]
-        type.interfaces.name as Set == ["Playable", "Node"] as Set
+        type.interfaces.name as Set == ["Playable", "Identifiable"] as Set
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "createdDate"
         fieldDef.description == "No Description"
@@ -150,10 +151,10 @@ class TypeRegistryIntegrationTest extends Specification {
         setup:
         Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
-        GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(Node.class)
+        GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(Identifiable.class)
         then:
-        type.name == Node.class.getSimpleName()
-        type.description == "Node interface needed for Relay"
+        type.name == Identifiable.class.getSimpleName()
+        type.description == "Identifiable interface needed for Relay"
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "id"
         fieldDef.description == "No Description"
@@ -169,10 +170,10 @@ class TypeRegistryIntegrationTest extends Specification {
         setup:
         Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()
         when:
-        GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(NodeAbstractClass.class)
+        GraphQLInterfaceType type = (GraphQLInterfaceType) glitr.typeRegistry.lookup(IdentifiableAbstractClass.class)
         then:
-        type.name == NodeAbstractClass.class.getSimpleName()
-        type.description == "Node interface needed for Relay"
+        type.name == IdentifiableAbstractClass.class.getSimpleName()
+        type.description == "Identifiable interface needed for Relay"
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "id"
         fieldDef.description == "No Description"
@@ -205,6 +206,6 @@ class TypeRegistryIntegrationTest extends Specification {
         type.description == "No Description"
         type.fieldDefinitions.name == ["bitrateList", "id", "lastModifiedDate", "title", "url"]
         then: "Make sure it implements the interfaces"
-        type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName, Node.simpleName, Playable.class.simpleName] as Set
+        type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName, Identifiable.simpleName, Playable.class.simpleName] as Set
     }
 }

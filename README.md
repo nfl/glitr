@@ -6,13 +6,7 @@
 [![][maven img]][maven]
 [![][license img]][license]
 
-GLiTR is a library that greatly simplifies the creation of a GraphQL schema.
-
-## How does it work?
-
-#### Todo
-
-todo
+A library that let you use Plain Old Java Objects to describe your GraphQL schema.
 
 ## Binaries
 
@@ -20,7 +14,7 @@ Example for Maven:
 
 ```xml
 <dependency>
-    <groupId>com.nfl.dm.shield</groupId>
+    <groupId>com.nfl.glitr</groupId>
     <artifactId>glitr</artifactId>
     <version>x.y.z</version>
 </dependency>
@@ -29,10 +23,53 @@ Example for Maven:
 Example for gradle:
 
 ```gradle
-compile("com.nfl.dm.shield:glitr:x.y.z")
+compile("com.nfl.glitr:glitr:x.y.z")
 ```
 
 Change history can be found here: [CHANGELOG.md](https://github.com/NFL/glitr/blob/master/CHANGELOG.md)
+
+## How to use it
+
+This is the famous "hello world" in [graphql-java](https://github.com/graphql-java/graphql-java) with GLiTR:
+
+```java
+import com.nfl.glitr.Glitr;
+import com.nfl.glitr.GlitrBuilder;
+import com.nfl.glitr.annotation.GlitrDescription;
+import graphql.GraphQL;
+import graphql.schema.DataFetchingEnvironment;
+
+import java.util.Map;
+
+public class HelloWorld {
+
+    public static void main(String[] args) {
+
+        Glitr glitr = GlitrBuilder.newGlitr()
+                .withQueryRoot(new Root())
+                .build();
+
+        GraphQL graphQL = new GraphQL(glitr.getSchema());
+
+        Map<String, Object> result = (Map<String, Object>) graphQL.execute("{hello}").getData();
+
+        System.out.println(result);
+        // Prints: {hello=World!}
+    }
+
+    @GlitrDescription("Where it all begins.")
+    public static class Root {
+
+        public String getHello(DataFetchingEnvironment environment) {
+            return "World!";
+        }
+    }
+}
+```
+
+## Full Documentation
+
+See the [Wiki](https://github.com/NFL/glitr/wiki/) for full documentation, examples, operational details and other information.
 
 ## Build
 
@@ -44,119 +81,13 @@ $ cd glitr/
 $ ./gradlew build
 ```
 
-Futher details on building can be found on the [Getting Started](https://github.com/NFL/glitr/wiki/Getting-Started) page of the wiki.
+Further details on building can be found on the [Getting Started](https://github.com/NFL/glitr/wiki/Getting-Started) page of the wiki.
 
-## How to use it
+## Requirements
 
-```java
-return GlitrBuilder.newGlitrWithRelaySupport()
-        .withNodeFetcherService(nodeFetcherService)
-        .withQueryRoot(new Viewer())
-        .withMutationRoot(new MutationType())
-        // add potential custom data fetchers
-        .addCustomDataFetcherFactory(SomeAnnotation.class, someAnnotationBasedDataFetcherFactory)
-        .build();
-```
+ - >= Java 8
 
-```java
-@GraphQLDescription("Global node. Entry point needed for Relay.")
-public class Viewer {
-    public Root getViewer(DataFetchingEnvironment environment) {
-        return new Root();
-    }
-}
-```
-
-```java
-@GraphQLDescription("Where it all begins.")
-public class Root {
-
-    @Argument(name = "someDomainObject", type = String.class , nullable = true)
-    private SomeDomainObject someDomainObject;
-
-    public SomeDomainObject getSomeDomainObject() {
-        return someDomainObject;
-    }
-```
-
-```java
-@GraphQLDescription("Where to persist something.")
-public class MutationType {
-
-    @Argument(name = "input", type = SomeMutationInput.class, nullable = false)
-    public SomeMutationPayload getSomeMutation(DataFetchingEnvironment env) {
-        SaveSomethingFunc mutation = new SaveSomethingFunc();
-        MutationDataFetcher mutationDataFetcher = new MutationDataFetcher(SomeMutationInput.class, new SomeValidator(), mutation);
-        return (SomeMutationPayload) mutationDataFetcher.get(env);
-    }
-}
-```
-
-```java
-public class SaveSomethingFunc implements RelayMutation<SomeMutationInput, SomeMutationPayload> {
-
-    public SomeMutation call(SomeMutationInput mtnInput, DataFetchingEnvironment env) {
-        SomeDomainObject someDomainObject = persist(mtnInput);
-        return new SomeMutationPayload().setSomeDomainObject(someDomainObject);
-    }
-
-    public SomeDomainObject persist(SomeMutationInput mtnInput) {
-        // persistenc logic goes here
-    }
-}
-```
-
-```java
-public class SomeMutationPayload extends RelayMutationType {
-
-    private SomeDomainObject someDomainObject;
-
-    public SomeDomainObject getSomeDomainObject() {
-        return someDomainObject;
-    }
-
-    public SomeMutationPayload setSomeDomainObject(SomeDomainObject someDomainObject) {
-        this.someDomainObject = someDomainObject;
-        return this;
-    }
-}
-```
-
-```java
-public class SomeMutationInput extends RelayMutationType {
-
-    private SomeMutation someMutation;
-
-    public SomeMutation getVideo() {
-        return video;
-    }
-
-    public SomeMutationInput setSomeDomainObject(VideoMtn someMutation) {
-        this.someMutation = someMutation;
-        return this;
-    }
-
-    public static class SomeMutation {
-
-        private String someValue;
-
-        public String getSomeValue() {
-            return someValue;
-        }
-
-        public SomeMutation setSomeValue(String someValue) {
-            this.someValue = someValue;
-            return this;
-        }
-    }
-}
-```
-
-## Full Documentation
-
-See the [Wiki](https://github.com/NFL/glitr/wiki/) for full documentation, examples, operational details and other information.
-
-See the [Javadoc](https://github.com/NFL/glitr/javadoc) for the API.
+## Examples 
 
 See [glitr-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
 
@@ -168,17 +99,4 @@ See [glitr-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src
 
 ## LICENSE
 
-Copyright 2016 NFL Enterprises LLC. NFL and the NFL shield design are
-registered trademarks of the National Football League.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-<http://www.apache.org/licenses/LICENSE-2.0>
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+GLiTR is license under the MIT License. See [LICENSE](LICENSE) for more details.

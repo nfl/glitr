@@ -1,8 +1,9 @@
 package com.nfl.glitr.relay;
 
 import com.nfl.glitr.registry.TypeRegistry;
-import com.nfl.glitr.registry.datafetcher.query.RelayNodeDataFetcher;
-import graphql.relay.*;
+import graphql.relay.Base64;
+import graphql.relay.ConnectionCursor;
+import graphql.relay.Edge;
 import graphql.schema.*;
 
 import java.util.ArrayList;
@@ -16,23 +17,16 @@ public class RelayHelper {
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
 
     private final TypeRegistry typeRegistry;
-    private GraphQLFieldDefinition nodeField;
 
-
-    public RelayHelper(Relay relay, TypeRegistry typeRegistry, RelayNodeDataFetcher relayNodeDataFetcher) {
+    public RelayHelper(Relay relay, TypeRegistry typeRegistry) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(typeRegistry.getNodeInterface(), "NodeInterface can't be null");
         this.relay = relay;
         this.typeRegistry = typeRegistry;
-        this.nodeField = relay.nodeField(typeRegistry.getNodeInterface(), relayNodeDataFetcher);
     }
 
     public GraphQLInterfaceType getNodeInterface() {
         return typeRegistry.getNodeInterface();
-    }
-
-    public GraphQLFieldDefinition getNodeField() {
-        return nodeField;
     }
 
     public List<GraphQLArgument> getConnectionFieldArguments() {

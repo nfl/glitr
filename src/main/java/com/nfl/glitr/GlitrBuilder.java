@@ -4,7 +4,6 @@ import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.TypeRegistryBuilder;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
-import com.nfl.glitr.registry.datafetcher.query.RelayNodeDataFetcher;
 import com.nfl.glitr.relay.Relay;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.RelayImpl;
@@ -23,7 +22,6 @@ import java.util.Map;
 
 public class GlitrBuilder {
 
-    private RelayNodeDataFetcher relayNodeDataFetcher;
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
@@ -51,11 +49,6 @@ public class GlitrBuilder {
 
     public GlitrBuilder withMutationRoot(Object mutationRoot) {
         this.mutationRoot = mutationRoot;
-        return this;
-    }
-
-    public GlitrBuilder withRelayNodeDataFetcher(RelayNodeDataFetcher relayNodeDataFetcher) {
-        this.relayNodeDataFetcher = relayNodeDataFetcher;
         return this;
     }
 
@@ -178,7 +171,7 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setTypeRegistry(typeRegistry);
 
         // instantiate RelayHelper
-        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry, relayNodeDataFetcher);
+        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry);
 
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);

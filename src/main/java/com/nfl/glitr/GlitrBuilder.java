@@ -30,6 +30,7 @@ public class GlitrBuilder {
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Relay relay = null;
+    private boolean explicitRelayNodeScanEnabled = false;
 
     private Object queryRoot = null;
     private Object mutationRoot = null;
@@ -70,6 +71,11 @@ public class GlitrBuilder {
 
     public GlitrBuilder withAnnotationToGraphQLOutputTypeMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap) {
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
+        return this;
+    }
+
+    public GlitrBuilder withExplicitRelayNodeScan() {
+        this.explicitRelayNodeScanEnabled = true;
         return this;
     }
 
@@ -132,6 +138,7 @@ public class GlitrBuilder {
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
+                .withExplicitRelayNodeScan(explicitRelayNodeScanEnabled)
                 .build();
 
         // create GraphQL Schema
@@ -160,6 +167,7 @@ public class GlitrBuilder {
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
+                .withExplicitRelayNodeScan(explicitRelayNodeScanEnabled)
                 // add the relay extra features
                 .withRelay(relay)
                 .addCustomFieldOutputTypeFunc(GlitrForwardPagingArguments.class, pagingOutputTypeConverter)

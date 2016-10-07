@@ -76,8 +76,8 @@ public class TypeRegistryBuilder {
         return this;
     }
 
-    public TypeRegistryBuilder withExplicitRelayNodeScan() {
-        this.explicitRelayNodeScanEnabled = true;
+    public TypeRegistryBuilder withExplicitRelayNodeScan(boolean explicitRelayNodeScanEnabled) {
+        this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
         return this;
     }
 

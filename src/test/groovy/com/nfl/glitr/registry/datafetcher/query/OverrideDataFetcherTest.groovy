@@ -1,6 +1,5 @@
 package com.nfl.glitr.registry.datafetcher.query
 
-import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher
 import graphql.Scalars
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification

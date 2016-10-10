@@ -19,7 +19,25 @@ import java.util.stream.Collectors;
 public class ReflectionUtil {
 
     private final static Logger logger = LoggerFactory.getLogger(ReflectionUtil.class);
+    public final static String NAME_PREFIX = "class ";
 
+
+
+    public static  String getClassName(Type type) {
+        String fullName = type.toString();
+        if (fullName.startsWith(NAME_PREFIX)) {
+            return fullName.substring(NAME_PREFIX.length());
+        }
+        return fullName;
+    }
+
+    public static Class getClassFromType(Type type) {
+        try {
+            return Class.forName(getClassName(type));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Determines if the given method is eligible for inclusion in the GraphQL Schema

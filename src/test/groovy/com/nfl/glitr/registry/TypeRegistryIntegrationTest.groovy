@@ -3,17 +3,9 @@ package com.nfl.glitr.registry
 import com.nfl.glitr.Glitr
 import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.mutation.Bitrate
-import com.nfl.glitr.data.query.AbstractContent
-import com.nfl.glitr.data.query.AbstractTimestamped
-
-import com.nfl.glitr.data.query.IdentifiableAbstractClass
-import com.nfl.glitr.data.query.Identifiable
-import com.nfl.glitr.data.query.Playable
-import com.nfl.glitr.data.query.ProfileType
-import com.nfl.glitr.data.query.QueryType
-import com.nfl.glitr.data.query.Video
-import com.nfl.glitr.graphql.data.query.*
+import com.nfl.glitr.data.query.*
 import com.nfl.glitr.registry.datafetcher.query.CompositeDataFetcher
+import com.nfl.glitr.util.SerializationUtil
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -21,7 +13,11 @@ class TypeRegistryIntegrationTest extends Specification {
 
     def "Inspect queryType"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitrWithRelaySupport().withQueryRoot(new QueryType()).build()
+        Glitr glitr = GlitrBuilder.newGlitr()
+                .withRelay()
+                .withObjectMapper(SerializationUtil.objectMapper)
+                .withQueryRoot(new QueryType())
+                .build()
         when:
         GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(QueryType.class)
         then:

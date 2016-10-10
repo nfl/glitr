@@ -1,12 +1,13 @@
 package com.nfl.glitr.registry.mutation;
 
+import com.nfl.glitr.Glitr;
 import com.nfl.glitr.exception.GlitrValidationException;
-import com.nfl.glitr.util.JsonUtils;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import java.util.Map;
@@ -25,7 +26,12 @@ public class RelayMutationDataFetcher implements DataFetcher {
     private final RelayMutation mutationFunc;
 
 
-    public RelayMutationDataFetcher(Class mutationInputClass, Validator validator, RelayMutation mutationFunc) {
+    public RelayMutationDataFetcher(Class mutationInputClass, RelayMutation mutationFunc) {
+        this(mutationInputClass, mutationFunc, null);
+    }
+
+
+    public RelayMutationDataFetcher(Class mutationInputClass, RelayMutation mutationFunc, @Nullable Validator validator) {
         this.mutationInputClass = mutationInputClass;
         this.validator = validator;
         this.mutationFunc = mutationFunc;
@@ -37,7 +43,7 @@ public class RelayMutationDataFetcher implements DataFetcher {
         Map<String, Object> inputMap = env.getArgument("input");
 
         // map fields from input map to mutationInputClass
-        Object inputPayloadMtn = JsonUtils.convertValue(inputMap, mutationInputClass);
+        Object inputPayloadMtn = Glitr.getObjectMapper().convertValue(inputMap, mutationInputClass);
         // apply some validation on inputPayloadMtn (should validation be in the mutationFunc instead?)
         validate(inputPayloadMtn);
         // mutate and return output

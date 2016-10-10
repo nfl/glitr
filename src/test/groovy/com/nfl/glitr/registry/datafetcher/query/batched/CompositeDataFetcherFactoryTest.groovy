@@ -2,8 +2,6 @@ package com.nfl.glitr.registry.datafetcher.query.batched
 
 import com.nfl.glitr.registry.datafetcher.query.CompositeDataFetcher
 import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher
-import com.nfl.glitr.registry.datafetcher.query.batched.BatchedCompositeDataFetcher
-import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory
 import graphql.execution.batched.Batched
 import graphql.execution.batched.BatchedDataFetcher
 import graphql.execution.batched.UnbatchedDataFetcher

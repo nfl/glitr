@@ -13,7 +13,7 @@ public class MutationType {
     @GlitrArguments({@GlitrArgument(name = "input", type = VideoMutationInput.class, nullable = false, defaultValue = "{default input}")})
     public VideoMutationPayload getSaveVideoInfoMutation(DataFetchingEnvironment env) {
         SaveVideoInfo saveVideoInfo = new SaveVideoInfo();
-        RelayMutationDataFetcher relayMutationDataFetcher = new RelayMutationDataFetcher(VideoMutationInput.class, null, saveVideoInfo);
+        RelayMutationDataFetcher relayMutationDataFetcher = new RelayMutationDataFetcher(VideoMutationInput.class, saveVideoInfo);
         return (VideoMutationPayload) relayMutationDataFetcher.get(env);
     }
 

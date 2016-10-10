@@ -1,6 +1,5 @@
 package com.nfl.glitr.registry.type
 
-import com.nfl.glitr.registry.type.Scalars
 import graphql.language.StringValue
 import spock.lang.Specification
 

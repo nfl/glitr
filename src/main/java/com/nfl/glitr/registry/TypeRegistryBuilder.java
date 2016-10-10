@@ -2,6 +2,7 @@ package com.nfl.glitr.registry;
 
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.glitr.relay.Relay;
+import com.nfl.glitr.relay.RelayConfig;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
@@ -24,8 +25,7 @@ public class TypeRegistryBuilder {
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
 
     private Relay relay = null;
-    private boolean explicitRelayNodeScanEnabled = false;
-
+    private boolean explicitRelayNodeScanEnabled = RelayConfig.EXPLICIT_RELAY_NODE_SCAN_DEFAULT;
 
     private TypeRegistryBuilder() {
     }

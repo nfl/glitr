@@ -3,7 +3,6 @@ package com.nfl.glitr.relay.type;
 import com.google.common.collect.Lists;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.relay.RelayHelper;
-import com.nfl.glitr.util.NodeUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrNonNull;
@@ -47,7 +46,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
 
         // e.g: for List<Thing>, we attempt to extract class `Thing`
         Type endEdgeType = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
-        Class endEdgeClass =  NodeUtil.getClassFromType(endEdgeType);
+        Class endEdgeClass =  ReflectionUtil.getClassFromType(endEdgeType);
 
         // find that class from the registry (or lookup if first time)
         GraphQLOutputType edgeGraphQLOutputType = (GraphQLOutputType) typeRegistry.convertToGraphQLOutputType(endEdgeType, endEdgeClass.getSimpleName());

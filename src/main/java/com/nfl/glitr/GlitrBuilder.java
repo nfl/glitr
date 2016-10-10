@@ -4,12 +4,14 @@ import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.TypeRegistryBuilder;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
-import com.nfl.glitr.relay.Relay;
+import com.nfl.glitr.relay.RelayConfig;
 import com.nfl.glitr.relay.RelayHelper;
-import com.nfl.glitr.relay.RelayImpl;
 import com.nfl.glitr.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
+import com.nfl.glitr.util.ObjectMapper;
 import graphql.schema.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.functions.Func4;
 
 import java.lang.annotation.Annotation;
@@ -22,23 +24,23 @@ import java.util.Map;
 
 public class GlitrBuilder {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlitrBuilder.class);
+
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
-    private Relay relay = null;
-    private boolean explicitRelayNodeScanEnabled = false;
-
+    private RelayConfig relayConfig = null;
     private Object queryRoot = null;
     private Object mutationRoot = null;
-
+    private ObjectMapper objectMapper = null;
 
     private GlitrBuilder() {
     }
 
-    public GlitrBuilder withRelay(Relay relay) {
-        this.relay = relay;
+    public GlitrBuilder withObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         return this;
     }
 
@@ -64,11 +66,6 @@ public class GlitrBuilder {
 
     public GlitrBuilder withAnnotationToGraphQLOutputTypeMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap) {
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
-        return this;
-    }
-
-    public GlitrBuilder withExplicitRelayNodeScan() {
-        this.explicitRelayNodeScanEnabled = true;
         return this;
     }
 
@@ -98,12 +95,17 @@ public class GlitrBuilder {
         return this;
     }
 
-    public static GlitrBuilder newGlitr() {
-        return new GlitrBuilder();
+    public GlitrBuilder withRelay(RelayConfig relayConfig) {
+        this.relayConfig = relayConfig;
+        return this;
     }
 
-    public static GlitrBuilder newGlitrWithRelaySupport() {
-        return new GlitrBuilder().withRelay(new RelayImpl());
+    public GlitrBuilder withRelay() {
+        return withRelay(RelayConfig.newRelayConfig().build());
+    }
+
+    public static GlitrBuilder newGlitr() {
+        return new GlitrBuilder();
     }
 
     public Glitr build() {
@@ -117,13 +119,18 @@ public class GlitrBuilder {
             this.addOverride(mutationRoot.getClass(), mutationRoot);
         }
 
-        if (relay != null) {
+        if (relayConfig != null) {
             return buildGlitrWithRelaySupport();
         }
         return buildGlitr();
     }
 
     private Glitr buildGlitr() {
+
+        if (objectMapper == null) {
+            logger.warn("No ObjectMapper instance has been registered.");
+        }
+
         // create TypeRegistry
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry()
                 .withAnnotationToArgumentsProviderMap(annotationToArgumentsProviderMap)
@@ -131,7 +138,6 @@ public class GlitrBuilder {
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
-                .withExplicitRelayNodeScan(explicitRelayNodeScanEnabled)
                 .build();
 
         // create GraphQL Schema
@@ -146,10 +152,15 @@ public class GlitrBuilder {
                 .mutation(mutationType)
                 .build(typeRegistry.getTypeDictionary());
 
-        return new Glitr(typeRegistry, null, schema);
+        return new Glitr(typeRegistry, schema, objectMapper);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
+
+        if (objectMapper == null) {
+            throw new IllegalArgumentException("No ObjectMapper instance has been registered. It's required to register one when using GLiTR with Relay");
+        }
+
         PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter();
         CustomFieldArgumentsFunc customFieldArgumentsFunc = new CustomFieldArgumentsFunc();
 
@@ -160,9 +171,9 @@ public class GlitrBuilder {
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
                 .withOverrides(overrides)
-                .withExplicitRelayNodeScan(explicitRelayNodeScanEnabled)
                 // add the relay extra features
-                .withRelay(relay)
+                .withExplicitRelayNodeScan(relayConfig.isExplicitRelayNodeScanEnabled())
+                .withRelay(relayConfig.getRelay())
                 .addCustomFieldOutputTypeFunc(GlitrForwardPagingArguments.class, pagingOutputTypeConverter)
                 .addCustomFieldArgumentsFunc(GlitrForwardPagingArguments.class, customFieldArgumentsFunc)
                 .build();
@@ -171,7 +182,7 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setTypeRegistry(typeRegistry);
 
         // instantiate RelayHelper
-        RelayHelper relayHelper = new RelayHelper(relay, typeRegistry);
+        RelayHelper relayHelper = new RelayHelper(relayConfig.getRelay(), typeRegistry);
 
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);
@@ -188,6 +199,6 @@ public class GlitrBuilder {
                 .mutation(mutationType)
                 .build(typeRegistry.getTypeDictionary());
 
-        return new Glitr(typeRegistry, relayHelper, schema);
+        return new Glitr(typeRegistry, schema, objectMapper, relayHelper);
     }
 }

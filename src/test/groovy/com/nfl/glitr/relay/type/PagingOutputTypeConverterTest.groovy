@@ -4,6 +4,7 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.QueryType
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments
 import com.nfl.glitr.annotation.GlitrNonNull
+import com.nfl.glitr.util.SerializationUtil
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import spock.lang.Specification
@@ -15,7 +16,11 @@ import java.lang.reflect.Method
 
 class PagingOutputTypeConverterTest extends Specification {
 
-    def glitr = GlitrBuilder.newGlitrWithRelaySupport().withQueryRoot(new QueryType()).build()
+    def glitr = GlitrBuilder.newGlitr()
+            .withRelay()
+            .withObjectMapper(SerializationUtil.objectMapper)
+            .withQueryRoot(new QueryType())
+            .build()
     def typeRegistry = glitr.typeRegistry
     def relayHelper = glitr.relayHelper
     def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter().setRelayHelper(relayHelper).setTypeRegistry(typeRegistry)

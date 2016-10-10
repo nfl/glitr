@@ -1,6 +1,5 @@
 package com.nfl.glitr.registry.type
 
-import com.nfl.glitr.registry.type.GraphQLEnumTypeFactory
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLType
 import spock.lang.Specification

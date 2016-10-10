@@ -6,6 +6,7 @@ import com.nfl.glitr.data.mutation.MutationType
 import com.nfl.glitr.data.mutation.VideoMutationIn
 import com.nfl.glitr.data.mutation.VideoMutationPayload
 import com.nfl.glitr.data.query.QueryType
+import com.nfl.glitr.util.SerializationUtil
 import graphql.GraphQL
 import graphql.schema.*
 import org.apache.commons.lang3.StringUtils
@@ -65,14 +66,16 @@ class TypeRegistryMutationIntegrationTest extends Specification {
 
     def "Perform a mutation against mutationType"() {
         setup:
-        Glitr glitr = GlitrBuilder.newGlitrWithRelaySupport()
+        Glitr glitr = GlitrBuilder.newGlitr()
+                .withRelay()
                 .withQueryRoot(new QueryType())
                 .withMutationRoot(new MutationType())
+                .withObjectMapper(SerializationUtil.objectMapper)
                 .build()
 
         GraphQL graphQL =  new GraphQL(glitr.getSchema());
         when:
-        def data = graphQL.execute("""
+        def result = graphQL.execute("""
             mutation {
                 saveVideoInfoMutation(input: {
                     clientMutationId: \"mutationId-Sx160620160639713-1\"
@@ -86,8 +89,11 @@ class TypeRegistryMutationIntegrationTest extends Specification {
                     }
                 }
             }
-        """).data;
+        """);
+        def data = result.data
+        def errors = result.errors
         then:
+        errors.empty
         (data as Map).saveVideoInfoMutation?.videoMutationPayload?.title == "My video title"
         (data as Map).saveVideoInfoMutation?.clientMutationId == "mutationId-Sx160620160639713-1"
     }

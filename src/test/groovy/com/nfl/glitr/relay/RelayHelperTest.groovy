@@ -2,11 +2,15 @@ package com.nfl.glitr.relay
 
 import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.QueryType
+import com.nfl.glitr.util.SerializationUtil
 import spock.lang.Specification
 
 class RelayHelperTest extends Specification {
 
-    def glitr = GlitrBuilder.newGlitrWithRelaySupport().withQueryRoot(new QueryType()).build()
+    def glitr = GlitrBuilder.newGlitr()
+            .withRelay()
+            .withObjectMapper(SerializationUtil.objectMapper)
+            .withQueryRoot(new QueryType()).build()
     def typeRegistry = glitr.typeRegistry
     def relayHelper = glitr.relayHelper
 

@@ -1,23 +1,25 @@
 description = "GLiTR"
 
-group = 'com.nfl.glitr'
-version = '1.3.0-SNAPSHOT'
+group = 'com.nfl.dm.shield'
+version = '1.0.0-RC'
+project.ext.app_name = 'glitr'
 
 buildscript {
     repositories {
-        maven {
-            url "http://nexus.la3.nfl.com/nexus/content/groups/public"
-        }
         mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
-        classpath 'com.nfl.dm.shield.gradle:shield-plugin:1.0.+'
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.1-rc3"
     }
 }
 
-apply plugin: 'com.nfl.dm.shield.gradle'
 apply plugin: 'idea'
 apply plugin: 'groovy'
+apply plugin: 'jacoco'
+apply plugin: 'org.sonarqube'
 
 jacoco {
     toolVersion = "0.7.5.201505241946"
@@ -30,9 +32,6 @@ targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
-    maven {
-        url "http://nexus.la3.nfl.com/nexus/content/groups/public"
-    }
     mavenCentral()
 }
 
@@ -62,8 +61,6 @@ dependencies {
 
 task testSpock(type: Test) {
     useJUnit()
-    systemProperty 'consul_hostname', 'la3devconsul01.dm.nfl.com'
-    systemProperty 'consul_folder', project.ext.appName
 }
 
 test.dependsOn 'testSpock'
@@ -79,6 +76,14 @@ sonarqube {
         property "sonar.jacoco.reportPath", "${project.buildDir}/jacoco/testSpock.exec"
         //noinspection GroovyAssignabilityCheck
         property "sonar.coverage.exclusions", "**/*Exception.java"
+        property "sonar.projectKey",  project.ext.app_name
+        property "sonar.projectName", project.ext.app_name
+        property "sonar.projectVersion", project.version
+        property "sonar.host.url", "http://sonar.dm.nfl.com/"
+        property "sonar.language", "java"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.java.coveragePlugin", "jacoco"
+        property "sonar.scm.provider", "git"
     }
 }
 

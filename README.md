@@ -2,7 +2,7 @@
 
 # GLiTR: GraphQL Lightweight Type Registry
 
-[![https://travis-ci.com/nfl/glitr.svg?token=Qo6bav9EZzhnpwg6Mz2z&branch=master][travis img]][travis]
+[![Build Status](https://travis-ci.com/nfl/glitr.svg?token=Qo6bav9EZzhnpwg6Mz2z&branch=master)](https://travis-ci.com/nfl/glitr)
 [![][maven img]][maven]
 [![][license img]][license]
 

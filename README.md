@@ -67,7 +67,7 @@ Further details on building can be found on the [Getting Started](https://github
 
 ## Examples 
 
-See [glitr-examples](https://github.com/NFL/glitr/tree/master/glitr-examples/src/main/java/com/nfl/dm/glitr/examples) for example implementation
+See [glitr-examples](https://github.com/nfl/glitr-examples) for example implementation
 
 ## Contact Info
 

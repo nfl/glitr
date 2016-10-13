@@ -77,4 +77,4 @@ See [glitr-examples](https://github.com/nfl/glitr-examples) for example implemen
 
 ## LICENSE
 
-GLiTR is license under the MIT License. See [LICENSE](LICENSE) for more details.
+GLiTR is licensed under the MIT License. See [LICENSE](LICENSE) for more details.

@@ -6,26 +6,6 @@
 
 A library that lets you use Plain Old Java Objects to describe your GraphQL schema.
 
-## Binaries
-
-Example for Maven:
-
-```xml
-<dependency>
-    <groupId>com.nfl.glitr</groupId>
-    <artifactId>glitr</artifactId>
-    <version>x.y.z</version>
-</dependency>
-```
-
-Example for gradle:
-
-```gradle
-compile("com.nfl.glitr:glitr:x.y.z")
-```
-
-Change history can be found here: [CHANGELOG.md](https://github.com/NFL/glitr/blob/master/CHANGELOG.md)
-
 ## How to use it
 
 This is the famous "hello world" in [graphql-java](https://github.com/graphql-java/graphql-java) with GLiTR:

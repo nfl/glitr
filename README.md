@@ -1,10 +1,8 @@
 <img src="http://static.nfl.com/static/content/public/static/img/logos/nfl-engineering-light.svg" width="300" />
 
-# GLiTR: GraphQL Lightweight Type Registry
+# GLiTR
 
 [![Build Status](https://travis-ci.com/nfl/glitr.svg?token=Qo6bav9EZzhnpwg6Mz2z&branch=master)](https://travis-ci.com/nfl/glitr)
-[![][maven img]][maven]
-[![][license img]][license]
 
 A library that let you use Plain Old Java Objects to describe your GraphQL schema.
 

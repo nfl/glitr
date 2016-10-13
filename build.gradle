@@ -1,7 +1,7 @@
 description = "GLiTR"
 
 group = 'com.nfl.dm.shield'
-version = '1.0.0-RC'
+version = '1.0.0'
 project.ext.app_name = 'glitr'
 
 buildscript {

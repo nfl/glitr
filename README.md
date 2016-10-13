@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.com/nfl/glitr.svg?token=Qo6bav9EZzhnpwg6Mz2z&branch=master)](https://travis-ci.com/nfl/glitr)
 
-A library that let you use Plain Old Java Objects to describe your GraphQL schema.
+A library that lets you use Plain Old Java Objects to describe your GraphQL schema.
 
 ## Binaries
 

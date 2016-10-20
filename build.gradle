@@ -1,6 +1,6 @@
 description = "GLiTR"
 
-group = 'com.nfl.dm.shield'
+group = 'com.nfl.glitr'
 version = '1.0.0'
 project.ext.app_name = 'glitr'
 

@@ -1,11 +1,11 @@
-description = "GLiTR"
-
 group = 'com.nfl.glitr'
 version = '1.0.0'
 project.ext.app_name = 'glitr'
+description = "A library that lets you use Plain Old Java Objects to describe your GraphQL schema."
 
 buildscript {
     repositories {
+        jcenter()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -13,6 +13,7 @@ buildscript {
     }
     dependencies {
         classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.1-rc3"
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
     }
 }
 
@@ -20,6 +21,10 @@ apply plugin: 'idea'
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
 apply plugin: 'org.sonarqube'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 jacoco {
     toolVersion = "0.7.5.201505241946"
@@ -94,12 +99,77 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
+
 sourceSets {
     //tell gradle where the resource folders (used for inclusion in the jar too)
     main {
         resources.srcDirs = ["src/main/resources", "generatedsources/"]
     }
 }
+
+publishing {
+    publications {
+        glitr(MavenPublication) {
+            from components.java
+            groupId project.group
+            artifactId project.name
+            version version
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name project.name
+                    description project.description
+                    url 'https://github.com/nfl/glitr'
+                    scm {
+                        url 'https://github.com/nfl/glitr'
+                        connection 'https://github.com/nfl/glitr'
+                        developerConnection 'https://github.com/nfl/glitr'
+                    }
+                    licenses {
+                        license {
+                            name 'MIT'
+                            url 'https://github.com/nfl/glitr/blob/master/LICENSE'
+                            distribution 'repo'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    user = System.getenv('BINTRAY_USER') ?: project.findProperty('bintray.user')
+    key = System.getenv('BINTRAY_KEY') ?: project.findProperty('bintray.key')
+    publications = ['glitr']
+    publish = true
+    pkg {
+        repo = 'maven'
+        name = 'glitr'
+        userOrg = 'nfl'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/nfl/glitr'
+        version {
+            name = project.version
+            desc = project.description
+            released  = new Date()
+            vcsTag = 'v'+ project.version
+            gpg {
+                sign = true
+            }
+            mavenCentralSync {
+                user = System.getenv('SONATYPE_USERNAME') ?: project.findProperty('sonatype.username')
+                password = System.getenv('SONATYPE_PASSWORD') ?: project.findProperty('sonatype.password')
+            }
+        }
+    }
+}
+
+// all publish tasks depend on the build task
+tasks.withType(PublishToMavenRepository) {
+    dependsOn build
+}
+
 
 jar {
     from "LICENSE"

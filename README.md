@@ -31,8 +31,7 @@ public class HelloWorld {
 
         Map<String, Object> result = (Map<String, Object>) graphQL.execute("{hello}").getData();
 
-        System.out.println(result);
-        // Prints: {hello=World!}
+        System.out.println(result); // Prints: {hello=World!}
     }
 
     @GlitrDescription("Where it all begins.")

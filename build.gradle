@@ -140,6 +140,16 @@ publishing {
                             distribution 'repo'
                         }
                     }
+                    developers {
+                        developer {
+                            id 'tinnou'
+                            name 'Antoine Boyer'
+                        }
+                        developer {
+                            id 'vaant'
+                            name 'Arash Shokoufandeh'
+                        }
+                    }
                 }
             }
         }

@@ -2,9 +2,29 @@
 
 # GLiTR
 
-[![Build Status](https://travis-ci.org/nfl/glitr.svg?branch=master)](https://travis-ci.org/nfl/glitr) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nfl.glitr/glitr/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.nfl.glitr/glitr) [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/nfl/glitr/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/nfl/glitr.svg?branch=master)](https://travis-ci.org/nfl/glitr) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.nfl.glitr/glitr/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.nfl.glitr/glitr) [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/nfl/glitr/blob/master/LICENSE)
 
 A library that lets you use Plain Old Java Objects to describe your GraphQL schema.
+
+## Binaries
+
+Example for Maven:
+
+```xml
+<dependency>
+    <groupId>com.nfl.glitr</groupId>
+    <artifactId>glitr</artifactId>
+    <version>x.y.z</version>
+</dependency>
+```
+
+Example for gradle:
+
+```gradle
+compile("com.nfl.glitr:glitr:x.y.z")
+```
+
+Change history can be found here: [CHANGELOG.md](https://github.com/nfl/glitr/blob/master/CHANGELOG.md)
 
 ## How to use it
 

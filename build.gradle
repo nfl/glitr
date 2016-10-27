@@ -109,7 +109,7 @@ sourceSets {
 
 publishing {
     publications {
-        glitr(MavenPublication) {
+        projectPublish(MavenPublication) {
             from components.java
             groupId project.group
             artifactId project.name
@@ -127,16 +127,16 @@ publishing {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     name project.name
                     description project.description
-                    url 'https://github.com/nfl/glitr'
+                    url PROJECT_GITHUB_REPO_URL
                     scm {
-                        url 'https://github.com/nfl/glitr'
-                        connection 'https://github.com/nfl/glitr'
-                        developerConnection 'https://github.com/nfl/glitr'
+                        url PROJECT_GITHUB_REPO_URL
+                        connection PROJECT_GITHUB_REPO_URL
+                        developerConnection PROJECT_GITHUB_REPO_URL
                     }
                     licenses {
                         license {
                             name 'MIT'
-                            url 'https://github.com/nfl/glitr/blob/master/LICENSE'
+                            url PROJECT_LICENSE_URL
                             distribution 'repo'
                         }
                     }
@@ -159,14 +159,14 @@ publishing {
 bintray {
     user = System.getenv('BINTRAY_USER') ?: project.findProperty('bintray.user')
     key = System.getenv('BINTRAY_KEY') ?: project.findProperty('bintray.key')
-    publications = ['glitr']
+    publications = ['projectPublish']
     publish = true
     pkg {
         repo = 'maven'
         name = 'glitr'
         userOrg = 'nfl'
         licenses = ['MIT']
-        vcsUrl = 'https://github.com/nfl/glitr'
+        vcsUrl = PROJECT_GITHUB_REPO_URL
         version {
             name = project.version
             desc = project.description
@@ -176,6 +176,7 @@ bintray {
                 sign = true
             }
             mavenCentralSync {
+                sync = System.getenv('MAVEN_CENTRAL_SYNC') ?: project.findProperty('maven.central.sync')
                 user = System.getenv('SONATYPE_USERNAME') ?: project.findProperty('sonatype.username')
                 password = System.getenv('SONATYPE_PASSWORD') ?: project.findProperty('sonatype.password')
             }

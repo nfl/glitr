@@ -26,6 +26,51 @@ compile("com.nfl.glitr:glitr:x.y.z")
 
 Change history can be found here: [CHANGELOG.md](https://github.com/nfl/glitr/blob/master/CHANGELOG.md)
 
+### How to use the latest build with Gradle
+
+Add the repositories:
+
+```groovy
+repositories {
+    maven { url  "http://dl.bintray.com/nfl/maven" }
+}
+```
+
+Dependency:
+
+```groovy
+dependencies {
+  compile 'com.nfl.glitr:INSERT_LATEST_VERSION_HERE'
+}
+```
+
+### How to use the latest build with Maven
+
+Add the repository:
+
+```xml
+<repository>
+    <snapshots>
+        <enabled>false</enabled>
+    </snapshots>
+    <id>bintray-nfl-maven</id>
+    <name>bintray</name>
+    <url>http://dl.bintray.com/nfl/maven</url>
+</repository>
+
+```
+
+Dependency:
+
+```xml
+<dependency>
+    <groupId>com.nfl.glitr</groupId>
+    <artifactId>glitr</artifactId>
+    <version>INSERT_LATEST_VERSION_HERE</version>
+</dependency>
+
+```
+
 ## How to use it
 
 This is the famous "hello world" in [graphql-java](https://github.com/graphql-java/graphql-java) with GLiTR:

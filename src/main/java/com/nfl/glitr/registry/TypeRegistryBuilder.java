@@ -27,6 +27,7 @@ public class TypeRegistryBuilder {
     private Relay relay = null;
     private boolean explicitRelayNodeScanEnabled = RelayConfig.EXPLICIT_RELAY_NODE_SCAN_DEFAULT;
 
+
     private TypeRegistryBuilder() {
     }
 

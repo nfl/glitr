@@ -36,6 +36,7 @@ public class GlitrBuilder {
     private Object mutationRoot = null;
     private ObjectMapper objectMapper = null;
 
+
     private GlitrBuilder() {
     }
 

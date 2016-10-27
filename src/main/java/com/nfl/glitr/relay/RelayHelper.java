@@ -18,6 +18,7 @@ public class RelayHelper {
 
     private final TypeRegistry typeRegistry;
 
+
     public RelayHelper(Relay relay, TypeRegistry typeRegistry) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(typeRegistry.getNodeInterface(), "NodeInterface can't be null");

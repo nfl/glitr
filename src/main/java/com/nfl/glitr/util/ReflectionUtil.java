@@ -22,7 +22,6 @@ public class ReflectionUtil {
     public final static String NAME_PREFIX = "class ";
 
 
-
     public static  String getClassName(Type type) {
         String fullName = type.toString();
         if (fullName.startsWith(NAME_PREFIX)) {

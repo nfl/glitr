@@ -6,6 +6,7 @@ public class RelayConfig {
     private final Relay relay;
     private final boolean explicitRelayNodeScanEnabled;
 
+
     private RelayConfig(Relay relay, boolean explicitRelayNodeScanEnabled) {
         this.relay = relay;
         this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
@@ -38,7 +39,6 @@ public class RelayConfig {
             return new RelayConfig(relay, explicitRelayNodeScanEnabled);
         }
     }
-
 
     public Relay getRelay() {
         return relay;

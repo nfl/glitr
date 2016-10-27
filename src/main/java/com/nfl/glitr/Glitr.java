@@ -16,15 +16,14 @@ public class Glitr {
     private GraphQLSchema schema;
     private static ObjectMapper objectMapper;
 
+
     Glitr(TypeRegistry typeRegistry, GraphQLSchema schema) {
         this(typeRegistry, schema, null);
     }
 
-
     Glitr(TypeRegistry typeRegistry, GraphQLSchema schema, @Nullable ObjectMapper objectMapper) {
         this(typeRegistry, schema, objectMapper, null);
     }
-
 
     Glitr(TypeRegistry typeRegistry, GraphQLSchema schema, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");

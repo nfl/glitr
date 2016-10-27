@@ -1,6 +1,7 @@
+import java.text.SimpleDateFormat
+
 group = 'com.nfl.glitr'
-version = '1.0.0'
-project.ext.app_name = 'glitr'
+version = System.getenv('TRAVIS_TAG') ? PROJECT_VERSION : PROJECT_VERSION + '-' + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 description = "A library that lets you use Plain Old Java Objects to describe your GraphQL schema."
 
 buildscript {
@@ -163,7 +164,7 @@ bintray {
     publish = true
     pkg {
         repo = 'maven'
-        name = 'glitr'
+        name = project.name
         userOrg = 'nfl'
         licenses = ['MIT']
         vcsUrl = PROJECT_GITHUB_REPO_URL
@@ -176,7 +177,7 @@ bintray {
                 sign = true
             }
             mavenCentralSync {
-                sync = System.getenv('MAVEN_CENTRAL_SYNC') ?: project.findProperty('maven.central.sync')
+                sync = project.property('maven.central.sync')
                 user = System.getenv('SONATYPE_USERNAME') ?: project.findProperty('sonatype.username')
                 password = System.getenv('SONATYPE_PASSWORD') ?: project.findProperty('sonatype.password')
             }

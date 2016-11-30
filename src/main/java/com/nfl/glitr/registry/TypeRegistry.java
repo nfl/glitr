@@ -241,7 +241,7 @@ public class TypeRegistry implements TypeResolver {
 
         // Default values need to match type so we replace our default String with null
         Object defaultValue = null;
-        if (!arg.defaultValue().equalsIgnoreCase("No Default Value")) {
+        if (!arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE)) {
             defaultValue = arg.defaultValue();
         }
 

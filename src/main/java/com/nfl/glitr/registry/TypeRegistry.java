@@ -151,7 +151,7 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
-     * Check if the given class if found the registry, if not, first create it ({@link GraphQLInputType}), next add it
+     * Check if the given class is found in the registry, if not, first create it ({@link GraphQLInputType}), then add it
      * to the registry
      *
      * @param clazz class on which to preform input introspection
@@ -239,11 +239,17 @@ public class TypeRegistry implements TypeResolver {
             inputType = new GraphQLNonNull(inputType);
         }
 
+        // Default values need to match type so we replace our default String with null
+        Object defaultValue = null;
+        if (!arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE)) {
+            defaultValue = arg.defaultValue();
+        }
+
         return newArgument()
                 .name(arg.name())
                 .description(arg.description())
                 .type(inputType)
-                .defaultValue(arg.defaultValue())
+                .defaultValue(defaultValue)
                 .build();
     }
 
@@ -419,7 +425,7 @@ public class TypeRegistry implements TypeResolver {
         GraphQLOutputType graphQLOutputType;
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
 
-        graphQLOutputType = getGraphQLOutputTypeFromAnnotationsOnGetter(declaringClass, method, null);
+        graphQLOutputType = getGraphQLOutputTypeFromAnnotationsOnGetter(declaringClass, method);
         graphQLOutputType = getGraphQLOutputTypeFromAnnotationsOnField(declaringClass, method, graphQLOutputType, name);
 
         // default OutputType
@@ -468,7 +474,8 @@ public class TypeRegistry implements TypeResolver {
         return field;
     }
 
-    private GraphQLOutputType getGraphQLOutputTypeFromAnnotationsOnGetter(Class declaringClass, Method method, GraphQLOutputType graphQLOutputType) {
+    private GraphQLOutputType getGraphQLOutputTypeFromAnnotationsOnGetter(Class declaringClass, Method method) {
+        GraphQLOutputType graphQLOutputType = null;
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
         for (Annotation annotation: methodAnnotations) {
             // custom OutputType

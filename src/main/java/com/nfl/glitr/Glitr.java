@@ -3,6 +3,7 @@ package com.nfl.glitr;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.util.ObjectMapper;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import javax.annotation.Nullable;
@@ -17,21 +18,17 @@ public class Glitr {
     private static ObjectMapper objectMapper;
 
 
-    Glitr(TypeRegistry typeRegistry, GraphQLSchema schema) {
-        this(typeRegistry, schema, null);
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot) {
+        this(typeRegistry, queryRoot, objectMapper, null, mutationRoot);
     }
 
-    Glitr(TypeRegistry typeRegistry, GraphQLSchema schema, @Nullable ObjectMapper objectMapper) {
-        this(typeRegistry, schema, objectMapper, null);
-    }
-
-    Glitr(TypeRegistry typeRegistry, GraphQLSchema schema, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper) {
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
-        assertNotNull(schema, "GraphQLSchema can't be null");
+        assertNotNull(typeRegistry, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
-        this.schema = schema;
         Glitr.objectMapper = objectMapper;
+        this.schema = buildSchema(queryRoot, mutationRoot);
     }
 
     public TypeRegistry getTypeRegistry() {
@@ -52,5 +49,25 @@ public class Glitr {
             throw new RuntimeException("Serialization Impossible. Can't find an ObjectMapper implementation. Please configure GLiTR to use an ObjectMapper.");
         }
         return objectMapper;
+    }
+
+    private GraphQLSchema buildSchema(Class queryRoot, Class mutationRoot) {
+        // create GraphQL Schema
+        GraphQLObjectType mutationType = null;
+        if (mutationRoot != null) {
+            mutationType = typeRegistry.createRelayMutationType(mutationRoot);
+        }
+
+        GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot);
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .mutation(mutationType)
+                .build(typeRegistry.getTypeDictionary());
+        return schema;
+    }
+
+    public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot) {
+        this.schema = buildSchema(queryRoot, mutationRoot);
+        return this.schema;
     }
 }

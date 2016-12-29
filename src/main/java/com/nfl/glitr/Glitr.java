@@ -24,7 +24,7 @@ public class Glitr {
 
     public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
-        assertNotNull(typeRegistry, "queryRoot class can't be null");
+        assertNotNull(queryRoot, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
         Glitr.objectMapper = objectMapper;

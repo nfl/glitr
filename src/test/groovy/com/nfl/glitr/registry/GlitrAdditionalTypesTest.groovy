@@ -1,0 +1,33 @@
+package com.nfl.glitr.registry
+
+import com.nfl.glitr.Glitr
+import com.nfl.glitr.GlitrBuilder
+import com.nfl.glitr.data.query.additionalTypes.Cyborg
+import com.nfl.glitr.data.query.additionalTypes.Man
+import com.nfl.glitr.data.query.additionalTypes.QueryRoot
+import com.nfl.glitr.util.SerializationUtil
+import spock.lang.Specification
+
+class GlitrAdditionalTypesTest extends Specification {
+
+    def "Register Additional types"() {
+        when: "first discovery"
+        Glitr glitr = GlitrBuilder.newGlitr()
+                .withObjectMapper(SerializationUtil.objectMapper)
+                .withQueryRoot(new QueryRoot())
+                .build()
+        then: "incidentally Man and Cyborg by default have not been discovered"
+        glitr.typeRegistry.getType(new Man()) == null
+        glitr.typeRegistry.getType(new Cyborg()) == null
+
+        when: "add additional types to type registry and reload the schema"
+        glitr.typeRegistry.lookup(Man.class)
+        glitr.typeRegistry.lookup(Cyborg.class)
+        glitr.reloadSchema(QueryRoot.class, null)
+        then: "Man and Cyborg are now part of the schema"
+        glitr.typeRegistry.getType(new Man()) != null
+        glitr.typeRegistry.getType(new Cyborg()) != null
+        glitr.schema.getType(Man.class.simpleName) != null
+        glitr.schema.getType(Cyborg.class.simpleName) != null
+    }
+}

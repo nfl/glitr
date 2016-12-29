@@ -141,19 +141,9 @@ public class GlitrBuilder {
                 .withOverrides(overrides)
                 .build();
 
-        // create GraphQL Schema
-        GraphQLObjectType mutationType = null;
-        if (mutationRoot != null) {
-            mutationType = typeRegistry.createRelayMutationType(mutationRoot.getClass());
-        }
+        Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot.getClass());
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(queryType)
-                .mutation(mutationType)
-                .build(typeRegistry.getTypeDictionary());
-
-        return new Glitr(typeRegistry, schema, objectMapper);
+        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, null, mutationRootClass);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
@@ -188,18 +178,8 @@ public class GlitrBuilder {
         // init RelayHelper on the converters
         pagingOutputTypeConverter.setRelayHelper(relayHelper);
 
-        // create GraphQL Schema
-        GraphQLObjectType mutationType = null;
-        if (mutationRoot != null) {
-            mutationType = typeRegistry.createRelayMutationType(mutationRoot.getClass());
-        }
+        Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot.getClass());
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(queryType)
-                .mutation(mutationType)
-                .build(typeRegistry.getTypeDictionary());
-
-        return new Glitr(typeRegistry, schema, objectMapper, relayHelper);
+        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, relayHelper, mutationRootClass);
     }
 }

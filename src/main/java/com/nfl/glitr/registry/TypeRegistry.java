@@ -538,6 +538,10 @@ public class TypeRegistry implements TypeResolver {
         } else if (type instanceof ParameterizedType) {
             return getGraphQLTypeForOutputParameterizedType(type, name, fromInterface);
         } else if (((Class) type).isArray()) {
+            // ids is also magical
+            if (name != null && name.equals("ids")) {
+                return new GraphQLList(GraphQLID);
+            }
             return createListOutputTypeFromArrayType(type, fromInterface);
         } else if (fromInterface) { // to avoid circular references we will process the Interface field type later
             return new GraphQLTypeReference(((Class) type).getSimpleName());
@@ -580,6 +584,10 @@ public class TypeRegistry implements TypeResolver {
         } else if (type instanceof ParameterizedType) {
             return getGraphQLTypeForInputParameterizedType(type);
         } else if (((Class) type).isArray()) {
+            // ids is also magical
+            if (name != null && name.equals("ids")) {
+                return new GraphQLList(GraphQLID);
+            }
             return createListInputTypeFromArrayType(type);
         }
         return lookupInput((Class) type);

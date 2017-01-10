@@ -23,12 +23,13 @@ class TypeRegistryIntegrationTest extends Specification {
         then:
         type.name == QueryType.class.getSimpleName()
         type.description == "No Description"
+
         // Relay Identifiable field
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "node"
         fieldDef.description == "No Description"
         fieldDef.type instanceof GraphQLInterfaceType
-        def GraphQLInterfaceType fieldDefType = (GraphQLInterfaceType) fieldDef.type
+        GraphQLInterfaceType fieldDefType = (GraphQLInterfaceType) fieldDef.type
         fieldDefType.name == "Node"
         fieldDefType.description == "An object with an ID"
         fieldDefType.fieldDefinitions.size() == 1
@@ -40,12 +41,30 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType.name == "ID"
         inputWrappedType.description == "Built-in ID"
 
+        // Nodes field
+        def fieldDef1 = type.fieldDefinitions[1]
+        fieldDef1.name == "nodes"
+        fieldDef1.description == "No Description"
+        fieldDef1.type instanceof GraphQLList
+        GraphQLList fieldDefType1 = (GraphQLList) fieldDef1.type
+        GraphQLInterfaceType wrappedType = (GraphQLInterfaceType) fieldDefType1.wrappedType
+        wrappedType.name == "Node"
+        wrappedType.description == "An object with an ID"
+        wrappedType.fieldDefinitions.size() == 1
+        def input1 = (GraphQLArgument) fieldDef1.arguments[0]
+        input1.name == "ids"
+        input1.description == "No Description"
+        input1.type instanceof GraphQLNonNull
+        def inputWrappedType1 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
+        inputWrappedType1.name == "ID"
+        inputWrappedType1.description == "Built-in ID"
+
         // Video field
-        def fieldDef2 = type.fieldDefinitions[1]
+        def fieldDef2 = type.fieldDefinitions[2]
         fieldDef2.name == "video"
         fieldDef2.description == "No Description"
         fieldDef2.type instanceof GraphQLObjectType
-        def GraphQLObjectType fieldDefType2 = (GraphQLObjectType) fieldDef2.type
+        GraphQLObjectType fieldDefType2 = (GraphQLObjectType) fieldDef2.type
         fieldDefType2.name == "Video"
         fieldDefType2.description == "No Description"
         fieldDefType2.fieldDefinitions.size() == 5
@@ -58,12 +77,12 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType2.description == "Built-in ID"
 
         // Videos field
-        def fieldDef3 = type.fieldDefinitions[2]
+        def fieldDef3 = type.fieldDefinitions[3]
         fieldDef3.name == "videos"
         fieldDef3.description == "No Description"
         fieldDef3.arguments.name as Set == ["first", "after"] as Set
         fieldDef3.type instanceof GraphQLObjectType
-        def GraphQLObjectType fieldDefType3 = (GraphQLObjectType) fieldDef3.type
+        GraphQLObjectType fieldDefType3 = (GraphQLObjectType) fieldDef3.type
         fieldDefType3.name == "VideoConnection"
         fieldDefType3.description == "A connection to a list of items."
         fieldDefType3.fieldDefinitions.size() == 2

@@ -20,4 +20,7 @@ public class QueryType {
 
     @GlitrArgument(name = "id", type = String.class, nullable = false)
     public com.nfl.glitr.relay.Node getNode() { return null; }
+
+    @GlitrArgument(name = "ids", type = String[].class, nullable = false)
+    public List<com.nfl.glitr.relay.Node> getNodes() { return null; }
 }

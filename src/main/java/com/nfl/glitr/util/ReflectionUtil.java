@@ -85,11 +85,23 @@ public class ReflectionUtil {
                 .collect(Collectors.toMap(Method::getName, eligibleMethod -> Pair.of(eligibleMethod, eligibleMethod.getDeclaringClass()))));
     }
 
+    /**
+     * Strip a string from the prefix `get` or `is` and un-capitalize.
+     * @param name usually a getter name. e.g: `getTitle`
+     * @return sanitized name `title`
+     */
     public static String sanitizeMethodName(String name) {
-        return StringUtils.uncapitalize(
-                name.startsWith("is")
-                        ? name.substring(2)
-                        : name.substring(3));
+
+        String sanitized;
+        if (name.startsWith("is")) {
+            sanitized = name.substring(2);
+        } else if (name.startsWith("get")) {
+            sanitized = name.substring(3);
+        } else {
+            sanitized = name;
+        }
+
+        return StringUtils.uncapitalize(sanitized);
     }
 
     public static Type getActualTypeArgumentFromType(ParameterizedType parameterizedType) {

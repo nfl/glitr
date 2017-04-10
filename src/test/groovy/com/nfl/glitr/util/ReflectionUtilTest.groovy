@@ -1,7 +1,6 @@
 package com.nfl.glitr.util
 
 import com.nfl.glitr.annotation.GlitrIgnore
-import com.nfl.glitr.util.ReflectionUtil
 import spock.lang.Specification
 
 class ReflectionUtilTest extends Specification {
@@ -28,15 +27,15 @@ class ReflectionUtilTest extends Specification {
         ReflectionUtil.eligibleMethod(Video.getMethod(methodName)) == eligible
 
         where:
-        methodName                                      || eligible
-        "getTitle"                                      || true
-        "getId"                                         || true
-        "isValid"                                       || true
-        "nonGetterMethod"                               || false
-        "getTitleWithGlitrIgnoreOnField"                || false
-        "getTitleWithGlitrIgnoreOnGetter"               || false
-        "getTitleWithGlitrIgnoreOnBothFieldAndGetter"   || false
-        "getMap"                                        || false
+        methodName                                    || eligible
+        "getTitle"                                    || true
+        "getId"                                       || true
+        "isValid"                                     || true
+        "nonGetterMethod"                             || false
+        "getTitleWithGlitrIgnoreOnField"              || false
+        "getTitleWithGlitrIgnoreOnGetter"             || false
+        "getTitleWithGlitrIgnoreOnBothFieldAndGetter" || false
+        "getMap"                                      || false
     }
 
     class Video {
@@ -83,5 +82,21 @@ class ReflectionUtilTest extends Specification {
         def Map getMap() {
             return null
         }
+    }
+
+
+    def "check sanitizeMethodName works properly, (can accept short method names)"() {
+        expect:
+        ReflectionUtil.sanitizeMethodName(methodName) == sanitized
+
+        where:
+        methodName            || sanitized
+        "getId"               || "id"
+        "isEnabled"           || "enabled"
+        "getVIDEO"            || "vIDEO"
+        "l"                   || "l"
+        "or"                  || "or"
+        "and"                 || "and"
+        "aVeryLongMethodName" || "aVeryLongMethodName"
     }
 }

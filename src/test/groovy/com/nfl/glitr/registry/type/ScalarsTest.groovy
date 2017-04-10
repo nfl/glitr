@@ -30,6 +30,7 @@ public class ScalarsTest extends Specification {
         Instant.parse("2016-01-08T00:32:09.132Z")       | "2016-01-08T00:32:09.132Z"
         Instant.ofEpochMilli(1454362550000l)            | "2016-02-01T21:35:50.000Z"
         ZonedDateTime.parse("2016-01-08T00:32:09.132Z") | "2016-01-08T00:32:09.132Z"
+        "2016-01-08T00:32:09.132Z"                           | "2016-01-08T00:32:09.132Z"
         null                                            | null
     }
 

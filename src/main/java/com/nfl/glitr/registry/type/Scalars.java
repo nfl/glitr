@@ -41,6 +41,17 @@ public class Scalars {
                 return formatter.format(time);
             }
 
+            if (input instanceof String) {
+                String time = (String) input;
+
+                try {
+                    Instant instant = Instant.parse(time);
+                    return serialize(instant);
+                } catch (RuntimeException ex) {
+                    // let the exception get thrown
+                }
+            }
+
             throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString());
         }
 

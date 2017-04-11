@@ -91,7 +91,7 @@ public class GlitrBuilder {
         return this;
     }
 
-    public GlitrBuilder addJavaTypeAsScalar(Class clazz, GraphQLScalarType scalarType) {
+    public GlitrBuilder addCustomScalar(Class clazz, GraphQLScalarType scalarType) {
         if (javaTypeDeclaredAsScalarMap.containsKey(clazz)) {
             throw new IllegalArgumentException("Attempted to register an existing Java type as a Scalar." +
                     " You have previously registered the following Java type "+ clazz.getName() +

@@ -13,7 +13,7 @@ class GlitrRegisterAdditionalScalars extends Specification {
         when: "first discovery"
         Glitr glitr = GlitrBuilder.newGlitr()
                 .withQueryRoot(new Root())
-                .addJavaTypeAsScalar(CustomScalar.class, Scalars.GraphQLString)
+                .addCustomScalar(CustomScalar.class, Scalars.GraphQLString)
                 .build()
         then: "make sure the scalar has been registered correctly as a GraphQLString"
         glitr.typeRegistry.getType(new Root()).getFieldDefinition("scalar").type.name == Scalars.GraphQLString.name
@@ -23,8 +23,8 @@ class GlitrRegisterAdditionalScalars extends Specification {
         when: "first discovery"
         Glitr glitr = GlitrBuilder.newGlitr()
                 .withQueryRoot(new Root())
-                .addJavaTypeAsScalar(CustomScalar.class, Scalars.GraphQLString)
-                .addJavaTypeAsScalar(CustomScalar.class, Scalars.GraphQLInt)
+                .addCustomScalar(CustomScalar.class, Scalars.GraphQLString)
+                .addCustomScalar(CustomScalar.class, Scalars.GraphQLInt)
                 .build()
         then: "make sure Glitr doesn't let the user attempt to register two scalars for the same java type."
         def e = thrown(IllegalArgumentException)

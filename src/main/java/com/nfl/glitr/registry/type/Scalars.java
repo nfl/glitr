@@ -41,6 +41,16 @@ public class Scalars {
                 return formatter.format(time);
             }
 
+            if (input instanceof String) {
+                try {
+                    String time = (String) input;
+                    Instant instant = Instant.parse(time);
+                    return serialize(instant);
+                } catch (RuntimeException ex) {
+                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDateTime with value "+input.toString()+". Value likely of an unsupported format.", ex);
+                }
+            }
+
             throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString());
         }
 
@@ -95,7 +105,17 @@ public class Scalars {
                 return formatter.format(time);
             }
 
-            throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString());
+            if (input instanceof String) {
+                try {
+                    String time = (String) input;
+                    Instant instant = Instant.parse(time);
+                    return serialize(instant);
+                } catch (RuntimeException ex) {
+                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDate with value "+input.toString()+". Value likely of an unsupported format.", ex);
+                }
+            }
+
+            throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+input.toString());
         }
 
         @Override

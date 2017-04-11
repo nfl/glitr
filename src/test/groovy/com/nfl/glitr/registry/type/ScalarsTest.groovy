@@ -30,6 +30,7 @@ public class ScalarsTest extends Specification {
         Instant.parse("2016-01-08T00:32:09.132Z")       | "2016-01-08T00:32:09.132Z"
         Instant.ofEpochMilli(1454362550000l)            | "2016-02-01T21:35:50.000Z"
         ZonedDateTime.parse("2016-01-08T00:32:09.132Z") | "2016-01-08T00:32:09.132Z"
+        "2016-01-08T00:32:09.132Z"                      | "2016-01-08T00:32:09.132Z"
         null                                            | null
     }
 
@@ -42,7 +43,7 @@ public class ScalarsTest extends Specification {
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.getMessage() == "Can't serialize type class java.lang.String with value "+ input
+        e.getMessage() == "Failed to parse/serialize GraphQLDateTime with value "+input+". Value likely of an unsupported format."
     }
 
 
@@ -67,6 +68,7 @@ public class ScalarsTest extends Specification {
         Instant.ofEpochMilli(1454362550000l)            | "2016-02-01"
         ZonedDateTime.parse("2016-01-08T00:32:09.132Z") | "2016-01-08"
         LocalDate.of(2015, 01, 01)                      | "2015-01-01"
+        "2016-01-08T00:32:09.132Z"                      | "2016-01-08"
         null                                            | null
     }
 
@@ -79,6 +81,6 @@ public class ScalarsTest extends Specification {
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.getMessage() == "Can't serialize type class java.lang.String with value "+ input
+        e.getMessage() == "Failed to parse/serialize GraphQLDate with value "+input+". Value likely of an unsupported format."
     }
 }

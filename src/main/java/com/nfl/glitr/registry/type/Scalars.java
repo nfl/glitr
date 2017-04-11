@@ -47,7 +47,7 @@ public class Scalars {
                     Instant instant = Instant.parse(time);
                     return serialize(instant);
                 } catch (RuntimeException ex) {
-                    throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString(), ex);
+                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDateTime with value "+input.toString()+". Value likely of an unsupported format.", ex);
                 }
             }
 
@@ -111,11 +111,11 @@ public class Scalars {
                     Instant instant = Instant.parse(time);
                     return serialize(instant);
                 } catch (RuntimeException ex) {
-                    throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString(), ex);
+                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDate with value "+input.toString()+". Value likely of an unsupported format.", ex);
                 }
             }
 
-            throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString());
+            throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+input.toString());
         }
 
         @Override

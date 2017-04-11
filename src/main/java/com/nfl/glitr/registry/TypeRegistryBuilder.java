@@ -6,6 +6,7 @@ import com.nfl.glitr.relay.RelayConfig;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import rx.functions.Func4;
 
 import java.lang.annotation.Annotation;
@@ -23,6 +24,8 @@ public class TypeRegistryBuilder {
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
+    private Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap = new HashMap<>();
+
 
     private Relay relay = null;
     private boolean explicitRelayNodeScanEnabled = RelayConfig.EXPLICIT_RELAY_NODE_SCAN_DEFAULT;
@@ -71,6 +74,11 @@ public class TypeRegistryBuilder {
         return this;
     }
 
+    public TypeRegistryBuilder withJavaTypesDeclaredAsScalarMap(Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap) {
+        this.javaTypeDeclaredAsScalarMap = javaTypeDeclaredAsScalarMap;
+        return this;
+    }
+
     public TypeRegistryBuilder addOverride(Class clazz, Object overrideObject) {
         overrides.putIfAbsent(clazz, new ArrayList<>());
         overrides.get(clazz).add(overrideObject);
@@ -87,6 +95,6 @@ public class TypeRegistryBuilder {
     }
 
     public TypeRegistry build() {
-        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToDataFetcherMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, relay, explicitRelayNodeScanEnabled);
+        return new TypeRegistry(overrides, annotationToDataFetcherFactoryMap, annotationToDataFetcherMap, annotationToArgumentsProviderMap, annotationToGraphQLOutputTypeMap, javaTypeDeclaredAsScalarMap, relay, explicitRelayNodeScanEnabled);
     }
 }

@@ -1,14 +1,14 @@
 package com.nfl.glitr.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
-import com.nfl.glitr.registry.type.*;
-import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
+import com.nfl.glitr.registry.type.*;
 import com.nfl.glitr.relay.Relay;
+import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -21,9 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -48,6 +46,7 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
     private final Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap;
     private final Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap;
+    private final Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap;
 
     private GraphQLInterfaceType nodeInterface;
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
@@ -62,12 +61,13 @@ public class TypeRegistry implements TypeResolver {
             .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
-    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Relay relay, boolean explicitRelayNodeScanEnabled) {
+    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap, Relay relay, boolean explicitRelayNodeScanEnabled) {
         this.overrides = overrides;
         this.annotationToDataFetcherFactoryMap = annotationToDataFetcherFactoryMap;
         this.annotationToDataFetcherMap = annotationToDataFetcherMap;
         this.annotationToArgumentsProviderMap = annotationToArgumentsProviderMap;
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
+        this.javaTypeDeclaredAsScalarMap = javaTypeDeclaredAsScalarMap;
         this.relay = relay;
         if (relay != null) {
             this.nodeInterface = relay.nodeInterface(this);
@@ -518,24 +518,12 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLType convertToGraphQLOutputType(Type type, String name, boolean fromInterface) {
-        // id is magical, always return this.
-        if (name != null && name.equals("id")) {
-            return GraphQLID;
-        } else if (type == Integer.class || type == int.class) {
-            return GraphQLInt;
-        } else if (type == String.class) {
-            return GraphQLString;
-        } else if (type == Boolean.class || type == boolean.class) {
-            return GraphQLBoolean;
-        } else if (type == Float.class || type == Double.class) {
-            return GraphQLFloat;
-        } else if (type == Long.class) {
-            return GraphQLLong;
-        } else if (type == LocalDate.class) {
-            return Scalars.GraphQLDate;
-        } else if (type == ZonedDateTime.class || type == Instant.class) {
-            return Scalars.GraphQLDateTime;
-        } else if (type instanceof ParameterizedType) {
+        GraphQLType scalarType = detectScalarOrNull(type, name);
+        if (scalarType != null) {
+            return scalarType;
+        }
+
+        if (type instanceof ParameterizedType) {
             return getGraphQLTypeForOutputParameterizedType(type, name, fromInterface);
         } else if (((Class) type).isArray()) {
             // ids is also magical
@@ -563,9 +551,14 @@ public class TypeRegistry implements TypeResolver {
         }
     }
 
-    public GraphQLType convertToGraphQLInputType(Type type, String name) {
-        // id is magical, always return this.
-        if (name != null && name.equals("id")) {
+    public GraphQLType detectScalarOrNull(Type type, String name) {
+        // users can register their own GraphQLScalarTypes for given Java types
+        if (javaTypeDeclaredAsScalarMap.containsKey(type)) {
+            return javaTypeDeclaredAsScalarMap.get(type);
+        }
+        // Default scalars
+        // `id` keyword is magical, always return this.
+        else if (name != null && name.equals("id")) {
             return GraphQLID;
         } else if (type == Integer.class || type == int.class) {
             return GraphQLInt;
@@ -581,7 +574,18 @@ public class TypeRegistry implements TypeResolver {
             return Scalars.GraphQLDate;
         } else if (type == ZonedDateTime.class || type == Instant.class) {
             return Scalars.GraphQLDateTime;
-        } else if (type instanceof ParameterizedType) {
+        }
+        // not a scalar
+        return null;
+    }
+
+    public GraphQLType convertToGraphQLInputType(Type type, String name) {
+        GraphQLType scalarType = detectScalarOrNull(type, name);
+        if (scalarType != null) {
+            return scalarType;
+        }
+
+        if (type instanceof ParameterizedType) {
             return getGraphQLTypeForInputParameterizedType(type);
         } else if (((Class) type).isArray()) {
             // ids is also magical

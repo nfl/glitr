@@ -31,6 +31,7 @@ public class GlitrBuilder {
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
+    private Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap = new HashMap<>();
     private RelayConfig relayConfig = null;
     private Object queryRoot = null;
     private Object mutationRoot = null;
@@ -90,6 +91,17 @@ public class GlitrBuilder {
         return this;
     }
 
+    public GlitrBuilder addJavaTypeAsScalar(Class clazz, GraphQLScalarType scalarType) {
+        if (javaTypeDeclaredAsScalarMap.containsKey(clazz)) {
+            throw new IllegalArgumentException("Attempted to register an existing Java type as a Scalar." +
+                    " You have previously registered the following Java type "+ clazz.getName() +
+                    " with the following GraphQLScalarType: "+ javaTypeDeclaredAsScalarMap.get(clazz));
+        }
+
+        javaTypeDeclaredAsScalarMap.put(clazz, scalarType);
+        return this;
+    }
+
     public GlitrBuilder addOverride(Class clazz, Object overrideObject) {
         overrides.putIfAbsent(clazz, new ArrayList<>());
         overrides.get(clazz).add(overrideObject);
@@ -138,6 +150,7 @@ public class GlitrBuilder {
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
+                .withJavaTypesDeclaredAsScalarMap(javaTypeDeclaredAsScalarMap)
                 .withOverrides(overrides)
                 .build();
 

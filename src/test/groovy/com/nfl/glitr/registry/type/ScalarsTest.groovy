@@ -43,7 +43,7 @@ public class ScalarsTest extends Specification {
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.getMessage() == "Can't serialize type class java.lang.String with value "+ input
+        e.getMessage() == "Failed to parse/serialize GraphQLDateTime with value "+input+". Value likely of an unsupported format."
     }
 
 
@@ -81,6 +81,6 @@ public class ScalarsTest extends Specification {
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.getMessage() == "Can't serialize type class java.lang.String with value "+ input
+        e.getMessage() == "Failed to parse/serialize GraphQLDate with value "+input+". Value likely of an unsupported format."
     }
 }

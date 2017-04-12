@@ -518,9 +518,9 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLType convertToGraphQLOutputType(Type type, String name, boolean fromInterface) {
-        GraphQLType scalarType = detectScalarOrNull(type, name);
-        if (scalarType != null) {
-            return scalarType;
+        Optional<GraphQLType> scalarType = detectScalar(type, name);
+        if (scalarType.isPresent()) {
+            return scalarType.get();
         }
 
         if (type instanceof ParameterizedType) {
@@ -551,38 +551,38 @@ public class TypeRegistry implements TypeResolver {
         }
     }
 
-    public GraphQLType detectScalarOrNull(Type type, String name) {
+    public Optional<GraphQLType> detectScalar(Type type, String name) {
         // users can register their own GraphQLScalarTypes for given Java types
         if (javaTypeDeclaredAsScalarMap.containsKey(type)) {
-            return javaTypeDeclaredAsScalarMap.get(type);
+            return Optional.of(javaTypeDeclaredAsScalarMap.get(type));
         }
         // Default scalars
         // `id` keyword is magical, always return this.
         else if (name != null && name.equals("id")) {
-            return GraphQLID;
+            return Optional.of(GraphQLID);
         } else if (type == Integer.class || type == int.class) {
-            return GraphQLInt;
+            return Optional.of(GraphQLInt);
         } else if (type == String.class) {
-            return GraphQLString;
+            return Optional.of(GraphQLString);
         } else if (type == Boolean.class || type == boolean.class) {
-            return GraphQLBoolean;
+            return Optional.of(GraphQLBoolean);
         } else if (type == Float.class || type == Double.class) {
-            return GraphQLFloat;
+            return Optional.of(GraphQLFloat);
         } else if (type == Long.class) {
-            return GraphQLLong;
+            return Optional.of(GraphQLLong);
         } else if (type == LocalDate.class) {
-            return Scalars.GraphQLDate;
+            return Optional.of(Scalars.GraphQLDate);
         } else if (type == ZonedDateTime.class || type == Instant.class) {
-            return Scalars.GraphQLDateTime;
+            return Optional.of(Scalars.GraphQLDateTime);
         }
         // not a scalar
-        return null;
+        return Optional.empty();
     }
 
     public GraphQLType convertToGraphQLInputType(Type type, String name) {
-        GraphQLType scalarType = detectScalarOrNull(type, name);
-        if (scalarType != null) {
-            return scalarType;
+        Optional<GraphQLType> scalarType = detectScalar(type, name);
+        if (scalarType.isPresent()) {
+            return scalarType.get();
         }
 
         if (type instanceof ParameterizedType) {

@@ -12,9 +12,9 @@ import java.util.Optional;
      We can test the query's depth limit.
      We can test the query's overall score.
 
-     * maxCharacterLimit = Maximum allowed characters in the query string.
-     * maxDepthLimit = Maximum allowed depth in the query string.
-     * defaultMultiplier = Multiplier per depth level for complex types.
+     * maxCharacterLimit = maximum allowed characters in the query string.
+     * maxDepthLimit = maximum allowed depth in the query string.
+     * defaultMultiplier = multiplier per depth level
  */
 
 public class QueryComplexityCalculator {
@@ -65,16 +65,15 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - Query string
-     * @return true if query.length() is greater than maxCharacterLimit
-     *         false if query.length() is less than or equal to maxCharacterLimit
+     * @param query - query string
+     * @return true if the query's length is greater than the maximum allowed number of characters.
      */
     public boolean characterLimitExceeded(String query) {
         return characterScore(query) > maxCharacterLimit;
     }
 
     /**
-     * @param query - Query string
+     * @param query - query string
      * @return the length of the query string.
      */
     public int characterScore(String query) {
@@ -87,9 +86,8 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - Query string to parse
-     * @return true if depth of query is greater than maxDepthLimit
-     *         false if depth of query is less than or equal to maxDepthLimit
+     * @param query - query string
+     * @return true if the query's depth is greater than the maximum allowed depth.
      */
     public boolean depthLimitExceeded(String query) {
         return depthScore(query) > maxDepthLimit;
@@ -97,8 +95,8 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - Query string to parse
-     * @return the maximum child depth as an integer.
+     * @param query - query string
+     * @return the maximum depth of the query string
      */
     public int depthScore(String query) {
 
@@ -111,12 +109,11 @@ public class QueryComplexityCalculator {
 
     /**
      * @param queryNode - Root node to recursively iterate and find the deepest child.
-     * @return the maximum child depth as an integer.
+     * @return the maximum child depth as an integer.  We start at the queryNode.  We figure out what type of node this is.
+     * It can be an OPERATION_DEFINITION, a SELECTION_SET, a FIELD, etc.  If it's a field and not a LEAF, we increase
+     * the depth by 1.  A node is considered a LEAF when it doesn't have any children.  We continue and recursively go
+     * through each child and figure out what the deepest one is.  The deepest child is what is returned as the maximum depth.
      *
-     * We start at the queryNode.  We figure out what type of node this is.  It can be an OPERATION_DEFINITION, a SELECTION_SET
-     * a FIELD, etc etc.  If it's a field and not a LEAF, we increase the depth by 1.  A node is considered a LEAF when
-     * it doesn't have any children.  We continue and recursively go through each child and figure out what the deepest one is.
-     * The deepest child is what is returned as the maximum depth.
      * Examples
      ******************************************************************************************************************
      ******************************************************************************************************************
@@ -145,6 +142,20 @@ public class QueryComplexityCalculator {
      * }
      ******************************************************************************************************************
      ******************************************************************************************************************
+     * Depth = 2
+     * {
+     *     playLists{
+     *         playListId
+     *         tracks{
+     *             trackId
+     *         }
+     *         artists{
+     *             artistId
+     *         }
+     *     }
+     * }
+     ******************************************************************************************************************
+     ******************************************************************************************************************
      * Depth = 3
      * {
      *     playLists{
@@ -165,10 +176,8 @@ public class QueryComplexityCalculator {
         int depth = 0;
 
         String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
-        if (nodeType.equals(QUERY_FIELD)) {
-            if (!isLeaf(queryNode)) {
-                depth = 1;
-            }
+        if (nodeType.equals(QUERY_FIELD) && !isLeaf(queryNode)) {
+            depth = 1;
         }
 
         int maxChildDepth = 0;
@@ -182,10 +191,11 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query = query to test against
-     * @return the actual query score.
-     * The way the query is calculated is by summing the depth * multiplier of all non-child nodes.
-     ****************************************************************************************************************
+     * @param query = query string
+     * @return query score as an integer.  The way the query score is calculated is by summing the depth * multiplier of
+     * all non-leaf nodes.
+     ******************************************************************************************************************
+     ******************************************************************************************************************
      * {
      *     playLists{    depth = 1, multiplier = 10 (default)
      *         id
@@ -246,12 +256,11 @@ public class QueryComplexityCalculator {
         int score = 0;
         int multiplier = 0;
 
-        if (queryNode.getClass() == Field.class) {
-            if (!isLeaf(queryNode)) {
-                Field field = (Field) queryNode;
-                multiplier = extractMultiplierFromListField(field);
-                depth += 1;
-            }
+        String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
+        if (nodeType.equals(QUERY_FIELD) && !isLeaf(queryNode)) {
+            Field field = (Field) queryNode;
+            multiplier = extractMultiplierFromListField(field);
+            depth += 1;
         }
 
         for (Node currentChild : queryNode.getChildren()) {
@@ -265,10 +274,10 @@ public class QueryComplexityCalculator {
 
     /**
      *
-     * @param query - query string to parse
-     * @return
-     * We parse the query with a graphql library and retrieve a document object.  We filter the document object in search
-     * of an OPERATION_DEFINITION and make sure its a QUERY and not a MUTATION.  Once we find the object, we return it.
+     * @param query - query string
+     * @return the root node.  We parse the query with a graphql library and retrieve a document object.  We filter the
+     * document object in search of an OPERATION_DEFINITION and make sure its a QUERY and not a MUTATION.  Once we find
+     * the object, we return it.
      */
     private Node parseRootNode(String query) {
 
@@ -285,7 +294,7 @@ public class QueryComplexityCalculator {
                 .findFirst();
 
         if (!queryNode.isPresent()) {
-            throw new GlitrException("Cannot find query node 'OperationDefinition' or query is a MUTATION");
+            throw new GlitrException("Cannot find query node 'OperationDefinition' or query is a 'MUTATION'");
         }
 
         return queryNode.get();

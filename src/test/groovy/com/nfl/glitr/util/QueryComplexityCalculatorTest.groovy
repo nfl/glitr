@@ -183,7 +183,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
         def exception = thrown(GlitrException)
-        exception.getMessage().equals("Cannot find query node 'OperationDefinition' or query is a MUTATION")
+        exception.getMessage().equals("Cannot find query node 'OperationDefinition' or query is a 'MUTATION'")
 
         where:
         query = '''\

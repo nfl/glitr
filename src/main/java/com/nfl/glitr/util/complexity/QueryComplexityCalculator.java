@@ -52,7 +52,6 @@ public class QueryComplexityCalculator {
      * @return the query score after we have verified the character / depth limits are adequate.
      */
     public int checkAndRetrieveQueryScore(String query) {
-
         if (characterLimitExceeded(query)) {
             throw new GlitrException(String.format("query length has exceeded the maximum of %d characters.", maxCharacterLimit));
         }
@@ -77,7 +76,6 @@ public class QueryComplexityCalculator {
      * @return the length of the query string.
      */
     public int characterScore(String query) {
-
         if (StringUtils.isBlank(query)) {
             throw new GlitrException("query cannot be null or empty");
         }
@@ -91,7 +89,6 @@ public class QueryComplexityCalculator {
      */
     public boolean depthLimitExceeded(String query) {
         return depthScore(query) > maxDepthLimit;
-
     }
 
     /**
@@ -99,7 +96,6 @@ public class QueryComplexityCalculator {
      * @return the maximum depth of the query string
      */
     public int depthScore(String query) {
-
         if (StringUtils.isBlank(query)) {
             throw new GlitrException("query cannot be null or empty");
         }
@@ -172,7 +168,6 @@ public class QueryComplexityCalculator {
      ******************************************************************************************************************
      */
     private int calculateMaxDepth(Node queryNode) {
-
         int depth = 0;
 
         String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
@@ -252,7 +247,6 @@ public class QueryComplexityCalculator {
     }
 
     private int queryScore(Node queryNode, int depth) {
-
         int score = 0;
         int multiplier = 0;
 
@@ -280,7 +274,6 @@ public class QueryComplexityCalculator {
      * the object, we return it.
      */
     private Node parseRootNode(String query) {
-
         Document document;
         try {
             document = documentParser.parseDocument(query);
@@ -338,7 +331,6 @@ public class QueryComplexityCalculator {
      *****************************************************************************************************************
      */
     private int extractMultiplierFromListField(Field node) {
-
         Optional<Argument> listLimit = node.getArguments().stream()
                 .filter(argument -> argument.getName().equals("first"))
                 .findFirst();
@@ -365,7 +357,5 @@ public class QueryComplexityCalculator {
     private boolean isLeaf(Node node) {
         return node.getChildren().isEmpty();
     }
-
-
 }
 

@@ -386,7 +386,7 @@ public class QueryComplexityCalculator {
     }
 
     public boolean isMutation(String query){
-        return query.trim().startsWith(MUTATION_DEFINITION) || query.trim().startsWith(StringUtils.capitalize(MUTATION_DEFINITION));
+        return query.trim().startsWith(MUTATION_DEFINITION);
     }
 
     /**
@@ -394,7 +394,6 @@ public class QueryComplexityCalculator {
      * @return the query that is returned by the mutation response body
      */
     private String extractReturnQueryFromMutation(String query){
-
         //We need to find the end of the mutation input, which is '})'
         int endOfMutationInput = query.indexOf("})");
 

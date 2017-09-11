@@ -20,38 +20,43 @@ import java.util.Optional;
 public class QueryComplexityCalculator {
 
     private final String QUERY_FIELD = "FIELD";
+    private final String MUTATION_DEFINITION = "mutation";
 
     private final int maxCharacterLimit;
     private final int maxDepthLimit;
+    private final int maxScoreLimit;
     private final int defaultMultiplier;
     private final Parser documentParser;
 
     public QueryComplexityCalculator() {
-        this.maxCharacterLimit = 5;
-        this.maxDepthLimit = 5;
+        this.maxCharacterLimit = 10000;
+        this.maxDepthLimit = 8;
+        this.maxScoreLimit = 500;
         this.defaultMultiplier = 10;
         this.documentParser = new Parser();
     }
 
-    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int defaultMultiplier) {
+    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int maxScoreLimit, int defaultMultiplier) {
         this.maxCharacterLimit = maxCharacterLimit;
         this.maxDepthLimit = maxDepthLimit;
+        this.maxScoreLimit = maxScoreLimit;
         this.defaultMultiplier = defaultMultiplier;
         this.documentParser = new Parser();
     }
 
-    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int defaultMultiplier, Parser documentParser) {
+    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int maxScoreLimit, int defaultMultiplier, Parser documentParser) {
         this.maxCharacterLimit = maxCharacterLimit;
         this.maxDepthLimit = maxDepthLimit;
+        this.maxScoreLimit = maxScoreLimit;
         this.defaultMultiplier = defaultMultiplier;
         this.documentParser = documentParser;
     }
 
     /**
-     * @param query - Query string to test against
-     * @return the query score after we have verified the character / depth limits are adequate.
+     * @param query - graphql query string
+     * We want to validate the query or fail fast.
      */
-    public int checkAndRetrieveQueryScore(String query) {
+    public void validate(String query) {
         if (characterLimitExceeded(query)) {
             throw new GlitrException(String.format("query length has exceeded the maximum of %d characters.", maxCharacterLimit));
         }
@@ -60,11 +65,14 @@ public class QueryComplexityCalculator {
             throw new GlitrException(String.format("query depth has exceeded the maximum depth level of %d.", maxDepthLimit));
         }
 
-        return queryScore(query);
+        if(scoreLimitExceeded(query)){
+            throw new GlitrException(String.format("query score has exceeded the maximum score level of %d.", maxScoreLimit));
+        }
+
     }
 
     /**
-     * @param query - query string
+     * @param query - graphql query string
      * @return true if the query's length is greater than the maximum allowed number of characters.
      */
     public boolean characterLimitExceeded(String query) {
@@ -72,19 +80,23 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - query string
-     * @return the length of the query string.
+     * @param query - graphql query string
+     * @return the length of the query string.  If the query is a mutation, we retrieve the return query body of the mutation
      */
     public int characterScore(String query) {
         if (StringUtils.isBlank(query)) {
             throw new GlitrException("query cannot be null or empty");
         }
 
+        if(isMutation(query)){
+            query = extractReturnQueryFromMutation(query);
+        }
+
         return query.trim().length();
     }
 
     /**
-     * @param query - query string
+     * @param query - graphql query string
      * @return true if the query's depth is greater than the maximum allowed depth.
      */
     public boolean depthLimitExceeded(String query) {
@@ -92,7 +104,7 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - query string
+     * @param query - graphql query string
      * @return the maximum depth of the query string
      */
     public int depthScore(String query) {
@@ -185,8 +197,7 @@ public class QueryComplexityCalculator {
         return depth;
     }
 
-    /**
-     * @param query = query string
+     /* @param query = query string
      * @return query score as an integer.  The way the query score is calculated is by summing the depth * multiplier of
      * all non-leaf nodes.
      ******************************************************************************************************************
@@ -242,6 +253,19 @@ public class QueryComplexityCalculator {
      ******************************************************************************************************************
      ******************************************************************************************************************
      */
+
+    /**
+     * @param query - graphql query string
+     * @return true if the query's score is greater than the maximum allowed score.
+     */
+    public boolean scoreLimitExceeded(String query) {
+        return queryScore(query) > maxScoreLimit;
+    }
+
+    /**
+     * @param query - graphql query string
+     * @return query score
+     */
     public int queryScore(String query) {
         return queryScore(parseRootNode(query), 0);
     }
@@ -268,12 +292,17 @@ public class QueryComplexityCalculator {
 
     /**
      *
-     * @param query - query string
+     * @param query - graphql query string
      * @return the root node.  We parse the query with a graphql library and retrieve a document object.  We filter the
-     * document object in search of an OPERATION_DEFINITION and make sure its a QUERY and not a MUTATION.  Once we find
-     * the object, we return it.
+     * document object in search of an OPERATION_DEFINITION.  If the query is a MUTATION we extract the return query
+     * from the mutation body.  If it's not a mutation, we parse as is.
      */
-    private Node parseRootNode(String query) {
+    private OperationDefinition parseRootNode(String query) {
+
+        if (isMutation(query)) {
+            query = extractReturnQueryFromMutation(query);
+        }
+
         Document document;
         try {
             document = documentParser.parseDocument(query);
@@ -281,17 +310,16 @@ public class QueryComplexityCalculator {
             throw new GlitrException(String.format("Cannot parse query %s", query));
         }
 
-        Optional<Node> queryNode = document.getChildren().stream()
+        Optional<OperationDefinition> baseNode = document.getChildren().stream()
                 .filter(n -> (n.getClass() == OperationDefinition.class))
-                .filter(n -> ((OperationDefinition)n).getOperation() == OperationDefinition.Operation.QUERY)
+                .map(node -> (OperationDefinition) node)
                 .findFirst();
 
-        if (!queryNode.isPresent()) {
-            throw new GlitrException("Cannot find query node 'OperationDefinition' or query is a 'MUTATION'");
+        if (!baseNode.isPresent()) {
+            throw new GlitrException("Cannot find node 'OperationDefinition'");
         }
 
-        return queryNode.get();
-
+       return baseNode.get();
     }
 
     /**
@@ -357,5 +385,28 @@ public class QueryComplexityCalculator {
     private boolean isLeaf(Node node) {
         return node.getChildren().isEmpty();
     }
+
+    public boolean isMutation(String query){
+        return query.contains(MUTATION_DEFINITION);
+    }
+
+    /**
+     * @param query - graphql query string
+     * @return the query that is returned by the mutation response body
+     */
+    private String extractReturnQueryFromMutation(String query){
+
+        //We need to find the end of the mutation input, which is '})'
+        int endOfMutationInput = query.indexOf("})");
+
+        if(endOfMutationInput == -1){
+            throw new GlitrException("Malformed mutation query");
+        }
+
+        // We return the string after the index and we also remove the last } which is part of the entire mutation query which we don't need.
+        return query.substring(endOfMutationInput + 2, query.lastIndexOf("}")).trim();
+
+    }
+
 }
 

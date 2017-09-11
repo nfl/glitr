@@ -65,7 +65,7 @@ public class QueryComplexityCalculator {
             throw new GlitrException(String.format("query depth has exceeded the maximum depth level of %d.", maxDepthLimit));
         }
 
-        if(scoreLimitExceeded(query)){
+        if (scoreLimitExceeded(query)){
             throw new GlitrException(String.format("query score has exceeded the maximum score level of %d.", maxScoreLimit));
         }
 
@@ -88,7 +88,7 @@ public class QueryComplexityCalculator {
             throw new GlitrException("query cannot be null or empty");
         }
 
-        if(isMutation(query)){
+        if (isMutation(query)){
             query = extractReturnQueryFromMutation(query);
         }
 
@@ -298,7 +298,6 @@ public class QueryComplexityCalculator {
      * from the mutation body.  If it's not a mutation, we parse as is.
      */
     private OperationDefinition parseRootNode(String query) {
-
         if (isMutation(query)) {
             query = extractReturnQueryFromMutation(query);
         }

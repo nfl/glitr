@@ -27,8 +27,8 @@ public class QueryComplexityCalculator {
     private final Parser documentParser;
 
     public QueryComplexityCalculator() {
-        this.maxCharacterLimit = 5;
-        this.maxDepthLimit = 5;
+        this.maxCharacterLimit = 5000;
+        this.maxDepthLimit = 8;
         this.defaultMultiplier = 10;
         this.documentParser = new Parser();
     }
@@ -356,6 +356,18 @@ public class QueryComplexityCalculator {
      */
     private boolean isLeaf(Node node) {
         return node.getChildren().isEmpty();
+    }
+
+    public int getMaxCharacterLimit() {
+        return maxCharacterLimit;
+    }
+
+    public int getMaxDepthLimit() {
+        return maxDepthLimit;
+    }
+
+    public int getDefaultMultiplier() {
+        return defaultMultiplier;
     }
 }
 

@@ -387,7 +387,7 @@ public class QueryComplexityCalculator {
     }
 
     public boolean isMutation(String query){
-        return query.contains(MUTATION_DEFINITION);
+        return query.trim().startsWith(MUTATION_DEFINITION) || query.trim().startsWith(StringUtils.capitalize(MUTATION_DEFINITION));
     }
 
     /**

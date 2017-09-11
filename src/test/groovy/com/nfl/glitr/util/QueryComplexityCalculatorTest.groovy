@@ -769,6 +769,40 @@ class QueryComplexityCalculatorTest extends Specification {
         |      }
         |    }'''.stripMargin()       | "query is a mutation" || true
 
+        '''\
+        |{
+        |    playLists {
+        |        albumsFirst(first:30){
+        |           mutation
+        |           trackPick1{
+        |              myMutation
+        |           }
+        |        }
+        |    }
+        |}'''.stripMargin()  | "query is not a mutation" || false
+
+        '''\
+        |myMutation {
+        |      playListMtn(input: {
+        |        clientId: "abc"
+        |        playList: {
+        |          playListId: "abc"
+        |          title: "MyPlaylist"
+        |        }
+        |      }) {
+        |        playList {
+        |          playListId
+        |          tracks {
+        |            trackId
+        |            trackInfo {
+        |               id
+        |               name
+        |            }
+        |          }
+        |        }
+        |      }
+        |    }'''.stripMargin()       | "query is a mutation" || false
+
 
     }
 }

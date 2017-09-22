@@ -42,13 +42,14 @@ public class Scalars {
             }
 
             if (input instanceof String) {
-                try {
-                    String time = (String) input;
-                    Instant instant = Instant.parse(time);
-                    return serialize(instant);
-                } catch (RuntimeException ex) {
-                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDateTime with value "+input.toString()+". Value likely of an unsupported format.", ex);
+                Object obj = formatAsInstant(input);
+                if (obj == null) {
+                    obj = formatAsZonedDateTime(input);
                 }
+                if (obj == null) {
+                    throw new IllegalArgumentException("Failed to parse/serialize GraphQLDateTime with value "+input.toString()+". Value likely of an unsupported format.");
+                }
+                return serialize(obj);
             }
 
             throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+ input.toString());
@@ -69,7 +70,6 @@ public class Scalars {
         public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             String encodedDateTime = ((StringValue) input).getValue();
-
             return Instant.parse(encodedDateTime);
         }
     });
@@ -106,17 +106,17 @@ public class Scalars {
             }
 
             if (input instanceof String) {
-                Object o = formatAsInstant(input);
-                if (o == null) {
-                    o = formatAsLocalDate(input);
+                Object obj = formatAsInstant(input);
+                if (obj == null) {
+                    obj = formatAsLocalDate(input);
                 }
-                if (o == null) {
-                    o = formatAsZonedDateTime(input);
+                if (obj == null) {
+                    obj = formatAsZonedDateTime(input);
                 }
-                if (o == null) {
+                if (obj == null) {
                     throw new IllegalArgumentException("Failed to parse/serialize GraphQLDate with value "+input.toString()+". Value likely of an unsupported format.");
                 }
-                return o;
+                return serialize(obj);
             }
 
             throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+input.toString());
@@ -139,35 +139,32 @@ public class Scalars {
             String encodedDateTime = ((StringValue) input).getValue();
             return LocalDate.parse(encodedDateTime);
         }
-
-        private Object formatAsLocalDate(Object input) {
-            try {
-                String time = (String) input;
-                LocalDate localDate = LocalDate.parse(time);
-                return serialize(localDate);
-            } catch (RuntimeException ex) {
-                return null;
-            }
-        }
-
-        private Object formatAsZonedDateTime(Object input) {
-            try {
-                String time = (String) input;
-                ZonedDateTime zonedDateTime = ZonedDateTime.parse(time);
-                return serialize(zonedDateTime);
-            } catch (RuntimeException ex) {
-                return null;
-            }
-        }
-
-        private Object formatAsInstant(Object input) {
-            try {
-                String time = (String) input;
-                Instant instant = Instant.parse(time);
-                return serialize(instant);
-            } catch (RuntimeException ex) {
-                return null;
-            }
-        }
     });
+
+    private static Object formatAsLocalDate(Object input) {
+        try {
+            String time = (String) input;
+            return LocalDate.parse(time);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    private static Object formatAsZonedDateTime(Object input) {
+        try {
+            String time = (String) input;
+            return ZonedDateTime.parse(time);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    private static Object formatAsInstant(Object input) {
+        try {
+            String time = (String) input;
+            return Instant.parse(time);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
 }

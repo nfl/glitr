@@ -5,6 +5,7 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.additionalScalars.CustomScalar
 import com.nfl.glitr.data.additionalScalars.Root
 import graphql.Scalars
+import graphql.TypeResolutionEnvironment
 import spock.lang.Specification
 
 class GlitrRegisterAdditionalScalars extends Specification {
@@ -15,8 +16,9 @@ class GlitrRegisterAdditionalScalars extends Specification {
                 .withQueryRoot(new Root())
                 .addCustomScalar(CustomScalar.class, Scalars.GraphQLString)
                 .build()
+        def typeResolutionEnv = new TypeResolutionEnvironment(new Root(), null, null, null, null)
         then: "make sure the scalar has been registered correctly as a GraphQLString"
-        glitr.typeRegistry.getType(new Root()).getFieldDefinition("scalar").type.name == Scalars.GraphQLString.name
+        glitr.typeRegistry.getType(typeResolutionEnv).getFieldDefinition("scalar").type.name == Scalars.GraphQLString.name
     }
 
     def "Register twice the same custom scalar should fail"() {

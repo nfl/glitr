@@ -2,11 +2,15 @@ package com.nfl.glitr.registry.datafetcher.query
 
 import graphql.Scalars
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.DataFetchingEnvironmentBuilder
 import spock.lang.Specification
 
 class OverrideDataFetcherTest extends Specification {
 
-    def env = new DataFetchingEnvironment(new DummyClass(), null, null, null, Scalars.GraphQLString, null, null);
+    def env = DataFetchingEnvironmentBuilder.newDataFetchingEnvironment()
+            .source(new DummyClass())
+            .fieldType(Scalars.GraphQLString)
+            .build()
 
     def "override method in Override class"() {
         expect:

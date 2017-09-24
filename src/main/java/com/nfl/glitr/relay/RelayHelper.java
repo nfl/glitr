@@ -1,11 +1,20 @@
 package com.nfl.glitr.relay;
 
 import com.nfl.glitr.registry.TypeRegistry;
-import graphql.relay.Base64;
 import graphql.relay.ConnectionCursor;
+import graphql.relay.DefaultConnection;
+import graphql.relay.DefaultConnectionCursor;
+import graphql.relay.DefaultEdge;
 import graphql.relay.Edge;
-import graphql.schema.*;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,30 +53,30 @@ public class RelayHelper {
     }
 
     public static graphql.relay.Connection buildConnection(Iterable<?> col, int skipItems, int totalCount) {
-        List<Edge> edges = new ArrayList<>();
+        List<Edge<Object>> edges = new ArrayList<>();
         int ix = skipItems;
 
         for (Object object : col) {
-            edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));
+            edges.add(new DefaultEdge<>(object, new DefaultConnectionCursor(createCursor(ix++))));
         }
 
-        PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal();
+        ConnectionCursor startCursor = null;
+        ConnectionCursor endCursor = null ;
+        boolean hasPreviousPage = skipItems > 0 && totalCount > 0;
+        boolean hasNextPage = skipItems + edges.size() + 1 < totalCount;
 
         if (edges.size() > 0) {
             Edge firstEdge = edges.get(0);
             Edge lastEdge = edges.get(edges.size() - 1);
-            pageInfoWithTotal.setStartCursor(firstEdge.getCursor());
-            pageInfoWithTotal.setEndCursor(lastEdge.getCursor());
+            startCursor = firstEdge.getCursor();
+            endCursor = lastEdge.getCursor();
         }
 
-        pageInfoWithTotal.setHasPreviousPage(skipItems > 0 && totalCount > 0);
-        pageInfoWithTotal.setHasNextPage(skipItems + edges.size() + 1 < totalCount);
+        PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal(startCursor, endCursor,
+                hasPreviousPage, hasNextPage);
         pageInfoWithTotal.setTotal(totalCount);
 
-        graphql.relay.Connection connection = new graphql.relay.Connection();
-        connection.setEdges(edges);
-        connection.setPageInfo(pageInfoWithTotal);
-        return connection;
+        return new DefaultConnection<>(edges, pageInfoWithTotal);
     }
 
     public static String createCursor(int offset) {
@@ -78,5 +87,24 @@ public class RelayHelper {
         if (cursor == null) return defaultValue;
         String string = Base64.fromBase64(cursor);
         return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
+    }
+
+
+    static public class Base64 {
+
+        private Base64() {
+        }
+
+        public static String toBase64(String string) {
+            try {
+                return DatatypeConverter.printBase64Binary(string.getBytes("utf-8"));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static String fromBase64(String string) {
+            return new String(DatatypeConverter.parseBase64Binary(string), Charset.forName("UTF-8"));
+        }
     }
 }

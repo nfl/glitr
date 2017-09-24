@@ -3,6 +3,7 @@ package com.nfl.glitr.data.circularReference
 import com.nfl.glitr.Glitr
 import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.QueryType
+import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
@@ -20,7 +21,8 @@ class CircularReferenceTest extends Specification {
         type instanceof GraphQLInterfaceType
         type.name == AbstractRead.simpleName
         then: "And make sure the implementing type has the interface registered"
-        def objType = glitr.typeRegistry.getType(new Novel())
+        def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Novel(),
+                null, null, null, null))
         objType.class == GraphQLObjectType
         objType.name == Novel.simpleName
         objType.fieldDefinitions.name as Set == ["novel", "pageCount", "title", "reviewed"] as Set
@@ -36,7 +38,8 @@ class CircularReferenceTest extends Specification {
         type instanceof GraphQLInterfaceType
         type.name == Readable.simpleName
         then: "And make sure the implementing type has the interface registered"
-        def objType = glitr.typeRegistry.getType(new Book())
+        def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Book(),
+                null, null, null, null))
         objType.class == GraphQLObjectType
         objType.name == Book.simpleName
         objType.fieldDefinitions.name as Set == ["title", "synopsis"] as Set

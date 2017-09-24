@@ -6,10 +6,31 @@ import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
-import com.nfl.glitr.registry.type.*;
+import com.nfl.glitr.registry.type.GraphQLEnumTypeFactory;
+import com.nfl.glitr.registry.type.GraphQLInputObjectTypeFactory;
+import com.nfl.glitr.registry.type.GraphQLInterfaceTypeFactory;
+import com.nfl.glitr.registry.type.GraphQLObjectTypeFactory;
+import com.nfl.glitr.registry.type.GraphQLTypeFactory;
+import com.nfl.glitr.registry.type.JavaType;
+import com.nfl.glitr.registry.type.Scalars;
+import com.nfl.glitr.relay.Node;
 import com.nfl.glitr.relay.Relay;
 import com.nfl.glitr.util.ReflectionUtil;
-import graphql.schema.*;
+import graphql.TypeResolutionEnvironment;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.PropertyDataFetcher;
+import graphql.schema.TypeResolver;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +42,26 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLFloat;
+import static graphql.Scalars.GraphQLID;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLLong;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -71,6 +106,8 @@ public class TypeRegistry implements TypeResolver {
         this.relay = relay;
         if (relay != null) {
             this.nodeInterface = relay.nodeInterface(this);
+            // register Node so we don't inadvertently recreate it later
+            this.registry.put(Node.class, this.nodeInterface);
         }
         this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
     }
@@ -91,8 +128,8 @@ public class TypeRegistry implements TypeResolver {
     }
 
     @Override
-    public GraphQLObjectType getType(Object object) {
-        return (GraphQLObjectType)registry.get(object.getClass());
+    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+        return (GraphQLObjectType)registry.get(env.getObject().getClass());
     }
 
     public Map<Class, GraphQLType> getRegistry() {

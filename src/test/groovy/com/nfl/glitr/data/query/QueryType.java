@@ -2,7 +2,6 @@ package com.nfl.glitr.data.query;
 
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
-import com.nfl.glitr.relay.*;
 
 import java.util.List;
 

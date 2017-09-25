@@ -1,8 +1,10 @@
 package com.nfl.glitr.data.circularReference;
 
 public abstract class AbstractRead {
+
     private int pageCount;
     private Novel novel;
+
 
     public int getPageCount() {
         return pageCount;

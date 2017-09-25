@@ -9,6 +9,7 @@ public class VideoMutationInput extends RelayMutationType {
 
     private VideoMutationIn videoMutation;
 
+
     @GlitrDescription("Info meta data needed")
     @GlitrNonNull
     public VideoMutationIn getVideoMutation() {

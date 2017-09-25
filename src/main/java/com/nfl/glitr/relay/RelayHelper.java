@@ -1,5 +1,6 @@
 package com.nfl.glitr.relay;
 
+import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.TypeRegistry;
 import graphql.relay.ConnectionCursor;
 import graphql.relay.DefaultConnection;
@@ -12,13 +13,14 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 
-import javax.xml.bind.DatatypeConverter;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
+import static java.lang.String.format;
+import static java.util.Base64.getDecoder;
+import static java.util.Base64.getEncoder;
 
 public class RelayHelper {
 
@@ -80,31 +82,28 @@ public class RelayHelper {
     }
 
     public static String createCursor(int offset) {
-        return Base64.toBase64(DUMMY_CURSOR_PREFIX + Integer.toString(offset));
+        byte[] bytes = (DUMMY_CURSOR_PREFIX + Integer.toString(offset)).getBytes(StandardCharsets.UTF_8);
+        return getEncoder().encodeToString(bytes);
     }
 
     public static int getOffsetFromCursor(String cursor, int defaultValue) {
-        if (cursor == null) return defaultValue;
-        String string = Base64.fromBase64(cursor);
-        return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
-    }
-
-
-    static public class Base64 {
-
-        private Base64() {
+        if (cursor == null) {
+            return defaultValue;
         }
-
-        public static String toBase64(String string) {
-            try {
-                return DatatypeConverter.printBase64Binary(string.getBytes("utf-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+        byte[] decode;
+        try {
+            decode = getDecoder().decode(cursor);
+        } catch (IllegalArgumentException e) {
+            throw new GlitrException(format("The cursor is not in base64 format : '%s'", cursor), e);
         }
-
-        public static String fromBase64(String string) {
-            return new String(DatatypeConverter.parseBase64Binary(string), Charset.forName("UTF-8"));
+        String string = new String(decode, StandardCharsets.UTF_8);
+        if (DUMMY_CURSOR_PREFIX.length() > string.length()) {
+            throw new GlitrException(format("The cursor prefix is missing from the cursor : '%s'", cursor));
+        }
+        try {
+            return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
+        } catch (NumberFormatException nfe) {
+            throw new GlitrException(format("The cursor was not created by this class  : '%s'", cursor), nfe);
         }
     }
 }

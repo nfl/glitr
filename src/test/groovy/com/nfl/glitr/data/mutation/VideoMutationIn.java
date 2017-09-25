@@ -8,6 +8,7 @@ public class VideoMutationIn {
     private String url;
     private List<Bitrate> bitrateList;
 
+
     public List<Bitrate> getBitrateList() {
         return bitrateList;
     }

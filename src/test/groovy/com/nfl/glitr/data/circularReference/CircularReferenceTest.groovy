@@ -11,7 +11,6 @@ import spock.lang.Specification
 
 class CircularReferenceTest extends Specification {
 
-
     def "Inspect AbstractClass that has a field circular reference"() {
         setup:
         Glitr glitr = GlitrBuilder.newGlitr().withQueryRoot(new QueryType()).build()

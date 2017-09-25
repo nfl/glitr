@@ -1,8 +1,10 @@
 package com.nfl.glitr.data.additionalScalars;
 
 public class Root {
+
     private String aString;
     private CustomScalar scalar;
+
 
     public String getaString() {
         return aString;

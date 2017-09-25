@@ -10,6 +10,7 @@ public class Video extends AbstractContent implements Playable {
     private String url;
     private List<Bitrate> bitrateList;
 
+
     public List<Bitrate> getBitrateList() {
         return bitrateList;
     }

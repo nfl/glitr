@@ -6,6 +6,7 @@ public class VideoMutationPayload extends RelayMutationType {
 
     private VideoMutationOut videoMutationPayload;
 
+
     public VideoMutationOut getVideoMutationPayload() {
         return videoMutationPayload;
     }

@@ -1,7 +1,9 @@
 package com.nfl.glitr.data.query;
 
 public abstract class AbstractTimestamped {
+
     private Long lastModifiedDate;
+
 
     public Long getLastModifiedDate() {
         return lastModifiedDate;

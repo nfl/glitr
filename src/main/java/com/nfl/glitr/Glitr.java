@@ -59,11 +59,10 @@ public class Glitr {
         }
 
         GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot);
-        GraphQLSchema schema = GraphQLSchema.newSchema()
+        return GraphQLSchema.newSchema()
                 .query(queryType)
                 .mutation(mutationType)
                 .build(typeRegistry.getTypeDictionary());
-        return schema;
     }
 
     public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot) {

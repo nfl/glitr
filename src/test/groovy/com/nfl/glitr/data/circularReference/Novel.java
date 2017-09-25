@@ -5,6 +5,7 @@ public class Novel extends AbstractRead {
     private String title;
     private boolean reviewed;
 
+
     public String getTitle() {
         return title;
     }

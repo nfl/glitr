@@ -1,8 +1,10 @@
 package com.nfl.glitr.data.circularReference;
 
 public class Book implements Readable {
+
     private String title;
     private Book synopsis;
+
 
     public String getTitle() {
         return title;

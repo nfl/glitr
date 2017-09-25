@@ -18,6 +18,7 @@ public class Bitrate implements Playable {
     private LocalDate createdDate;
     private Instant modifiedDateTime;
 
+
     public Integer getKbps() {
         return kbps;
     }

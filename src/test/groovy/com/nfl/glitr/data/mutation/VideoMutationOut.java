@@ -7,6 +7,7 @@ public class VideoMutationOut {
     private String url;
     private String bitrateList;
 
+
     public String getBitrateList() {
         return bitrateList;
     }

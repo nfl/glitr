@@ -40,11 +40,11 @@ class RelayHelperTest extends Specification {
         def items = []
         for (def i = 0; i < 10; i++) {
             if ((i + toSkip) < totalCount) {
-                items.add(i + toSkip);
+                items.add(i + toSkip)
             }
         }
 
-        def connection = RelayHelper.buildConnection(items, toSkip, totalCount);
+        def connection = RelayHelper.buildConnection(items, toSkip, totalCount)
         assert (connection.pageInfo.hasNextPage == hasNext)
         assert (connection.pageInfo.hasPreviousPage == hasPrev)
         assert (connection.edges.size() == resultSize)
@@ -53,12 +53,12 @@ class RelayHelperTest extends Specification {
         assert pageInfoWithTotal.total == totalCount
 
         if (resultSize > 0) {
-            assert (connection.pageInfo.startCursor?.value == RelayHelper.Base64.toBase64("simple-cursor${toSkip}"))
-            assert (connection.pageInfo.endCursor?.value == RelayHelper.Base64.toBase64("simple-cursor${toSkip + resultSize - 1}"))
+            assert (connection.pageInfo.startCursor?.value == RelayHelper.createCursor(toSkip))
+            assert (connection.pageInfo.endCursor?.value == RelayHelper.createCursor(toSkip + resultSize - 1))
         }
 
         connection.edges.forEach({
-            assert (it.cursor.value == RelayHelper.Base64.toBase64("simple-cursor${it.node}"));
-        });
+            assert (it.cursor.value == RelayHelper.createCursor(it.node))
+        })
     }
 }

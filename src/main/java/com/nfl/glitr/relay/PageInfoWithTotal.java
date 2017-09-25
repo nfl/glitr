@@ -7,6 +7,7 @@ public class PageInfoWithTotal extends DefaultPageInfo {
 
     private int total;
 
+
     public PageInfoWithTotal(ConnectionCursor startCursor, ConnectionCursor endCursor,
                              boolean hasPreviousPage, boolean hasNextPage) {
         super(startCursor, endCursor, hasPreviousPage, hasNextPage);

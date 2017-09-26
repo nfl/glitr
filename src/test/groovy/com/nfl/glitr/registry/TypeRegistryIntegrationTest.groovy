@@ -47,10 +47,10 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDef1.description == "No Description"
         fieldDef1.type instanceof GraphQLList
         GraphQLList fieldDefType1 = (GraphQLList) fieldDef1.type
-        GraphQLInterfaceType wrappedType = (GraphQLInterfaceType) fieldDefType1.wrappedType
-        wrappedType.name == "Node"
-        wrappedType.description == "An object with an ID"
-        wrappedType.fieldDefinitions.size() == 1
+        GraphQLInterfaceType wrappedType1 = (GraphQLInterfaceType) fieldDefType1.wrappedType
+        wrappedType1.name == "Node"
+        wrappedType1.description == "An object with an ID"
+        wrappedType1.fieldDefinitions.size() == 1
         def input1 = (GraphQLArgument) fieldDef1.arguments[0]
         input1.name == "ids"
         input1.description == "No Description"
@@ -84,7 +84,7 @@ class TypeRegistryIntegrationTest extends Specification {
         input3.name == "id"
         input3.description == "No Description"
         input3.type instanceof GraphQLNonNull
-        def inputWrappedType3 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
+        def inputWrappedType3 = (GraphQLScalarType) ((GraphQLNonNull)input3.type).wrappedType
         inputWrappedType3.name == "ID"
         inputWrappedType3.description == "Built-in ID"
 
@@ -99,6 +99,35 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDefType4.description == "A connection to a list of items."
         fieldDefType4.fieldDefinitions.size() == 2
         fieldDefType4.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
+
+        // ZZZ Nodes field
+        def fieldDef5 = type.fieldDefinitions[5]
+        fieldDef5.name == "zZZNodes"
+        fieldDef5.description == "No Description"
+        fieldDef5.type instanceof GraphQLList
+        GraphQLList fieldDefType5 = (GraphQLList) fieldDef5.type
+        GraphQLInterfaceType wrappedType5 = (GraphQLInterfaceType) fieldDefType5.wrappedType
+        wrappedType5.name == "Node"
+        wrappedType5.description == "An object with an ID"
+        wrappedType5.fieldDefinitions.size() == 1
+        def input5 = (GraphQLArgument) fieldDef5.arguments[0]
+        input5.name == "ids"
+        input5.description == "No Description"
+        input5.type instanceof GraphQLNonNull
+        def inputWrappedType5 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
+        inputWrappedType5.name == "ID"
+        inputWrappedType5.description == "Built-in ID"
+
+        // ZZZ Videos field
+        def fieldDef6 = type.fieldDefinitions[6]
+        fieldDef6.name == "zZZVideos"
+        fieldDef6.description == "No Description"
+        fieldDef6.type instanceof GraphQLList
+        GraphQLList fieldDefType6 = (GraphQLList) fieldDef6.type
+        GraphQLObjectType wrappedType6 = (GraphQLObjectType) fieldDefType6.wrappedType
+        wrappedType6.name == "Video"
+        wrappedType6.description == "No Description"
+        wrappedType6.fieldDefinitions.size() == 5
     }
 
     def "Inspect Simple Object type"() {

@@ -11,6 +11,7 @@ import com.nfl.glitr.registry.TypeRegistry;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import rx.functions.Func4;
 
 import javax.annotation.Nullable;
@@ -21,7 +22,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *  Output type converter function for paging arguments annotations.
@@ -30,8 +30,6 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
 
     private RelayHelper relayHelper;
     private TypeRegistry typeRegistry;
-
-    private final Map<String, GraphQLObjectType> connectionRegistry = new ConcurrentHashMap<>();
 
 
     @Override
@@ -73,7 +71,8 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         GraphQLObjectType connectionType = relayHelper.connectionType(endEdgeClass.getSimpleName(), edgeType, Lists.newArrayList());
 
         // check if a connection with this name already exists
-        GraphQLObjectType qlObjectType = connectionRegistry.get(connectionType.getName());
+        Map<String, GraphQLType> nameRegistry = typeRegistry.getNameRegistry();
+        GraphQLObjectType qlObjectType = (GraphQLObjectType) nameRegistry.get(connectionType.getName());
         if (qlObjectType != null) {
             // TODO: better equality function
             if (!qlObjectType.toString().equals(connectionType.toString())) {
@@ -84,7 +83,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         }
 
         // add the connection to the registry and return the connection
-        connectionRegistry.put(connectionType.getName(), connectionType);
+        nameRegistry.put(connectionType.getName(), connectionType);
         return connectionType;
     }
 

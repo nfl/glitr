@@ -59,34 +59,46 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType1.name == "ID"
         inputWrappedType1.description == "Built-in ID"
 
-        // Video field
+        // Other Video field
         def fieldDef2 = type.fieldDefinitions[2]
-        fieldDef2.name == "video"
+        fieldDef2.name == "otherVideos"
         fieldDef2.description == "No Description"
+        fieldDef2.arguments.name as Set == ["first", "after"] as Set
         fieldDef2.type instanceof GraphQLObjectType
         GraphQLObjectType fieldDefType2 = (GraphQLObjectType) fieldDef2.type
-        fieldDefType2.name == "Video"
-        fieldDefType2.description == "No Description"
-        fieldDefType2.fieldDefinitions.size() == 5
-        def input2 = (GraphQLArgument) fieldDef2.arguments[0]
-        input2.name == "id"
-        input2.description == "No Description"
-        input2.type instanceof GraphQLNonNull
-        def inputWrappedType2 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
-        inputWrappedType2.name == "ID"
-        inputWrappedType2.description == "Built-in ID"
+        fieldDefType2.name == "VideoConnection"
+        fieldDefType2.description == "A connection to a list of items."
+        fieldDefType2.fieldDefinitions.size() == 2
+        fieldDefType2.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
 
-        // Videos field
+        // Video field
         def fieldDef3 = type.fieldDefinitions[3]
-        fieldDef3.name == "videos"
+        fieldDef3.name == "video"
         fieldDef3.description == "No Description"
-        fieldDef3.arguments.name as Set == ["first", "after"] as Set
         fieldDef3.type instanceof GraphQLObjectType
         GraphQLObjectType fieldDefType3 = (GraphQLObjectType) fieldDef3.type
-        fieldDefType3.name == "VideoConnection"
-        fieldDefType3.description == "A connection to a list of items."
-        fieldDefType3.fieldDefinitions.size() == 2
-        fieldDefType3.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
+        fieldDefType3.name == "Video"
+        fieldDefType3.description == "No Description"
+        fieldDefType3.fieldDefinitions.size() == 5
+        def input3 = (GraphQLArgument) fieldDef3.arguments[0]
+        input3.name == "id"
+        input3.description == "No Description"
+        input3.type instanceof GraphQLNonNull
+        def inputWrappedType3 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
+        inputWrappedType3.name == "ID"
+        inputWrappedType3.description == "Built-in ID"
+
+        // Videos field
+        def fieldDef4 = type.fieldDefinitions[4]
+        fieldDef4.name == "videos"
+        fieldDef4.description == "No Description"
+        fieldDef4.arguments.name as Set == ["first", "after"] as Set
+        fieldDef4.type instanceof GraphQLObjectType
+        GraphQLObjectType fieldDefType4 = (GraphQLObjectType) fieldDef4.type
+        fieldDefType4.name == "VideoConnection"
+        fieldDefType4.description == "A connection to a list of items."
+        fieldDefType4.fieldDefinitions.size() == 2
+        fieldDefType4.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
     }
 
     def "Inspect Simple Object type"() {

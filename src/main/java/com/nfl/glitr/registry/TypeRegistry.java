@@ -75,6 +75,7 @@ public class TypeRegistry implements TypeResolver {
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
+    private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
     private final Map<Class, List<Object>> overrides;
 
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -108,6 +109,7 @@ public class TypeRegistry implements TypeResolver {
             this.nodeInterface = relay.nodeInterface(this);
             // register Node so we don't inadvertently recreate it later
             this.registry.put(Node.class, this.nodeInterface);
+            this.nameRegistry.put(Node.class.getSimpleName(), this.nodeInterface);
         }
         this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
     }
@@ -175,11 +177,13 @@ public class TypeRegistry implements TypeResolver {
 
         // put a type reference in while building the type to work around circular references
         registry.put(clazz, new GraphQLTypeReference(clazz.getSimpleName()));
+        nameRegistry.put(clazz.getSimpleName(), new GraphQLTypeReference(clazz.getSimpleName()));
 
         GraphQLOutputType type = graphQLTypeFactory.createGraphQLOutputType(clazz);
 
         if (type != null) {
             registry.put(clazz, type);
+            nameRegistry.put(clazz.getSimpleName(), type);
         } else {
             throw new IllegalArgumentException("Unable to create GraphQLOutputType for: " + clazz.getCanonicalName());
         }
@@ -203,6 +207,7 @@ public class TypeRegistry implements TypeResolver {
 
         if (type != null) {
             registry.put(clazz, type);
+            nameRegistry.put(clazz.getSimpleName(), type);
         } else {
             throw new IllegalArgumentException("Unable to create GraphQLInputType for: " + clazz.getCanonicalName());
         }
@@ -643,5 +648,9 @@ public class TypeRegistry implements TypeResolver {
         } else {
             throw new IllegalArgumentException("Unable to convert type " + type.getTypeName() + " to GraphQLInputType");
         }
+    }
+
+    public Map<String, GraphQLType> getNameRegistry() {
+        return nameRegistry;
     }
 }

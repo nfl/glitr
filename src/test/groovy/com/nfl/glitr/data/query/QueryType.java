@@ -18,8 +18,27 @@ public class QueryType {
     }
 
     @GlitrArgument(name = "id", type = String.class, nullable = false)
-    public com.nfl.glitr.relay.Node getNode() { return null; }
+    public com.nfl.glitr.relay.Node getNode() {
+        return null;
+    }
 
     @GlitrArgument(name = "ids", type = String[].class, nullable = false)
-    public List<com.nfl.glitr.relay.Node> getNodes() { return null; }
+    public List<com.nfl.glitr.relay.Node> getNodes() {
+        return null;
+    }
+
+    @GlitrForwardPagingArguments
+    public List<Video> getOtherVideos() {
+        return null;
+    }
+
+    @GlitrArgument(name = "ids", type = String[].class, nullable = false)
+    public List<com.nfl.glitr.relay.Node> getZZZNodes() {
+        return null;
+    }
+
+    // no arguments
+    public List<Video> getZZZVideos() {
+        return null;
+    }
 }

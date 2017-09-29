@@ -4,7 +4,13 @@ import com.nfl.glitr.exception.GlitrException;
 import graphql.language.*;
 import graphql.parser.Parser;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+
+import static org.apache.commons.lang3.StringUtils.substringBetween;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 /*
      This class is used as a tool to compute complexity of a graphql string query.
@@ -27,6 +33,7 @@ public class QueryComplexityCalculator {
     private final int maxScoreLimit;
     private final int defaultMultiplier;
     private final Parser documentParser;
+    private Map<String, Integer> queryComplexityMultipliersMap;
 
     public QueryComplexityCalculator() {
         this.maxCharacterLimit = 10000;
@@ -50,6 +57,20 @@ public class QueryComplexityCalculator {
         this.maxScoreLimit = maxScoreLimit;
         this.defaultMultiplier = defaultMultiplier;
         this.documentParser = documentParser;
+    }
+
+    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int maxScoreLimit, int defaultMultiplier, Parser documentParser, Map<String, Integer> queryComplexityMultipliersMap) {
+        this.maxCharacterLimit = maxCharacterLimit;
+        this.maxDepthLimit = maxDepthLimit;
+        this.maxScoreLimit = maxScoreLimit;
+        this.defaultMultiplier = defaultMultiplier;
+        this.documentParser = documentParser;
+        this.queryComplexityMultipliersMap = Optional.ofNullable(queryComplexityMultipliersMap).orElse(new HashMap<>());
+    }
+
+    public QueryComplexityCalculator withQueryComplexityMultipliersMap(Map<String, Integer> queryComplexityMultipliersMap) {
+        this.queryComplexityMultipliersMap = Optional.ofNullable(queryComplexityMultipliersMap).orElse(new HashMap<>());
+        return this;
     }
 
     /**
@@ -267,17 +288,29 @@ public class QueryComplexityCalculator {
      * @return query score
      */
     public int queryScore(String query) {
-        return queryScore(parseRootNode(query), 0);
+        String parent = null;
+        if (isMutation(query)) {
+            parent = getMutationName(query);
+        }
+
+        return queryScore(parent, parseRootNode(query), 0);
     }
 
-    private int queryScore(Node queryNode, int depth) {
+    private String getMutationName(String query) {
+        return trimToNull(substringBetween(query, "{", "("));
+    }
+
+    private int queryScore(String path, Node queryNode, int depth) {
         int score = 0;
         int multiplier = 0;
 
         String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
         if (nodeType.equals(QUERY_FIELD) && !isLeaf(queryNode)) {
             Field field = (Field) queryNode;
-            multiplier = extractMultiplierFromListField(field);
+            if (!field.getName().equals("edges") && !field.getName().equals("node")) {
+                path = NodeUtil.buildPath(path, field.getName());
+            }
+            multiplier = extractMultiplierFromListField(field, path);
             depth += 1;
         }
 
@@ -285,7 +318,8 @@ public class QueryComplexityCalculator {
             if (currentChild.getClass() == Argument.class) {
                 continue;
             }
-            score += (depth * multiplier) + queryScore(currentChild, depth);
+
+            score += (depth * multiplier) + queryScore(path, currentChild, depth);
         }
         return score;
     }
@@ -357,7 +391,7 @@ public class QueryComplexityCalculator {
      *****************************************************************************************************************
      *****************************************************************************************************************
      */
-    private int extractMultiplierFromListField(Field node) {
+    private int extractMultiplierFromListField(Field node, String path) {
         Optional<Argument> listLimit = node.getArguments().stream()
                 .filter(argument -> argument.getName().equals("first"))
                 .findFirst();
@@ -369,7 +403,7 @@ public class QueryComplexityCalculator {
 
         // If it has children with no argument
         if (!isLeaf(node)) {
-            return defaultMultiplier;
+            return queryComplexityMultipliersMap.getOrDefault(path, defaultMultiplier);
         }
 
         // If its a leaf

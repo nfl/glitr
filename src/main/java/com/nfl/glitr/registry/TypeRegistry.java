@@ -173,6 +173,8 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLType lookupOutput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
+        } else if (nameRegistry.containsKey(clazz.getSimpleName())) {
+            return nameRegistry.get(clazz.getSimpleName());
         }
 
         // put a type reference in while building the type to work around circular references
@@ -201,6 +203,8 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLType lookupInput(Class clazz) {
         if (registry.containsKey(clazz) && !(registry.get(clazz) instanceof GraphQLTypeReference)) {
             return registry.get(clazz);
+        } else if (nameRegistry.containsKey(clazz.getSimpleName()) && !(nameRegistry.get(clazz.getSimpleName()) instanceof GraphQLTypeReference)) {
+            return nameRegistry.get(clazz.getSimpleName());
         }
 
         GraphQLInputType type = graphQLTypeFactory.createGraphQLInputType(clazz);

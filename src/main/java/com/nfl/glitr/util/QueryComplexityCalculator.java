@@ -33,7 +33,7 @@ public class QueryComplexityCalculator {
     private final int maxScoreLimit;
     private final int defaultMultiplier;
     private final Parser documentParser;
-    private Map<String, Integer> queryComplexityMultipliersMap;
+    private Map<String, Integer> queryComplexityMultipliersMap = new HashMap<>();
 
     public QueryComplexityCalculator() {
         this.maxCharacterLimit = 10000;
@@ -318,7 +318,6 @@ public class QueryComplexityCalculator {
             if (currentChild.getClass() == Argument.class) {
                 continue;
             }
-
             score += (depth * multiplier) + queryScore(path, currentChild, depth);
         }
         return score;

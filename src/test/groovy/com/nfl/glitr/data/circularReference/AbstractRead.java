@@ -1,8 +1,11 @@
 package com.nfl.glitr.data.circularReference;
 
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
+
 public abstract class AbstractRead {
 
     private int pageCount;
+    @GlitrQueryComplexity("12")
     private Novel novel;
 
 

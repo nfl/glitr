@@ -121,7 +121,7 @@ public class TypeRegistry implements TypeResolver {
      * @return GraphQLType
      */
     public GraphQLType lookup(Class clazz) {
-        lookupComplexity(null,null, clazz);
+        lookupComplexity(clazz, null,null);
 
         // do a first pass lookup
         lookupOutput(clazz);
@@ -194,7 +194,7 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLObjectType createRelayMutationType(Class clazz) {
-        lookupComplexity(null,null, clazz);
+        lookupComplexity(clazz, null,null);
 
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
         addExtraMethodsToTheSchema(clazz, methods);
@@ -216,7 +216,18 @@ public class TypeRegistry implements TypeResolver {
         return builder.build();
     }
 
-    private void lookupComplexity(Set<Class> parsedTypes, String parentPath, Class clazz) {
+    /**
+     * check if the given class contains property marked with @{@link GlitrQueryComplexity} annotation, if found
+     * add it to query complexity multipliers map.
+     * <p> processing of incoming {@code clazz} is based on recursion and moving into deep of property types and finished
+     * if the current processing property is the one of the primitives or the type is an {@code Object}
+     * or the type of property is one of the instance of {@code Map}
+     *
+     * @param clazz class on which to preform introspection
+     * @param parentPath chain of processed properties in parent classes. <b>e.g.: viewer{@value NodeUtil#PATH_SEPARATOR}videoUrl{@value NodeUtil#PATH_SEPARATOR}messages</b>
+     * @param parsedTypes collection of already processed types, to avoid a circular processing
+     */
+    private void lookupComplexity(Class clazz, String parentPath, Set<Class> parsedTypes) {
         for (Method method : clazz.getDeclaredMethods()) {
             String name = ReflectionUtil.sanitizeMethodName(method.getName());
             String newPath = NodeUtil.buildPath(parentPath, name);
@@ -232,7 +243,7 @@ public class TypeRegistry implements TypeResolver {
             parsedTypes = Optional.ofNullable(parsedTypes).orElse(new HashSet<>());
             if (!parsedTypes.contains(returnType)) {
                 parsedTypes.add(returnType);
-                lookupComplexity(parsedTypes, newPath, returnType);
+                lookupComplexity(returnType, newPath, parsedTypes);
             }
         }
     }

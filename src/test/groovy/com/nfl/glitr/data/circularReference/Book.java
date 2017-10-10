@@ -1,8 +1,11 @@
 package com.nfl.glitr.data.circularReference;
 
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
+
 public class Book implements Readable {
 
     private String title;
+    @GlitrQueryComplexity("12")
     private Book synopsis;
 
 

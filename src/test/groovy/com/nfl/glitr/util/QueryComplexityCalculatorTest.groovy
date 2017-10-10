@@ -1,5 +1,9 @@
 package com.nfl.glitr.util
 
+import com.nfl.glitr.Glitr
+import com.nfl.glitr.GlitrBuilder
+import com.nfl.glitr.data.mutation.MutationType
+import com.nfl.glitr.data.query.QueryType
 import com.nfl.glitr.exception.GlitrException
 import spock.lang.Shared
 import spock.lang.Specification
@@ -804,5 +808,87 @@ class QueryComplexityCalculatorTest extends Specification {
         |    }'''.stripMargin()       | "query is a mutation" || false
 
 
+    }
+
+    @Unroll
+    def "Calculate query complexity with default multiplier"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0,1))
+                    .build()
+
+        when:
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
+            mutation {
+                saveVideoInfoMutation(input: {
+                    clientMutationId: \"mutationId-Sx160620160639713-1\"
+                    videoMutation: {
+                        title: "My video title"
+                        bitrateList: [
+                            {id: "1"},
+                            {id: "2"},
+                            {id: "3"}
+                        ]
+                    }
+                }){
+                    clientMutationId
+                    videoMutationPayload {
+                        title
+                        $bitrate
+                    }
+                }
+            }
+        """);
+        then:
+            queryScore == expectedScore
+        where:
+            bitrate           || expectedScore
+            "bitrateList{id}" || 9
+            "_"               || 1
+    }
+
+    @Unroll
+    def "Calculate query complexity with specified multiplier"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0,0))
+                    .build()
+
+        when:
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
+            mutation {
+                saveVideoInfoMutation(input: {
+                    clientMutationId: \"mutationId-Sx160620160639713-1\"
+                    videoMutation: {
+                        title: "My video title"
+                        bitrateList: [
+                            {id: "1"},
+                            {id: "2"},
+                            {id: "3"}
+                        ]
+                    }
+                }){
+                    clientMutationId
+                    videoMutationPayload {
+                        title
+                        $bitrate
+                    }
+                }
+            }
+        """);
+        then:
+            queryScore == expectedScore
+        where:
+            bitrate           || expectedScore
+            "bitrateList{id}" || 8
+            "_"               || 0
     }
 }

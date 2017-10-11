@@ -352,6 +352,7 @@ public class QueryComplexityCalculator {
     /**
      *
      * @param node - The field node we would like to test against
+     * @param path - Already tested nodes chain
      * @return the multiplier
      *
      ****************************************************************************************************************
@@ -361,7 +362,7 @@ public class QueryComplexityCalculator {
      *     players(first:5){
      *         playerId
      *     }
-     * } --> returns 5
+     * } == returns 5
      *****************************************************************************************************************
      *****************************************************************************************************************
      *
@@ -372,7 +373,7 @@ public class QueryComplexityCalculator {
      *     players{
      *         playerId
      *     }
-     * } --> returns 10, which is the default multiplier above.
+     * } == returns 10, which is the default multiplier above.
      *****************************************************************************************************************
      *****************************************************************************************************************
      *

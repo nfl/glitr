@@ -171,10 +171,22 @@ public class ReflectionUtil {
         return field;
     }
 
+    public static <A extends Annotation> Optional<A> getAnnotationOfMethodOrField(Class declaringClass, Method method, Class<A> aClass) {
+        String fieldName = ReflectionUtil.sanitizeMethodName(method.getName());
+        Field field = ReflectionUtil.getFieldByName(declaringClass, fieldName);
+
+        A annotation = method.getAnnotation(aClass);
+        if (annotation == null && field != null) {
+            annotation = field.getAnnotation(aClass);
+        }
+
+        return Optional.ofNullable(annotation);
+    }
+
     public static Class getSanitizedMethodReturnType(Method method) {
         Class<?> returnType = method.getReturnType();
 
-        if(!isSupportedType(returnType)) {
+        if (!isSupportedType(returnType)) {
             return null;
         }
 

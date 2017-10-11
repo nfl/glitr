@@ -818,7 +818,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     .withQueryRoot(new QueryType())
                     .withMutationRoot(new MutationType())
                     .withObjectMapper(SerializationUtil.objectMapper)
-                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0,1))
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0, 1))
                     .build()
 
         when:
@@ -859,7 +859,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     .withQueryRoot(new QueryType())
                     .withMutationRoot(new MutationType())
                     .withObjectMapper(SerializationUtil.objectMapper)
-                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0,0))
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(0, 0, 0, 0))
                     .build()
 
         when:
@@ -890,5 +890,56 @@ class QueryComplexityCalculatorTest extends Specification {
             bitrate           || expectedScore
             "bitrateList{id}" || 8
             "_"               || 0
+    }
+
+
+    @Unroll
+    def "Invoke multiplier extractor with and without pagination support"() {
+        setup:
+            //def qcc = new QueryComplexityCalculator(0, 0, 0,0)
+            def queryComplexityCalculator = Spy(QueryComplexityCalculator)
+
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(queryComplexityCalculator)
+                    .build()
+
+        when:
+
+            glitr.getQueryComplexityCalculator().queryScore(query);
+        then:
+            invocationTimes * queryComplexityCalculator.extractMultiplierFromListField(*_)
+
+        where:
+            query                           || invocationTimes
+            """
+            {
+                videos {
+                    edges {
+                        node {
+                            bitrateList {
+                                id
+                            }
+                        }
+                    }
+                }
+            }
+            """                              || 2
+            """
+            {
+                zZZVideos {
+                    edges {
+                        node {
+                            bitrateList {
+                                id
+                            }
+                        }
+                    }
+                }
+            }
+            """                              || 4
     }
 }

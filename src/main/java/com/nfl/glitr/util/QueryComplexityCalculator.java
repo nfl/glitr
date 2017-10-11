@@ -5,9 +5,7 @@ import graphql.language.*;
 import graphql.parser.Parser;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.substringBetween;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
@@ -34,6 +32,7 @@ public class QueryComplexityCalculator {
     private final int defaultMultiplier;
     private final Parser documentParser;
     private Map<String, Integer> queryComplexityMultipliersMap = new HashMap<>();
+    private Set<String> queryComplexityExcludeNodes = new HashSet<>();
 
     public QueryComplexityCalculator() {
         this.maxCharacterLimit = 10000;
@@ -59,13 +58,9 @@ public class QueryComplexityCalculator {
         this.documentParser = documentParser;
     }
 
-    public QueryComplexityCalculator(int maxCharacterLimit, int maxDepthLimit, int maxScoreLimit, int defaultMultiplier, Parser documentParser, Map<String, Integer> queryComplexityMultipliersMap) {
-        this.maxCharacterLimit = maxCharacterLimit;
-        this.maxDepthLimit = maxDepthLimit;
-        this.maxScoreLimit = maxScoreLimit;
-        this.defaultMultiplier = defaultMultiplier;
-        this.documentParser = documentParser;
-        this.queryComplexityMultipliersMap = Optional.ofNullable(queryComplexityMultipliersMap).orElse(new HashMap<>());
+    public QueryComplexityCalculator withQueryComplexityExcludeNodes(Set<String> queryComplexityExcludeNodes) {
+        this.queryComplexityExcludeNodes = Optional.ofNullable(queryComplexityExcludeNodes).orElse(new HashSet<>());
+        return this;
     }
 
     public QueryComplexityCalculator withQueryComplexityMultipliersMap(Map<String, Integer> queryComplexityMultipliersMap) {
@@ -307,11 +302,11 @@ public class QueryComplexityCalculator {
         String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
         if (nodeType.equals(QUERY_FIELD) && !isLeaf(queryNode)) {
             Field field = (Field) queryNode;
-            if (!field.getName().equals("edges") && !field.getName().equals("node")) {
+            if (!queryComplexityExcludeNodes.contains(NodeUtil.buildPath(path, field.getName()))) {
                 path = NodeUtil.buildPath(path, field.getName());
+                multiplier = extractMultiplierFromListField(field, path);
+                depth += 1;
             }
-            multiplier = extractMultiplierFromListField(field, path);
-            depth += 1;
         }
 
         for (Node currentChild : queryNode.getChildren()) {
@@ -390,7 +385,7 @@ public class QueryComplexityCalculator {
      *****************************************************************************************************************
      *****************************************************************************************************************
      */
-    private int extractMultiplierFromListField(Field node, String path) {
+    protected int extractMultiplierFromListField(Field node, String path) {
         Optional<Argument> listLimit = node.getArguments().stream()
                 .filter(argument -> argument.getName().equals("first"))
                 .findFirst();
@@ -430,7 +425,7 @@ public class QueryComplexityCalculator {
         //We need to find the end of the mutation input, which is '})'
         int endOfMutationInput = query.indexOf("})");
 
-        if(endOfMutationInput == -1){
+        if (endOfMutationInput == -1){
             throw new GlitrException("Malformed mutation query");
         }
 

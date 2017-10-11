@@ -2,6 +2,7 @@ package com.nfl.glitr.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
+import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
@@ -32,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.nfl.glitr.util.ReflectionUtil.getAnnotationOfMethodOrField;
 import static graphql.Scalars.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -48,6 +50,7 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
     private final Map<String, Integer> queryComplexityMultipliersMap = new ConcurrentHashMap<>();
+    private final Set<String> queryComplexityExcludeNodes = new HashSet<>();
     private final Map<Class, List<Object>> overrides;
 
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -217,7 +220,7 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
-     * check if the given class contains property marked with @{@link GlitrQueryComplexity} annotation, if found
+     * Check if the given class contains property marked with @{@link GlitrQueryComplexity} annotation, if found
      * add it to query complexity multipliers map.
      * <p> processing of incoming {@code clazz} is based on recursion and moving into deep of property types and finished
      * if the current processing property is the one of the primitives or the type is an {@code Object}
@@ -232,11 +235,25 @@ public class TypeRegistry implements TypeResolver {
             String name = ReflectionUtil.sanitizeMethodName(method.getName());
             String newPath = NodeUtil.buildPath(parentPath, name);
 
-            Optional<String> complexity = getComplexity(clazz, method);
-            complexity.ifPresent(compl -> queryComplexityMultipliersMap.put(newPath, Integer.valueOf(compl)));
+            Optional<String> complexityOpt = getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class)
+                    .map(GlitrQueryComplexity::value);
+            if (complexityOpt.isPresent()) {
+                try {
+                    Integer complexity = Integer.valueOf(complexityOpt.get());
+                    queryComplexityMultipliersMap.put(newPath, complexity);
+                } catch (NumberFormatException e) {
+                    logger.warn("complexity of {} in class {} should be an Integer value", name, clazz.getName());
+                }
+            }
+
+            Optional<GlitrForwardPagingArguments> glitrForwardPagingArguments = getAnnotationOfMethodOrField(clazz, method, GlitrForwardPagingArguments.class);
+            if (glitrForwardPagingArguments.isPresent()) {
+                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "edges") );
+                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "node") );
+            }
 
             Class<?> returnType = ReflectionUtil.getSanitizedMethodReturnType(method);
-            if(returnType == null) {
+            if (returnType == null) {
                 continue;
             }
 
@@ -246,18 +263,6 @@ public class TypeRegistry implements TypeResolver {
                 lookupComplexity(returnType, newPath, parsedTypes);
             }
         }
-    }
-
-    private Optional<String> getComplexity(Class declaringClass, Method method) {
-        String fieldName = ReflectionUtil.sanitizeMethodName(method.getName());
-        Field field = ReflectionUtil.getFieldByName(declaringClass, fieldName);
-
-        GlitrQueryComplexity queryComplexity = method.getAnnotation(GlitrQueryComplexity.class);
-        if(queryComplexity == null && field != null) {
-            queryComplexity = field.getAnnotation(GlitrQueryComplexity.class);
-        }
-
-        return Optional.ofNullable(queryComplexity).map(GlitrQueryComplexity::value);
     }
 
     private GraphQLFieldDefinition getGraphQLFieldDefinition(Class clazz, Pair<Method, Class> pair) {
@@ -397,7 +402,7 @@ public class TypeRegistry implements TypeResolver {
                     if (dataFetcher != null) {
                         return dataFetcher;
                     }
-                } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+                } else if (annotationToDataFetcherMap.containsKey(annotationType)) {
                     return annotationToDataFetcherMap.get(annotationType);
                 }
             }
@@ -416,7 +421,7 @@ public class TypeRegistry implements TypeResolver {
                 if (dataFetcher != null) {
                     return dataFetcher;
                 }
-            } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+            } else if (annotationToDataFetcherMap.containsKey(annotationType)) {
                 return annotationToDataFetcherMap.get(annotationType);
             }
         }
@@ -669,5 +674,9 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<String, Integer> getQueryComplexityMultipliersMap() {
         return queryComplexityMultipliersMap;
+    }
+
+    public Set<String> getQueryComplexityExcludeNodes() {
+        return queryComplexityExcludeNodes;
     }
 }

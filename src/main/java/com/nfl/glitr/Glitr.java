@@ -22,17 +22,19 @@ public class Glitr {
     private static ObjectMapper objectMapper;
 
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot, QueryComplexityCalculator queryComplexityCalculator) {
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
         this(typeRegistry, queryRoot, objectMapper, null, mutationRoot, queryComplexityCalculator);
     }
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot, QueryComplexityCalculator queryComplexityCalculator) {
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(queryRoot, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
         if (nonNull(queryComplexityCalculator)) {
-            this.queryComplexityCalculator = queryComplexityCalculator.withQueryComplexityMultipliersMap(typeRegistry.getQueryComplexityMultipliersMap());
+            this.queryComplexityCalculator = queryComplexityCalculator.
+                    withQueryComplexityMultipliersMap(typeRegistry.getQueryComplexityMultipliersMap())
+                    .withQueryComplexityExcludeNodes(typeRegistry.getQueryComplexityExcludeNodes());
         }
         Glitr.objectMapper = objectMapper;
         this.schema = buildSchema(queryRoot, mutationRoot);
@@ -80,11 +82,5 @@ public class Glitr {
     public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot) {
         this.schema = buildSchema(queryRoot, mutationRoot);
         return this.schema;
-    }
-
-    public void validateQuery(String query) throws GlitrException {
-        if (nonNull(queryComplexityCalculator)) {
-            queryComplexityCalculator.validate(query);
-        }
     }
 }

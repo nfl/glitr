@@ -1,18 +1,23 @@
 package com.nfl.glitr.data.mutation;
 
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
+
+import java.util.List;
+
 public class VideoMutationOut {
 
     private String title;
     private String id;
     private String url;
-    private String bitrateList;
+    @GlitrQueryComplexity("4")
+    private List<Bitrate> bitrateList;
 
 
-    public String getBitrateList() {
+    public List<Bitrate> getBitrateList() {
         return bitrateList;
     }
 
-    public VideoMutationOut setBitrateList(String bitrateList) {
+    public VideoMutationOut setBitrateList(List<Bitrate> bitrateList) {
         this.bitrateList = bitrateList;
         return this;
     }

@@ -60,6 +60,7 @@ dependencies {
 
      // Spock test dependencies
     testCompile("junit:junit:4.12")
+    testCompile("cglib:cglib-nodep:3.2.4")  // for spock mocking, need later version for Java 8
     testCompile("org.spockframework:spock-core:1.0-groovy-2.4")
     testCompile("org.codehaus.groovy:groovy-all:2.4.4")
     testCompile("com.fasterxml.jackson.core:jackson-databind:2.6.2")

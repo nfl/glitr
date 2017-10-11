@@ -1,38 +1,52 @@
 package com.nfl.glitr;
 
+import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.util.ObjectMapper;
+import com.nfl.glitr.util.QueryComplexityCalculator;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import javax.annotation.Nullable;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.Objects.nonNull;
 
 public class Glitr {
 
     private TypeRegistry typeRegistry;
     private RelayHelper relayHelper;
     private GraphQLSchema schema;
+    private QueryComplexityCalculator queryComplexityCalculator;
     private static ObjectMapper objectMapper;
 
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot) {
-        this(typeRegistry, queryRoot, objectMapper, null, mutationRoot);
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
+        this(typeRegistry, queryRoot, objectMapper, null, mutationRoot, queryComplexityCalculator);
     }
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot) {
+    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(queryRoot, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
+        if (nonNull(queryComplexityCalculator)) {
+            this.queryComplexityCalculator = queryComplexityCalculator.
+                    withQueryComplexityMultipliersMap(typeRegistry.getQueryComplexityMultipliersMap())
+                    .withQueryComplexityExcludeNodes(typeRegistry.getQueryComplexityExcludeNodes());
+        }
         Glitr.objectMapper = objectMapper;
         this.schema = buildSchema(queryRoot, mutationRoot);
     }
 
     public TypeRegistry getTypeRegistry() {
         return typeRegistry;
+    }
+
+    @Nullable
+    public QueryComplexityCalculator getQueryComplexityCalculator() {
+        return queryComplexityCalculator;
     }
 
     @Nullable

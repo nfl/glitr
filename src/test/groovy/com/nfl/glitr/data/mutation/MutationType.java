@@ -21,7 +21,9 @@ public class MutationType {
         @Override
         public VideoMutationPayload call(VideoMutationInput mtnInput, DataFetchingEnvironment env) {
             VideoMutationPayload out = new VideoMutationPayload();
-            out.setVideoMutationPayload(new VideoMutationOut().setTitle(mtnInput.getVideoMutation().getTitle()));
+            out.setVideoMutationPayload(new VideoMutationOut()
+                    .setTitle(mtnInput.getVideoMutation().getTitle())
+                    .setBitrateList(mtnInput.getVideoMutation().getBitrateList()));
             return out;
         }
     }

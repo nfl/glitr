@@ -6,6 +6,7 @@ import graphql.execution.batched.BatchedDataFetcher;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -157,6 +158,56 @@ public class ReflectionUtil {
             throw new IllegalArgumentException(e);
         }
         return false;
+    }
+
+    public static Field getFieldByName(Class declaringClass, String name) {
+        Field field = null;
+        try {
+            field = declaringClass.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            // that's fine
+            logger.debug("Field not found: {} for class {} ", name, declaringClass);
+        }
+        return field;
+    }
+
+    public static <A extends Annotation> Optional<A> getAnnotationOfMethodOrField(Class declaringClass, Method method, Class<A> aClass) {
+        String fieldName = ReflectionUtil.sanitizeMethodName(method.getName());
+        Field field = ReflectionUtil.getFieldByName(declaringClass, fieldName);
+
+        A annotation = method.getAnnotation(aClass);
+        if (annotation == null && field != null) {
+            annotation = field.getAnnotation(aClass);
+        }
+
+        return Optional.ofNullable(annotation);
+    }
+
+    public static Class getSanitizedMethodReturnType(Method method) {
+        Class<?> returnType = method.getReturnType();
+
+        if (!isSupportedType(returnType)) {
+            return null;
+        }
+
+        if (Collection.class.isAssignableFrom(returnType) && method.getGenericReturnType() instanceof ParameterizedType) {
+            try {
+                ParameterizedType pType = (ParameterizedType)method.getGenericReturnType();
+                returnType = (Class<?>) pType.getActualTypeArguments()[0];
+
+                if (!isSupportedType(returnType)) {
+                    return null;
+                }
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        return returnType;
+    }
+
+    private static boolean isSupportedType(Class<?> clazz) {
+        return !(ClassUtils.isPrimitiveOrWrapper(clazz) || clazz == Object.class || Map.class.isAssignableFrom(clazz));
     }
 
     /**

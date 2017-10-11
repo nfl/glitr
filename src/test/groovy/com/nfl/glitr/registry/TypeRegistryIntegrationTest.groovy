@@ -264,4 +264,23 @@ class TypeRegistryIntegrationTest extends Specification {
         then: "Make sure it implements the interfaces"
         type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName, Identifiable.simpleName, Playable.class.simpleName] as Set
     }
+
+    def "Inspect Query Complexity Exclude Nodes"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryRoot(new QueryType())
+                    .build()
+        when:
+            (GraphQLObjectType) glitr.typeRegistry.lookup(QueryType.class)
+        then:
+            def excludeNodes = glitr.typeRegistry.getQueryComplexityExcludeNodes()
+            excludeNodes.contains("otherVideos->node")
+            excludeNodes.contains("otherVideos->edges")
+            excludeNodes.contains("videos->edges")
+            excludeNodes.contains("videos->node")
+
+            !excludeNodes.contains("zZZVideos->node")
+            !excludeNodes.contains("zZZVideos->edges")
+    }
 }

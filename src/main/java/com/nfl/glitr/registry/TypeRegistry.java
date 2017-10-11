@@ -2,35 +2,19 @@ package com.nfl.glitr.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
+import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
-import com.nfl.glitr.registry.type.GraphQLEnumTypeFactory;
-import com.nfl.glitr.registry.type.GraphQLInputObjectTypeFactory;
-import com.nfl.glitr.registry.type.GraphQLInterfaceTypeFactory;
-import com.nfl.glitr.registry.type.GraphQLObjectTypeFactory;
-import com.nfl.glitr.registry.type.GraphQLTypeFactory;
-import com.nfl.glitr.registry.type.JavaType;
-import com.nfl.glitr.registry.type.Scalars;
+import com.nfl.glitr.registry.type.*;
 import com.nfl.glitr.relay.Node;
 import com.nfl.glitr.relay.Relay;
+import com.nfl.glitr.util.NodeUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.TypeResolutionEnvironment;
-import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeReference;
-import graphql.schema.PropertyDataFetcher;
-import graphql.schema.TypeResolver;
+import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,23 +29,12 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLFloat;
-import static graphql.Scalars.GraphQLID;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLLong;
-import static graphql.Scalars.GraphQLString;
+import static com.nfl.glitr.util.ReflectionUtil.getAnnotationOfMethodOrField;
+import static graphql.Scalars.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -76,6 +49,8 @@ public class TypeRegistry implements TypeResolver {
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
+    private final Map<String, Integer> queryComplexityMultipliersMap = new ConcurrentHashMap<>();
+    private final Set<String> queryComplexityExcludeNodes = new HashSet<>();
     private final Map<Class, List<Object>> overrides;
 
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -149,6 +124,8 @@ public class TypeRegistry implements TypeResolver {
      * @return GraphQLType
      */
     public GraphQLType lookup(Class clazz) {
+        lookupComplexity(clazz, null,null);
+
         // do a first pass lookup
         lookupOutput(clazz);
         // go over all the types in the type map and do another pass to resolve the GraphQL type references
@@ -220,6 +197,8 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLObjectType createRelayMutationType(Class clazz) {
+        lookupComplexity(clazz, null,null);
+
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
         addExtraMethodsToTheSchema(clazz, methods);
 
@@ -238,6 +217,55 @@ public class TypeRegistry implements TypeResolver {
                 .fields(fields);
 
         return builder.build();
+    }
+
+    /**
+     * Check if the given class contains a property marked with a @{@link GlitrQueryComplexity} annotation and,
+     * if found, add it to query complexity multipliers map.
+     * <p>Since processing of the incoming {@code clazz} is recursive, it'll run until it has reached one of the following:
+     * <ul>
+     *    <li> Primitive (Integer, String, etc) </li>
+     *    <li> {@code Object} </li>
+     *    <li> {@code Map} </li>
+     *</ul>
+     *
+     * @param clazz class on which to preform introspection
+     * @param parentPath chain of processed properties in parent classes. <b>e.g.: viewer{@value NodeUtil#PATH_SEPARATOR}videoUrl{@value NodeUtil#PATH_SEPARATOR}messages</b>
+     * @param parsedTypes collection of already processed types, to avoid a circular processing
+     */
+    private void lookupComplexity(Class clazz, String parentPath, Set<Class> parsedTypes) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            String name = ReflectionUtil.sanitizeMethodName(method.getName());
+            String newPath = NodeUtil.buildPath(parentPath, name);
+
+            Optional<String> complexityOpt = getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class)
+                    .map(GlitrQueryComplexity::value);
+            if (complexityOpt.isPresent()) {
+                try {
+                    Integer complexity = Integer.valueOf(complexityOpt.get());
+                    queryComplexityMultipliersMap.put(newPath, complexity);
+                } catch (NumberFormatException e) {
+                    logger.warn("complexity of {} in class {} should be an Integer value", name, clazz.getName());
+                }
+            }
+
+            Optional<GlitrForwardPagingArguments> glitrForwardPagingArguments = getAnnotationOfMethodOrField(clazz, method, GlitrForwardPagingArguments.class);
+            if (glitrForwardPagingArguments.isPresent()) {
+                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "edges") );
+                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "node") );
+            }
+
+            Class<?> returnType = ReflectionUtil.getSanitizedMethodReturnType(method);
+            if (returnType == null) {
+                continue;
+            }
+
+            parsedTypes = Optional.ofNullable(parsedTypes).orElse(new HashSet<>());
+            if (!parsedTypes.contains(returnType)) {
+                parsedTypes.add(returnType);
+                lookupComplexity(returnType, newPath, parsedTypes);
+            }
+        }
     }
 
     private GraphQLFieldDefinition getGraphQLFieldDefinition(Class clazz, Pair<Method, Class> pair) {
@@ -351,7 +379,7 @@ public class TypeRegistry implements TypeResolver {
         }
 
         // inspect annotations on field of same name
-        Field field = getFieldByName(declaringClass, fieldName);
+        Field field = ReflectionUtil.getFieldByName(declaringClass, fieldName);
         if (field == null) {
             return null;
         }
@@ -377,7 +405,7 @@ public class TypeRegistry implements TypeResolver {
                     if (dataFetcher != null) {
                         return dataFetcher;
                     }
-                } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+                } else if (annotationToDataFetcherMap.containsKey(annotationType)) {
                     return annotationToDataFetcherMap.get(annotationType);
                 }
             }
@@ -396,7 +424,7 @@ public class TypeRegistry implements TypeResolver {
                 if (dataFetcher != null) {
                     return dataFetcher;
                 }
-            } else if(annotationToDataFetcherMap.containsKey(annotationType)) {
+            } else if (annotationToDataFetcherMap.containsKey(annotationType)) {
                 return annotationToDataFetcherMap.get(annotationType);
             }
         }
@@ -412,7 +440,7 @@ public class TypeRegistry implements TypeResolver {
         arguments.addAll(getGraphQLArgumentsFromAnnotations(null, method, declaringClass, methodAnnotations));
 
         // inspect annotations on field of same name
-        Field field = getFieldByName(declaringClass, name);
+        Field field = ReflectionUtil.getFieldByName(declaringClass, name);
         if (field != null) {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
             arguments.addAll(getGraphQLArgumentsFromAnnotations(field, method, declaringClass, fieldAnnotations));
@@ -490,7 +518,7 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLOutputType getGraphQLOutputTypeFromAnnotationsOnField(Class declaringClass, Method method, GraphQLOutputType graphQLOutputType, String name) {
-        Field field = getFieldByName(declaringClass, name);
+        Field field = ReflectionUtil.getFieldByName(declaringClass, name);
 
         if (field != null) {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
@@ -507,17 +535,6 @@ public class TypeRegistry implements TypeResolver {
             }
         }
         return graphQLOutputType;
-    }
-
-    private Field getFieldByName(Class declaringClass, String name) {
-        Field field = null;
-        try {
-            field = declaringClass.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            // that's fine
-            logger.debug("Field not found: {} for class {} ", name, declaringClass);
-        }
-        return field;
     }
 
     private GraphQLOutputType getGraphQLOutputTypeFromAnnotationsOnGetter(Class declaringClass, Method method) {
@@ -656,5 +673,13 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<String, GraphQLType> getNameRegistry() {
         return nameRegistry;
+    }
+
+    public Map<String, Integer> getQueryComplexityMultipliersMap() {
+        return queryComplexityMultipliersMap;
+    }
+
+    public Set<String> getQueryComplexityExcludeNodes() {
+        return queryComplexityExcludeNodes;
     }
 }

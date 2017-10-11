@@ -9,6 +9,7 @@ import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
 import com.nfl.glitr.util.ObjectMapper;
+import com.nfl.glitr.util.QueryComplexityCalculator;
 import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +37,15 @@ public class GlitrBuilder {
     private Object queryRoot = null;
     private Object mutationRoot = null;
     private ObjectMapper objectMapper = null;
+    private QueryComplexityCalculator queryComplexityCalculator;
 
 
     private GlitrBuilder() {
+    }
+
+    public GlitrBuilder withQueryComplexityCalculator(QueryComplexityCalculator queryComplexityCalculator) {
+        this.queryComplexityCalculator = queryComplexityCalculator;
+        return this;
     }
 
     public GlitrBuilder withObjectMapper(ObjectMapper objectMapper) {
@@ -156,7 +163,7 @@ public class GlitrBuilder {
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, null, mutationRootClass);
+        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, null, mutationRootClass, queryComplexityCalculator);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
@@ -193,6 +200,6 @@ public class GlitrBuilder {
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, relayHelper, mutationRootClass);
+        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, relayHelper, mutationRootClass, queryComplexityCalculator);
     }
 }

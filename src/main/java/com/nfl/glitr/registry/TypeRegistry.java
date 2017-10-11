@@ -220,11 +220,14 @@ public class TypeRegistry implements TypeResolver {
     }
 
     /**
-     * Check if the given class contains property marked with @{@link GlitrQueryComplexity} annotation, if found
-     * add it to query complexity multipliers map.
-     * <p> processing of incoming {@code clazz} is based on recursion and moving into deep of property types and finished
-     * if the current processing property is the one of the primitives or the type is an {@code Object}
-     * or the type of property is one of the instance of {@code Map}
+     * Check if the given class contains a property marked with a @{@link GlitrQueryComplexity} annotation and,
+     * if found, add it to query complexity multipliers map.
+     * <p>Since processing of the incoming {@code clazz} is recursive, it'll run until it has reached one of the following:
+     * <ul>
+     *    <li> Primitive (Integer, String, etc) </li>
+     *    <li> {@code Object} </li>
+     *    <li> {@code Map} </li>
+     *</ul>
      *
      * @param clazz class on which to preform introspection
      * @param parentPath chain of processed properties in parent classes. <b>e.g.: viewer{@value NodeUtil#PATH_SEPARATOR}videoUrl{@value NodeUtil#PATH_SEPARATOR}messages</b>

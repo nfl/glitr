@@ -59,7 +59,7 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
     private GraphQLFieldDefinition getGraphQLFieldDefinition(Class clazz, Method method) {
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-        if (description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
+        if (description != null && description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
             ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
         }
 

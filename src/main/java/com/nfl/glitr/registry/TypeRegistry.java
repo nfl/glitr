@@ -280,7 +280,7 @@ public class TypeRegistry implements TypeResolver {
         DataFetcher dataFetcher = createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
 
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
-        if (description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
+        if (description != null && description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
             description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
         }
 

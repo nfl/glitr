@@ -2,6 +2,8 @@ package com.nfl.glitr.registry
 
 import com.nfl.glitr.Glitr
 import com.nfl.glitr.GlitrBuilder
+import com.nfl.glitr.annotation.GlitrArgument
+import com.nfl.glitr.annotation.GlitrDescription
 import com.nfl.glitr.data.mutation.MutationType
 import com.nfl.glitr.data.mutation.VideoMutationIn
 import com.nfl.glitr.data.mutation.VideoMutationPayload
@@ -23,7 +25,7 @@ class TypeRegistryMutationIntegrationTest extends Specification {
 
         then: "Check the mutation field"
         mutationType.name == MutationType.class.getSimpleName()
-        mutationType.description == "No Description"
+        mutationType.description == GlitrDescription.DEFAULT_DESCRIPTION
         def fieldDef = mutationType.fieldDefinitions[0]
         fieldDef.name == "saveVideoInfoMutation"
         fieldDef.description == "Saves Info related to a video"
@@ -32,7 +34,7 @@ class TypeRegistryMutationIntegrationTest extends Specification {
         then: "Check that output is correctly constructed"
         def GraphQLObjectType fieldDefType = (GraphQLObjectType) fieldDef.type
         fieldDefType.name == VideoMutationPayload.class.simpleName
-        fieldDefType.description == "No Description"
+        fieldDefType.description == GlitrDescription.DEFAULT_DESCRIPTION
         fieldDefType.fieldDefinitions.size() == 2
         fieldDefType.fieldDefinitions.name as Set == ["clientMutationId", StringUtils.uncapitalize(VideoMutationPayload.class.simpleName)] as Set
         def GraphQLObjectType fieldDefOutputType = (GraphQLObjectType) fieldDefType.fieldDefinitions[1].type
@@ -42,7 +44,7 @@ class TypeRegistryMutationIntegrationTest extends Specification {
         then: "Check that then input is correctly constructed"
         def input = (GraphQLArgument) fieldDef.arguments[0]
         input.name == "input"
-        input.description == "No Description"
+        input.description == GlitrArgument.DEFAULT_DESCRIPTION
         input.defaultValue == "{default input}"
         input.type instanceof GraphQLNonNull
         def inputWrappedType = (GraphQLInputObjectType) ((GraphQLNonNull)input.type).wrappedType
@@ -56,7 +58,7 @@ class TypeRegistryMutationIntegrationTest extends Specification {
         fieldDefInputType.type instanceof GraphQLNonNull
         def inputFieldWrappedType = (GraphQLInputObjectType) ((GraphQLNonNull)fieldDefInputType.type).wrappedType
         inputFieldWrappedType.name == VideoMutationIn.class.simpleName
-        inputFieldWrappedType.description == "No Description"
+        inputFieldWrappedType.description == GlitrDescription.DEFAULT_DESCRIPTION
         inputFieldWrappedType.fields.name as Set == ["url", "title", "bitrateList"] as Set
         inputFieldWrappedType.fields[1].type instanceof GraphQLScalarType
         inputFieldWrappedType.fields[2].type instanceof GraphQLScalarType

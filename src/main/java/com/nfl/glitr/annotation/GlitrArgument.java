@@ -19,7 +19,9 @@ public @interface GlitrArgument {
     String name();
     Class type();
     boolean nullable() default true;
-    String description() default "No Description";
+
+    String DEFAULT_DESCRIPTION = "";
+    String description() default DEFAULT_DESCRIPTION;
 
     String NO_DEFAULT_VALUE = "No Default Value";
     String defaultValue() default NO_DEFAULT_VALUE;

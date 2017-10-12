@@ -2,6 +2,7 @@ package com.nfl.glitr.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
+import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.exception.GlitrException;
@@ -278,9 +279,14 @@ public class TypeRegistry implements TypeResolver {
         List<DataFetcher> fetchers = retrieveDataFetchers(clazz, declaringClass, method);
         DataFetcher dataFetcher = createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
 
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+        if (description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
+            description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
+        }
+
         return newFieldDefinition()
                 .name(name)
-                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(method))
+                .description(description)
                 .type(retrieveGraphQLOutputType(declaringClass, method))
                 .argument(createRelayInputArgument(declaringClass, method))
                 .dataFetcher(dataFetcher)

@@ -1,6 +1,7 @@
 package com.nfl.glitr.registry.type;
 
 import com.googlecode.gentyref.GenericTypeReflector;
+import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.exception.GlitrException;
@@ -59,6 +60,9 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
 
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+        if (description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
+            ReflectionUtil.getDescriptionFromAnnotatedField(declaringClass, method);
+        }
 
         GraphQLType graphQLType = typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);
         if (!(graphQLType instanceof GraphQLInputType)) {

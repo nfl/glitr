@@ -92,7 +92,6 @@ public class ReflectionUtil {
      * @return sanitized name `title`
      */
     public static String sanitizeMethodName(String name) {
-
         String sanitized;
         if (name.startsWith("is")) {
             sanitized = name.substring(2);
@@ -101,7 +100,6 @@ public class ReflectionUtil {
         } else {
             sanitized = name;
         }
-
         return StringUtils.uncapitalize(sanitized);
     }
 
@@ -217,6 +215,16 @@ public class ReflectionUtil {
      */
     public static String getDescriptionFromAnnotatedElement(AnnotatedElement element) {
         return element.isAnnotationPresent(GlitrDescription.class) ? element.getAnnotation(GlitrDescription.class).value() : GlitrDescription.DEFAULT_DESCRIPTION;
+    }
+
+    public static String getDescriptionFromAnnotatedField(Class clazz, Method method) {
+        try {
+            Field field = clazz.getDeclaredField(ReflectionUtil.sanitizeMethodName(method.getName()));
+            return ReflectionUtil.getDescriptionFromAnnotatedElement(field);
+        } catch (NoSuchFieldException e) {
+            logger.warn("Could not find a Field associated to the Method [{}]", method.getName());
+        }
+        return null;
     }
 
     public static boolean isAnnotatedElementNullable(AnnotatedElement element) {

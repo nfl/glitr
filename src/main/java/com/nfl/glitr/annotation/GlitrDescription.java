@@ -7,6 +7,6 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.TYPE})
 public @interface GlitrDescription {
 
-    String DEFAULT_DESCRIPTION = "No Description";
+    String DEFAULT_DESCRIPTION = "";
     String value() default DEFAULT_DESCRIPTION;
 }

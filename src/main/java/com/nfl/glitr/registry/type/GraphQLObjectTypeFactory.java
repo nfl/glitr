@@ -1,5 +1,6 @@
 package com.nfl.glitr.registry.type;
 
+import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.*;
@@ -139,9 +140,14 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
         List<DataFetcher> fetchers = typeRegistry.retrieveDataFetchers(clazz, declaringClass, method);
         DataFetcher dataFetcher = TypeRegistry.createDataFetchersFromDataFetcherList(fetchers, declaringClass, name);
 
+        String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
+        if (description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
+            description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
+        }
+
         return newFieldDefinition()
                 .name(name)
-                .description(ReflectionUtil.getDescriptionFromAnnotatedElement(method))
+                .description(description)
                 .dataFetcher(dataFetcher)
                 .type(typeRegistry.retrieveGraphQLOutputType(declaringClass, method))
                 .argument(typeRegistry.retrieveArguments(declaringClass, method))

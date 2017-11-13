@@ -14,11 +14,11 @@ class ReflectionUtilTest extends Specification {
         "getTitle"                                      || true
         "getId"                                         || true
         "isValid"                                       || true
+        "getMap"                                        || true
         "nonGetterMethod"                               || false
         "getTitleWithGlitrIgnoreOnField"                || false
         "getTitleWithGlitrIgnoreOnGetter"               || false
         "getTitleWithGlitrIgnoreOnBothFieldAndGetter"   || false
-        "getMap"                                        || false
     }
 
     @SuppressWarnings("GroovyPointlessBoolean")
@@ -31,11 +31,11 @@ class ReflectionUtilTest extends Specification {
         "getTitle"                                    || true
         "getId"                                       || true
         "isValid"                                     || true
+        "getMap"                                      || true
         "nonGetterMethod"                             || false
         "getTitleWithGlitrIgnoreOnField"              || false
         "getTitleWithGlitrIgnoreOnGetter"             || false
         "getTitleWithGlitrIgnoreOnBothFieldAndGetter" || false
-        "getMap"                                      || false
     }
 
     class Video {

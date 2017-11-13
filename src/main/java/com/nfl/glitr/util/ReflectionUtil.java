@@ -66,8 +66,7 @@ public class ReflectionUtil {
         }
 
         return (methodName.startsWith("is") || methodName.startsWith("get"))
-                && method.getDeclaringClass() != Object.class
-                && (!Map.class.isAssignableFrom(method.getReturnType()));
+                && method.getDeclaringClass() != Object.class;
     }
 
     /**

@@ -498,6 +498,7 @@ public class TypeRegistry implements TypeResolver {
                 .name(arg.name())
                 .description(arg.description())
                 .type(inputType)
+                .defaultValue(arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE) ? null : arg.defaultValue())
                 .build();
     }
 
@@ -622,6 +623,10 @@ public class TypeRegistry implements TypeResolver {
 
     public Optional<GraphQLType> detectScalar(Type type, String name) {
         // users can register their own GraphQLScalarTypes for given Java types
+        if(type instanceof ParameterizedType) {
+            type = ((ParameterizedType)type).getRawType();
+        }
+
         if (javaTypeDeclaredAsScalarMap.containsKey(type)) {
             return Optional.of(javaTypeDeclaredAsScalarMap.get(type));
         }
@@ -643,6 +648,8 @@ public class TypeRegistry implements TypeResolver {
             return Optional.of(Scalars.GraphQLDate);
         } else if (type == ZonedDateTime.class || type == Instant.class) {
             return Optional.of(Scalars.GraphQLDateTime);
+        } else if (type == Map.class) {
+            return Optional.of(Scalars.GraphQLMap);
         }
         // not a scalar
         return Optional.empty();

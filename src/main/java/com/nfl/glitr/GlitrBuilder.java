@@ -181,6 +181,7 @@ public class GlitrBuilder {
                 .withAnnotationToGraphQLOutputTypeMap(annotationToGraphQLOutputTypeMap)
                 .withAnnotationToDataFetcherFactoryMap(annotationToDataFetcherFactoryMap)
                 .withAnnotationToDataFetcherMap(annotationToDataFetcherMap)
+                .withJavaTypesDeclaredAsScalarMap(javaTypeDeclaredAsScalarMap)
                 .withOverrides(overrides)
                 // add the relay extra features
                 .withExplicitRelayNodeScan(relayConfig.isExplicitRelayNodeScanEnabled())

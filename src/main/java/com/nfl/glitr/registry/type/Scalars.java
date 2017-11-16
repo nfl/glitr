@@ -1,14 +1,18 @@
 package com.nfl.glitr.registry.type;
 
-import graphql.language.StringValue;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import graphql.language.*;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Scalars {
 
@@ -16,6 +20,7 @@ public class Scalars {
     private static final String SHIELD_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String SHIELD_LOCAL_DATE_PATTERN = "yyyy-MM-dd";
 
+    private static final ObjectMapper om = new ObjectMapper();
 
     /**
      * {@code GraphQLDateTime} represents a date time as `2014-08-20T18:00:00.000Z`
@@ -140,6 +145,75 @@ public class Scalars {
             return LocalDate.parse(encodedDateTime);
         }
     });
+
+    public static final GraphQLScalarType GraphQLMap = new GraphQLScalarType("Map", "Object represented by map, " +
+            "where key is a property and value is a value of this property.", new Coercing() {
+
+        @Override
+        public Object serialize(Object input) {
+            if (input == null) {
+                return null;
+            }
+
+            if (input instanceof Map) {
+                return input;
+            }
+
+            if (input instanceof String) {
+                try {
+                    return om.readValue((String) input, Map.class);
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+input.toString());
+                }
+            }
+
+            throw new IllegalArgumentException("Can't serialize type "+input.getClass()+" with value "+input.toString());
+        }
+
+        @Override
+        public Object parseValue(Object input) {
+            return serialize(input);
+        }
+
+        /**
+         * Always parse to {@code Map}.
+         *
+         * @param input object string representation
+         * @return object as a {@code Map}
+         */
+        @Override
+        public Object parseLiteral(Object input) {
+            if (!(input instanceof ObjectValue)) return null;
+            ObjectValue obj = (ObjectValue) input;
+            Map<String, Object> map = new HashMap<>();
+            for (ObjectField of : obj.getObjectFields()) {
+                map.put(of.getName(), parseVariableValue(of.getValue()));
+            }
+            return map;
+        }
+    });
+
+    private static Object parseVariableValue(Value val) {
+        if (val instanceof StringValue) {
+            return ((StringValue) val).getValue();
+        } else if (val instanceof IntValue) {
+            return ((IntValue) val).getValue();
+        } else if (val instanceof FloatValue) {
+            return ((FloatValue) val).getValue();
+        } else if (val instanceof BooleanValue) {
+            return ((BooleanValue) val).isValue();
+        } else if (val instanceof NullValue) {
+            return null;
+        } else if (val instanceof ObjectValue) {
+            Map<String, Object> map = new HashMap<>();
+            for (ObjectField of : ((ObjectValue) val).getObjectFields()) {
+                map.put(of.getName(), parseVariableValue(of.getValue()));
+            }
+            return map;
+        }
+
+        throw new IllegalArgumentException("Can't serialize value " + val);
+    }
 
     private static Object formatAsLocalDate(Object input) {
         try {

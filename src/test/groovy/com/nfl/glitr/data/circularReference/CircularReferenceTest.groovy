@@ -23,7 +23,7 @@ class CircularReferenceTest extends Specification {
             type.name == AbstractRead.simpleName
         then: "And make sure the implementing type has the interface registered"
             def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Novel(),
-                    null, null, null, null))
+                    null, null, null, null, null))
             objType.class == GraphQLObjectType
             objType.name == Novel.simpleName
             objType.fieldDefinitions.name as Set == ["novel", "pageCount", "title", "reviewed"] as Set
@@ -45,7 +45,7 @@ class CircularReferenceTest extends Specification {
             type.name == Readable.simpleName
         then: "And make sure the implementing type has the interface registered"
             def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Book(),
-                    null, null, null, null))
+                    null, null, null, null, null))
             objType.class == GraphQLObjectType
             objType.name == Book.simpleName
             objType.fieldDefinitions.name as Set == ["title", "synopsis"] as Set

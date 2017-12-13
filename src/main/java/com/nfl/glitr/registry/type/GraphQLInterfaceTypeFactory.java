@@ -5,6 +5,7 @@ import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.glitr.util.ReflectionUtil;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.schema.*;
 
 import java.lang.reflect.Method;
@@ -50,6 +51,7 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
 
         return newInterface()
                 .name(clazz.getSimpleName())
+                .definition(new InterfaceTypeDefinition(clazz.getCanonicalName()))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .typeResolver(typeRegistry)
                 .fields(fields)

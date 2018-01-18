@@ -204,7 +204,7 @@ public class QueryComplexityCalculator {
         }
 
         int maxChildDepth = 0;
-        for (Node childNode : queryNode.getChildren()) {
+        for (Node childNode : (List<Node>) queryNode.getChildren()) {
             final int currentChildDepth = calculateMaxDepth(childNode);
             maxChildDepth = Math.max(maxChildDepth, currentChildDepth);
         }
@@ -309,7 +309,7 @@ public class QueryComplexityCalculator {
             }
         }
 
-        for (Node currentChild : queryNode.getChildren()) {
+        for (Node currentChild : (List<Node>) queryNode.getChildren()) {
             if (currentChild.getClass() == Argument.class) {
                 continue;
             }

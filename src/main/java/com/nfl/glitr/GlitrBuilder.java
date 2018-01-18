@@ -11,6 +11,7 @@ import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
 import com.nfl.glitr.util.ObjectMapper;
 import com.nfl.glitr.util.QueryComplexityCalculator;
 import graphql.schema.*;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func4;
@@ -36,6 +37,7 @@ public class GlitrBuilder {
     private RelayConfig relayConfig = null;
     private Object queryRoot = null;
     private Object mutationRoot = null;
+    private GraphqlFieldVisibility fieldVisibility = null;
     private ObjectMapper objectMapper = null;
     private QueryComplexityCalculator queryComplexityCalculator;
 
@@ -60,6 +62,11 @@ public class GlitrBuilder {
 
     public GlitrBuilder withMutationRoot(Object mutationRoot) {
         this.mutationRoot = mutationRoot;
+        return this;
+    }
+
+    public GlitrBuilder withFieldVisibility(GraphqlFieldVisibility fieldVisibility) {
+        this.fieldVisibility = fieldVisibility;
         return this;
     }
 
@@ -146,7 +153,6 @@ public class GlitrBuilder {
     }
 
     private Glitr buildGlitr() {
-
         if (objectMapper == null) {
             logger.warn("No ObjectMapper instance has been registered.");
         }
@@ -163,11 +169,10 @@ public class GlitrBuilder {
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, null, mutationRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, null, mutationRootClass, queryComplexityCalculator);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
-
         if (objectMapper == null) {
             throw new IllegalArgumentException("No ObjectMapper instance has been registered. It's required to register one when using GLiTR with Relay");
         }
@@ -201,6 +206,6 @@ public class GlitrBuilder {
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), objectMapper, relayHelper, mutationRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, relayHelper, mutationRootClass, queryComplexityCalculator);
     }
 }

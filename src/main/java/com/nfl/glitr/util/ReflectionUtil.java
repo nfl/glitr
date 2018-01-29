@@ -221,7 +221,7 @@ public class ReflectionUtil {
             Field field = clazz.getDeclaredField(ReflectionUtil.sanitizeMethodName(method.getName()));
             return ReflectionUtil.getDescriptionFromAnnotatedElement(field);
         } catch (NoSuchFieldException e) {
-            logger.warn("Could not find a Field associated to the Method [{}]", method.getName());
+            logger.debug("Could not find a Field associated to the Method [{}]", method.getName());
         }
         return null;
     }

@@ -27,7 +27,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.description == GlitrDescription.DEFAULT_DESCRIPTION
 
         // Relay Identifiable field
-        def fieldDef = type.fieldDefinitions[0]
+        def fieldDef = type.fieldDefinitions[4]
         fieldDef.name == "node"
         fieldDef.description == null
         fieldDef.type instanceof GraphQLInterfaceType
@@ -44,7 +44,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType.description == "Built-in ID"
 
         // Nodes field
-        def fieldDef1 = type.fieldDefinitions[1]
+        def fieldDef1 = type.fieldDefinitions[5]
         fieldDef1.name == "nodes"
         fieldDef1.description == null
         fieldDef1.type instanceof GraphQLList
@@ -62,7 +62,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType1.description == "Built-in ID"
 
         // Other Video field
-        def fieldDef2 = type.fieldDefinitions[2]
+        def fieldDef2 = type.fieldDefinitions[6]
         fieldDef2.name == "otherVideos"
         fieldDef2.description == null
         fieldDef2.arguments.name as Set == ["first", "after"] as Set
@@ -74,14 +74,14 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDefType2.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
 
         // Video field
-        def fieldDef3 = type.fieldDefinitions[3]
+        def fieldDef3 = type.fieldDefinitions[7]
         fieldDef3.name == "video"
         fieldDef3.description == null
         fieldDef3.type instanceof GraphQLObjectType
         GraphQLObjectType fieldDefType3 = (GraphQLObjectType) fieldDef3.type
         fieldDefType3.name == "Video"
         fieldDefType3.description == GlitrDescription.DEFAULT_DESCRIPTION
-        fieldDefType3.fieldDefinitions.size() == 5
+        fieldDefType3.fieldDefinitions.size() == 8
         def input3 = (GraphQLArgument) fieldDef3.arguments[0]
         input3.name == "id"
         input3.description == GlitrArgument.DEFAULT_DESCRIPTION
@@ -91,7 +91,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType3.description == "Built-in ID"
 
         // Videos field
-        def fieldDef4 = type.fieldDefinitions[4]
+        def fieldDef4 = type.fieldDefinitions[8]
         fieldDef4.name == "videos"
         fieldDef4.description == null
         fieldDef4.arguments.name as Set == ["first", "after"] as Set
@@ -103,7 +103,7 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDefType4.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
 
         // ZZZ Nodes field
-        def fieldDef5 = type.fieldDefinitions[5]
+        def fieldDef5 = type.fieldDefinitions[10]
         fieldDef5.name == "zZZNodes"
         fieldDef5.description == null
         fieldDef5.type instanceof GraphQLList
@@ -121,7 +121,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType5.description == "Built-in ID"
 
         // ZZZ Videos field
-        def fieldDef6 = type.fieldDefinitions[6]
+        def fieldDef6 = type.fieldDefinitions[11]
         fieldDef6.name == "zZZVideos"
         fieldDef6.description == null
         fieldDef6.type instanceof GraphQLList
@@ -129,7 +129,7 @@ class TypeRegistryIntegrationTest extends Specification {
         GraphQLObjectType wrappedType6 = (GraphQLObjectType) fieldDefType6.wrappedType
         wrappedType6.name == "Video"
         wrappedType6.description == GlitrDescription.DEFAULT_DESCRIPTION
-        wrappedType6.fieldDefinitions.size() == 5
+        wrappedType6.fieldDefinitions.size() == 8
     }
 
     def "Inspect Simple Object type"() {
@@ -262,7 +262,7 @@ class TypeRegistryIntegrationTest extends Specification {
         then: "Make sure it inherits the fields of the super classes"
         type.name == Video.class.getSimpleName()
         type.description == GlitrDescription.DEFAULT_DESCRIPTION
-        type.fieldDefinitions.name == ["bitrateList", "id", "lastModifiedDate", "title", "url"]
+        type.fieldDefinitions.name == ["allVariablesComplexityFormula", "bitrateList", "depth", "id", "lastModifiedDate", "title", "totalCollectionsSize", "url"]
         then: "Make sure it implements the interfaces"
         type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName, Identifiable.simpleName, Playable.class.simpleName] as Set
     }
@@ -277,12 +277,15 @@ class TypeRegistryIntegrationTest extends Specification {
             (GraphQLObjectType) glitr.typeRegistry.lookup(QueryType.class)
         then:
             def excludeNodes = glitr.typeRegistry.getQueryComplexityExcludeNodes()
-            excludeNodes.contains("otherVideos->node")
             excludeNodes.contains("otherVideos->edges")
+            excludeNodes.contains("otherVideos->node")
+            excludeNodes.contains("otherVideos->edges->node")
             excludeNodes.contains("videos->edges")
             excludeNodes.contains("videos->node")
+            excludeNodes.contains("videos->edges->node")
 
-            !excludeNodes.contains("zZZVideos->node")
             !excludeNodes.contains("zZZVideos->edges")
+            !excludeNodes.contains("zZZVideos->node")
+            !excludeNodes.contains("zZZVideos->edges->node")
     }
 }

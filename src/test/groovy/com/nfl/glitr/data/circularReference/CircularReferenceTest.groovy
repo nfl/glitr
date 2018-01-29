@@ -9,7 +9,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import spock.lang.Specification
 
-import static com.nfl.glitr.util.NodeUtil.buildPath
+import static com.nfl.glitr.util.NodeUtil.buildNewPath
 
 class CircularReferenceTest extends Specification {
 
@@ -30,8 +30,8 @@ class CircularReferenceTest extends Specification {
             objType.interfaces.name as Set == [AbstractRead.simpleName] as Set
         then: "And make sure there is no circular processing and complexity map populated only with one record where key is 'novel'"
             def queryComplexityMap = glitr.typeRegistry.getQueryComplexityMultipliersMap()
-            queryComplexityMap.size() == 1
-            queryComplexityMap.get("novel") == 12
+            queryComplexityMap.size() == 42
+            queryComplexityMap.get("novel") == "12"
 
     }
 
@@ -52,7 +52,7 @@ class CircularReferenceTest extends Specification {
             objType.interfaces.name as Set == [Readable.simpleName] as Set
         then: "And make sure there is no circular processing and complexity map populated only with one record where key is 'synopsis->synopsis'"
             def queryComplexityMap = glitr.typeRegistry.getQueryComplexityMultipliersMap()
-            queryComplexityMap.size() == 1
-            queryComplexityMap.get(buildPath("synopsis","synopsis")) == 12
+            queryComplexityMap.size() == 42
+            queryComplexityMap.get(buildNewPath("synopsis","synopsis")) == "12"
     }
 }

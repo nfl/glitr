@@ -2,6 +2,7 @@ package com.nfl.glitr.data.query;
 
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
 
 import java.util.List;
 
@@ -39,6 +40,34 @@ public class QueryType {
 
     // no arguments
     public List<Video> getZZZVideos() {
+        return null;
+    }
+
+
+    //Query complexity formula declarations
+
+    @GlitrQueryComplexity("#{depth}")
+    public List<Video> getVideosDepth() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("#{childScore}")
+    public List<Video> getChildScore() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("#{currentCollectionSize}")
+    public List<Video> getCurrentCollectionSize() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("incorrectVariableDeclaration + 5")
+    public List<Video> getIncorrectVariableDeclaration() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("#{childScore} + #{childScore} * #{childScore}")
+    public List<Video> getDuplicateVariables() {
         return null;
     }
 }

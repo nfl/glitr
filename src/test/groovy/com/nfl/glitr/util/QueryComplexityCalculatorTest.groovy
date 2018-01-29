@@ -849,7 +849,7 @@ class QueryComplexityCalculatorTest extends Specification {
         where:
             bitrate           || expectedScore
             "bitrateList{id}" || 5
-
+            "_"               || 1
     }
 
     @Unroll

@@ -236,6 +236,10 @@ public class TypeRegistry implements TypeResolver {
      */
     private void lookupComplexity(Class clazz, String parentPath, Set<String> parsedTypes) {
         for (Method method : clazz.getDeclaredMethods()) {
+            if (!ReflectionUtil.eligibleMethod(method)) {
+                continue;
+            }
+
             String name = ReflectionUtil.sanitizeMethodName(method.getName());
             String newPath = NodeUtil.buildNewPath(parentPath, name);
 

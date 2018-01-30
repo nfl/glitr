@@ -391,6 +391,7 @@ public class QueryComplexityCalculator {
         if (isMutation(query)) {
             parent = getMutationName(query);
             System.out.println("mutation name = " + parent);
+            System.out.println("queryComplexityMultipliersMap = " + queryComplexityMultipliersMap);
         }
 
         return queryScore(parent, parseRootNode(query), 0, new HashMap<>());
@@ -409,6 +410,7 @@ public class QueryComplexityCalculator {
             depth++;
             path = NodeUtil.buildNewPath(path, ((Field) queryNode).getName());
             refreshQueryContext(queryContext, (Field) queryNode);
+            System.out.println("node name = " + ((Field) queryNode).getName());
         }
 
         for (Node currentChild : (List<Node>) queryNode.getChildren()) {

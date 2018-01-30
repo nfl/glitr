@@ -400,14 +400,15 @@ public class QueryComplexityCalculator {
     }
 
     @SuppressWarnings("unchecked")
-    private double queryScore(String path, Node queryNode, int depth, Map<String, Double> queryContext) {
+    private double queryScore(String path, Node queryNode, int depth, Map<String, Double> globalQueryContext) {
         double currentNodeScore = 0d;
         double childScores = 0d;
+        boolean authorizedField = isAuthorizedField(queryNode, path);
 
-        if (isAccessibleField(queryNode, path)) {
+        if (authorizedField) {
             depth++;
             path = NodeUtil.buildNewPath(path, ((Field) queryNode).getName());
-            refreshQueryContext(queryContext, (Field) queryNode);
+            refreshQueryContext(globalQueryContext, (Field) queryNode);
         }
 
         for (Node currentChild : (List<Node>) queryNode.getChildren()) {
@@ -415,11 +416,11 @@ public class QueryComplexityCalculator {
                 continue;
             }
 
-            childScores += queryScore(path, currentChild, depth, queryContext);
+            childScores += queryScore(path, currentChild, depth, globalQueryContext);
         }
 
-        if (isAccessibleField(queryNode, path) ) {
-            Map<String, Double> multiplierContext = buildContext((Field) queryNode, queryContext, depth, childScores);
+        if (authorizedField) {
+            Map<String, Double> multiplierContext = buildContext((Field) queryNode, globalQueryContext, depth, childScores);
             currentNodeScore = extractMultiplierFromListField((Field) queryNode, path, multiplierContext);
         }
 
@@ -452,7 +453,7 @@ public class QueryComplexityCalculator {
         return multiplierContext;
     }
 
-    private boolean isAccessibleField(Node node, String path) {
+    private boolean isAuthorizedField(Node node, String path) {
         if (node == null) {
             return false;
         }
@@ -598,9 +599,9 @@ public class QueryComplexityCalculator {
 
                 formula = formula.replace(var, nextVarAlias);
             } catch (ArrayIndexOutOfBoundsException e) {
-                logger.error("The amount of variables has been exceeded.");
+                logger.error("The amount of variables in formula ({}) has been exceeded.", formula);
             } catch (Exception e) {
-                logger.error("Cannot evaluate ({}) variable of formula.", var);
+                logger.error("Cannot evaluate ({}) variable of formula ({}).", var, formula);
             }
         }
 

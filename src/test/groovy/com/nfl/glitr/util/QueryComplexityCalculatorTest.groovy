@@ -826,7 +826,7 @@ class QueryComplexityCalculatorTest extends Specification {
             def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
             mutation {
                 saveVideoInfoMutation(input: {
-                    clientMutationId: \"mutationId-Sx160620160639713-1\"
+                    clientMutationId: "mutationId-Sx160620160639713-1"
                     videoMutation: {
                         title: "My video title"
                         bitrateList: [
@@ -867,7 +867,7 @@ class QueryComplexityCalculatorTest extends Specification {
             def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
             mutation {
                 saveVideoInfoMutation(input: {
-                    clientMutationId: \"mutationId-Sx160620160639713-1\"
+                    clientMutationId: "mutationId-Sx160620160639713-1"
                     videoMutation: {
                         title: "My video title"
                         bitrateList: [

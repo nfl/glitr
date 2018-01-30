@@ -823,33 +823,53 @@ class QueryComplexityCalculatorTest extends Specification {
                     .build()
 
         when:
-            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
-            mutation {
-                saveVideoInfoMutation(input: {
-                    clientMutationId: "mutationId-Sx160620160639713-1"
-                    videoMutation: {
-                        title: "My video title"
-                        bitrateList: [
-                            {id: "1"},
-                            {id: "2"},
-                            {id: "3"}
-                        ]
-                    }
-                }){
-                    clientMutationId
-                    videoMutationPayload {
-                        title
-                        $bitrate
-                    }
-                }
-            }
-        """);
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore(query);
         then:
             queryScore == expectedScore
         where:
-            bitrate           || expectedScore
-            "bitrateList{id}" || 5
-            "id"              || 1
+            query                              || expectedScore
+            '''\
+            |mutation {
+            |    saveVideoInfoMutation(input: {
+            |        clientMutationId: "abc"
+            |        videoMutation: {
+            |            title: "My video title"
+            |            bitrateList: [
+            |                {id: "1"},
+            |                {id: "2"},
+            |                {id: "3"}
+            |            ]
+            |        }
+            |    }){
+            |        clientMutationId
+            |        videoMutationPayload {
+            |            title
+            |            bitrateList{id}
+            |        }
+            |    }
+            |}
+            | '''.stripMargin() || 5
+            '''\
+            |mutation {
+            |    saveVideoInfoMutation(input: {
+            |        clientMutationId: "abc"
+            |        videoMutation: {
+            |            title: "My video title"
+            |            bitrateList: [
+            |                {id: "1"},
+            |                {id: "2"},
+            |                {id: "3"}
+            |            ]
+            |        }
+            |    }){
+            |        clientMutationId
+            |        videoMutationPayload {
+            |            title
+            |            id
+            |        }
+            |    }
+            |}
+            | '''.stripMargin() || 1
     }
 
     @Unroll

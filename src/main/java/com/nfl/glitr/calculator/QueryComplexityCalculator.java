@@ -1,4 +1,4 @@
-package com.nfl.glitr.util;
+package com.nfl.glitr.calculator;
 
 import com.nfl.glitr.exception.GlitrException;
 import graphql.language.*;
@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.nfl.glitr.util.NodeUtil.buildNewPath;
 import static org.apache.commons.lang3.StringUtils.substringBetween;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -28,6 +29,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
  */
 
 public class QueryComplexityCalculator {
+
     private static final Logger logger = LoggerFactory.getLogger(QueryComplexityCalculator.class);
 
     private static final String[] ALPHABET = new String[]{"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"};
@@ -225,66 +227,9 @@ public class QueryComplexityCalculator {
         return depth;
     }
 
-     /* @param query = query string
-     * @return query score as an integer.  The way the query score is calculated is by summing the depth * multiplier of
-     * all non-leaf nodes.
-     ******************************************************************************************************************
-     ******************************************************************************************************************
-     * {
-     *     playLists{    depth = 1, multiplier = 10 (default)
-     *         id
-     *     }
-     * }
-     * score = (1 x 10) = 10
-     ****************************************************************************************************************
-     ****************************************************************************************************************
-     * {
-     *     playLists{               depth = 1, multiplier = 10
-     *         id
-     *         tracks(first:4){     depth = 2, multiplier = 4
-     *             trackId
-     *         }
-     *     }
-     * }
-     * score = (1 * 10) + (2 * 4) = 18
-     ****************************************************************************************************************
-     ****************************************************************************************************************
-     * {
-     *     playLists{               depth = 1, multiplier = 10
-     *         id
-     *         tracks(first:4){     depth = 2, multiplier = 4
-     *             trackId
-     *             trackInfo{       depth = 3, multiplier = 10
-     *                 runtime
-     *             }
-     *         }
-     *     }
-     * }
-     * score = (1 * 10) + (2 * 4) + (3 * 10) = 48
-     ****************************************************************************************************************
-     ****************************************************************************************************************
-     *{
-     *     playLists{                      depth = 1, multiplier = 10
-     *         id
-     *         tracks(first:4){            depth = 2, multiplier = 4
-     *             trackId
-     *             trackInfo{              depth = 3, multiplier = 10
-     *                 runtime
-     *                 authors(first:2){   depth = 4, multiplier = 2
-     *                     authorName
-     *                 }
-     *             }
-     *         }
-     *     }
-     * }
-     * score = (1 * 10) + (2 * 4) + (3 * 10) + (4 * 2) = 56
-     ******************************************************************************************************************
-     ******************************************************************************************************************
-     */
-
     /**
      * @param query - graphql query string
-     * @return true if the query's score is greater than the maximum allowed score.
+     * @return true if the {@link #queryScore(String) query's score} result is greater than the maximum allowed score.
      */
     public boolean scoreLimitExceeded(String query) {
         return queryScore(query) > maxScoreLimit;
@@ -384,15 +329,24 @@ public class QueryComplexityCalculator {
     * ****************************************************************************************************************
     * </pre>
     * @param query string
-    * @return query score as an double.  The way the query score is calculated is by summing the multipliers of all non-leaf nodes.
+    * @return query score as an double.  The way the query score is calculated is by summing the multipliers of all nodes.
     **/
     public double queryScore(String query) {
+        return queryScoreDetails(query).getTotalWeight();
+    }
+
+    /**
+     *
+     * @param query  string
+     * @return {@link QueryComplexityNode}
+     */
+    public QueryComplexityNode queryScoreDetails(String query) {
         String parent = null;
         if (isMutation(query)) {
             parent = getMutationName(query);
         }
 
-        return queryScore(parent, parseRootNode(query), 0, new HashMap<>());
+        return queryScoreDetails(parseRootNode(query), parent, 0, new HashMap<>());
     }
 
     private String getMutationName(String query) {
@@ -400,14 +354,16 @@ public class QueryComplexityCalculator {
     }
 
     @SuppressWarnings("unchecked")
-    private double queryScore(String path, Node queryNode, int depth, Map<String, Double> globalQueryContext) {
+    private QueryComplexityNode queryScoreDetails(Node queryNode, String path, int depth, Map<String, Double> globalQueryContext) {
+        boolean authorizedField = isAuthorizedField(queryNode, path);
+        String nodeName = authorizedField ? ((Field) queryNode).getName() : queryNode.getClass().getSimpleName();
+        QueryComplexityNode.Builder resultBuilder = QueryComplexityNode.newBuilder(nodeName, authorizedField);
         double currentNodeScore = 0d;
         double childScores = 0d;
-        boolean authorizedField = isAuthorizedField(queryNode, path);
 
         if (authorizedField) {
             depth++;
-            path = NodeUtil.buildNewPath(path, ((Field) queryNode).getName());
+            path = buildNewPath(path, nodeName);
             refreshQueryContext(globalQueryContext, (Field) queryNode);
         }
 
@@ -416,15 +372,18 @@ public class QueryComplexityCalculator {
                 continue;
             }
 
-            childScores += queryScore(path, currentChild, depth, globalQueryContext);
+            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, path, depth, globalQueryContext);
+            childScores += childComplexityNode.getTotalWeight();
+            resultBuilder.addChild(childComplexityNode);
         }
 
         if (authorizedField) {
             Map<String, Double> multiplierContext = buildContext((Field) queryNode, globalQueryContext, depth, childScores);
             currentNodeScore = extractMultiplierFromListField((Field) queryNode, path, multiplierContext);
+            resultBuilder.withWeight(currentNodeScore);
         }
 
-        return currentNodeScore + childScores;
+        return resultBuilder.build();
     }
 
     private void refreshQueryContext(Map<String, Double> queryContext, Field field) {
@@ -462,8 +421,8 @@ public class QueryComplexityCalculator {
             return false;
         }
 
-        path = NodeUtil.buildNewPath(path, ((Field) node).getName());
-        return !queryComplexityExcludeNodes.contains(path) && !isLeaf(node);
+        path = buildNewPath(path, ((Field) node).getName());
+        return !queryComplexityExcludeNodes.contains(path);
     }
 
     private Optional<Integer> getLimitArgIfPresent(Field node) {
@@ -550,7 +509,7 @@ public class QueryComplexityCalculator {
      *
      * *****************************************************************************************************************
      * *****************************************************************************************************************
-     * If the node is a leaf node, we return 1.
+     * If the node is a leaf node, we return 0. Exception is if the leaf node is marked with {@link com.nfl.glitr.annotation.GlitrQueryComplexity @GlitrQueryComplexity}.
      * {
      *     playerName
      * }
@@ -575,16 +534,16 @@ public class QueryComplexityCalculator {
         }
 
         // If it has children with no argument
-        if (!isLeaf(node)) {
+        if (!isLeaf(node) || StringUtils.isNotBlank(multiplier)) {
             return calculateMultiplier(multiplier, context);
         }
 
         // If its a leaf
-        return 1;
+        return 0;
     }
 
     private Double calculateMultiplier(String formula, Map<String, Double> context) {
-        if(StringUtils.isBlank(formula)) {
+        if (StringUtils.isBlank(formula)) {
             return defaultMultiplier;
         }
 

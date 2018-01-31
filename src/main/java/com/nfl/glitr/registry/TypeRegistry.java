@@ -621,7 +621,7 @@ public class TypeRegistry implements TypeResolver {
 
     public Optional<GraphQLType> detectScalar(Type type, String name) {
         // users can register their own GraphQLScalarTypes for given Java types
-        if(type instanceof ParameterizedType) {
+        if (type instanceof ParameterizedType) {
             type = ((ParameterizedType)type).getRawType();
         }
 

@@ -2,6 +2,7 @@ package com.nfl.glitr.util
 
 import com.nfl.glitr.Glitr
 import com.nfl.glitr.GlitrBuilder
+import com.nfl.glitr.calculator.QueryComplexityCalculator
 import com.nfl.glitr.data.mutation.MutationType
 import com.nfl.glitr.data.query.QueryType
 import com.nfl.glitr.exception.GlitrException
@@ -928,7 +929,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-            """ || 2
+            """ || 3
 
     }
 

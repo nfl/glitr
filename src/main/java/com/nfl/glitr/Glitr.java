@@ -3,7 +3,7 @@ package com.nfl.glitr;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.util.ObjectMapper;
-import com.nfl.glitr.util.QueryComplexityCalculator;
+import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.GraphqlFieldVisibility;

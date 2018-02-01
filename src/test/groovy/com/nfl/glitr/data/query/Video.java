@@ -1,5 +1,6 @@
 package com.nfl.glitr.data.query;
 
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.data.mutation.Bitrate;
 
 import java.util.List;
@@ -23,4 +24,18 @@ public class Video extends AbstractContent implements Playable {
         return url;
     }
 
+    @GlitrQueryComplexity("#{depth}")
+    public List<Video> getDepth() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("#{totalCollectionsSize}")
+    public List<Video> getTotalCollectionsSize() {
+        return null;
+    }
+
+    @GlitrQueryComplexity("#{depth} + #{childScore} + #{currentCollectionSize} + #{totalCollectionsSize} + #{maxCharacterLimit} + #{maxDepthLimit} + #{maxScoreLimit} + #{defaultMultiplier} + 5")
+    public List<Video> getAllVariablesComplexityFormula() {
+        return null;
+    }
 }

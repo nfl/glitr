@@ -9,7 +9,7 @@ import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
 import com.nfl.glitr.util.ObjectMapper;
-import com.nfl.glitr.util.QueryComplexityCalculator;
+import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import graphql.schema.*;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.slf4j.Logger;

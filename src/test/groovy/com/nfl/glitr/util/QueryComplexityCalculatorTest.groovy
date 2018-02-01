@@ -2,6 +2,7 @@ package com.nfl.glitr.util
 
 import com.nfl.glitr.Glitr
 import com.nfl.glitr.GlitrBuilder
+import com.nfl.glitr.calculator.QueryComplexityCalculator
 import com.nfl.glitr.data.mutation.MutationType
 import com.nfl.glitr.data.query.QueryType
 import com.nfl.glitr.exception.GlitrException
@@ -11,21 +12,22 @@ import spock.lang.Unroll
 
 class QueryComplexityCalculatorTest extends Specification {
 
-    @Shared queryComplexityCalculator;
+    @Shared
+    def queryComplexityCalculator;
 
     def setup() {
-        queryComplexityCalculator = new QueryComplexityCalculator(200, 3, 50,10);
+        queryComplexityCalculator = new QueryComplexityCalculator(200, 3, 50, 10);
     }
 
     @Unroll
     def "test query character score, case: #name"() {
         expect:
-        int characterScore = queryComplexityCalculator.characterScore(query);
-        characterScore == expectedResult
+            int characterScore = queryComplexityCalculator.characterScore(query);
+            characterScore == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                                                || expectedResult
+            '''\
         |{
         |    viewer {
         |        playLists(first:25) {
@@ -42,18 +44,18 @@ class QueryComplexityCalculatorTest extends Specification {
         |            }
         |        }
         |    }
-        |}'''.stripMargin()            | "query with 334 chars" || 334
+        |}'''.stripMargin()     | "query with 334 chars"                              || 334
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        tracks{
         |          trackId
         |        }
         |    }
-        |}'''.stripMargin()            | "query with 69 chars" || 69
+        |}'''.stripMargin()     | "query with 69 chars"                               || 69
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -73,31 +75,31 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query with 186 chars on the return mutation query" || 186
+        |    }'''.stripMargin() | "query with 186 chars on the return mutation query" || 186
     }
 
     def "test query character score with exception [empty query]"() {
         when:
-        queryComplexityCalculator.characterScore(query)
+            queryComplexityCalculator.characterScore(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("query cannot be null or empty")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("query cannot be null or empty")
 
         where:
-        query = '''
+            query = '''
         '''.stripMargin()
     }
 
     @Unroll
     def "test query character limit, case: #name"() {
         expect:
-        boolean characterLimitExceeded = queryComplexityCalculator.characterLimitExceeded(query);
-        characterLimitExceeded == expectedResult
+            boolean characterLimitExceeded = queryComplexityCalculator.characterLimitExceeded(query);
+            characterLimitExceeded == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                                                                        || expectedResult
+            '''\
         |{
         |    viewer {
         |        playLists(first:25) {
@@ -114,18 +116,18 @@ class QueryComplexityCalculatorTest extends Specification {
         |            }
         |        }
         |    }
-        |}'''.stripMargin()            | "query with 334 chars when max characters allowed is 200" || true
+        |}'''.stripMargin()     | "query with 334 chars when max characters allowed is 200"                   || true
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        tracks{
         |          trackId
         |        }
         |    }
-        |}'''.stripMargin()            | "query with 69 chars when max characters allowed is 200" || false
+        |}'''.stripMargin()     | "query with 69 chars when max characters allowed is 200"                    || false
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -143,27 +145,27 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query with 146 chars on the return mutation query when max allowed is 200" || false
+        |    }'''.stripMargin() | "query with 146 chars on the return mutation query when max allowed is 200" || false
     }
 
     @Unroll
     def "test query depth score, case: #name"() {
         expect:
-        int depthScore = queryComplexityCalculator.depthScore(query);
-        depthScore == expectedResult
+            int depthScore = queryComplexityCalculator.depthScore(query);
+            depthScore == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                 || expectedResult
+            '''\
         |{
         |    playLists {
         |        tracks{
         |          trackId
         |        }
         |    }
-        |}'''.stripMargin()            | "query with depth 2" || 2
+        |}'''.stripMargin()     | "query with depth 2" || 2
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        tracks{
@@ -173,9 +175,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |    }
-        |}'''.stripMargin()            | "query with depth 3" || 3
+        |}'''.stripMargin()     | "query with depth 3" || 3
 
-        '''\
+            '''\
         |{
         |    viewer {
         |        playLists(first:25) {
@@ -192,9 +194,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |            }
         |        }
         |    }
-        |}'''.stripMargin()            | "query with depth 4" || 4
+        |}'''.stripMargin()     | "query with depth 4" || 4
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -210,56 +212,56 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query with depth 2" || 2
+        |    }'''.stripMargin() | "query with depth 2" || 2
     }
 
     def "test query depth score with exception [empty query]"() {
         when:
-        queryComplexityCalculator.depthScore(query)
+            queryComplexityCalculator.depthScore(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("query cannot be null or empty")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("query cannot be null or empty")
 
         where:
-        query = '''
+            query = '''
         '''.stripMargin()
     }
 
     def "test query depth score with exception [malformed query with missing braces]"() {
         when:
-        queryComplexityCalculator.depthScore(query)
+            queryComplexityCalculator.depthScore(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("Cannot parse query {playLists{playListId}")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("Cannot parse query {playLists{playListId}")
 
         where:
-        query = '''{playLists{playListId}'''.stripMargin()
+            query = '''{playLists{playListId}'''.stripMargin()
 
     }
 
     @Unroll
     def "test query depth limit, case: #name"() {
         expect:
-        boolean depthLimitExceeded = queryComplexityCalculator.depthLimitExceeded(query);
-        depthLimitExceeded == expectedResult
+            boolean depthLimitExceeded = queryComplexityCalculator.depthLimitExceeded(query);
+            depthLimitExceeded == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                                                       || expectedResult
+            '''\
         |{
         | playListId
-        |}'''.stripMargin()                | "query with depth 0 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 0 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
         |    }
-        |}'''.stripMargin()               | "query with depth 1 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 1 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -268,9 +270,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with depth 2 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 2 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -285,9 +287,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with depth 2 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 2 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -299,9 +301,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with depth 3 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 3 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -316,9 +318,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with depth 3 when max depth allowed is 3" || false
+        |}'''.stripMargin()     | "query with depth 3 when max depth allowed is 3"           || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -334,9 +336,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with depth 4 when max depth allowed is 3" || true
+        |}'''.stripMargin()     | "query with depth 4 when max depth allowed is 3"           || true
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -356,30 +358,30 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "mutation return query with depth 2 when max allowed is 3" || false
+        |    }'''.stripMargin() | "mutation return query with depth 2 when max allowed is 3" || false
     }
 
     @Unroll
     def "test query score, case: #name"() {
         expect:
-        int queryScore = queryComplexityCalculator.queryScore(query);
-        queryScore == expectedResult
+            int queryScore = queryComplexityCalculator.queryScore(query);
+            queryScore == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                                       || expectedResult
+            '''\
         |{
         | playListId
-        |}'''.stripMargin()                | "query with a score of 0" || 0
+        |}'''.stripMargin()     | "query with a score of 0"                  || 0
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
         |    }
-        |}'''.stripMargin()               | "query with a score of 10" || 10
+        |}'''.stripMargin()     | "query with a score of 10"                 || 10
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -388,9 +390,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 16" || 16
+        |}'''.stripMargin()     | "query with a score of 40"                 || 40
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -405,9 +407,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 48" || 48
+        |}'''.stripMargin()     | "query with a score of 110"                || 110
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -419,9 +421,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 46" || 46
+        |}'''.stripMargin()     | "query with a score of 50"                 || 50
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -437,9 +439,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 54" || 54
+        |}'''.stripMargin()     | "query with a score of 70"                 || 70
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -454,9 +456,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 76" || 76
+        |}'''.stripMargin()     | "query with a score of 60"                 || 60
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -476,9 +478,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "mutation return query with a score of 60" || 60
+        |    }'''.stripMargin() | "mutation return query with a score of 30" || 30
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -498,7 +500,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "mutation return query with a score of 29" || 29
+        |    }'''.stripMargin() | "mutation return query with a score of 80" || 80
 
 
     }
@@ -506,24 +508,24 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query score limit, case: #name"() {
         expect:
-        boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query);
-        scoreLimitExceeded == expectedResult
+            boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query);
+            scoreLimitExceeded == expectedResult
 
         where:
-        query                              | name                 || expectedResult
-        '''\
+            query                              | name                                                || expectedResult
+            '''\
         |{
         | playListId
-        |}'''.stripMargin()                | "query with score 0 when max score allowed is 50" || false
+        |}'''.stripMargin()     | "query with score 0 when max score allowed is 50"   || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
         |    }
-        |}'''.stripMargin()               | "query with score 10 when max score allowed is 50" || false
+        |}'''.stripMargin()     | "query with score 10 when max score allowed is 50"  || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -532,9 +534,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with score 16 when max score allowed is 50" || false
+        |}'''.stripMargin()     | "query with score 40 when max score allowed is 50"  || false
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -549,10 +551,10 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with score 48 when max score allowed is 50" || false
+        |}'''.stripMargin()     | "query with score 210 when max score allowed is 50" || true
 
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -567,9 +569,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with score 76 when max score allowed is 50" || true
+        |}'''.stripMargin()     | "query with score 60 when max score allowed is 50"  || true
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
@@ -585,9 +587,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()               | "query with score 86 when max score allowed is 50" || true
+        |}'''.stripMargin()     | "query with score 60 when max score allowed is 50"  || true
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -607,40 +609,40 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query with score 60 when max score allowed is 50" || true
+        |    }'''.stripMargin() | "query with score 30 when max score allowed is 50"  || false
     }
 
     @Unroll
     def "test validate query, case: #name"() {
         expect:
-        queryComplexityCalculator.validate(query);
+            queryComplexityCalculator.validate(query);
 
         where:
-        query                          | name
-        '''\
+            query                              | name
+            '''\
         |{
         | playListId
-        |}'''.stripMargin()            | "query with a score of 0"
+        |}'''.stripMargin()     | "query with a score of 0"
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
         |    }
-        |}'''.stripMargin()            | "query with a score of 10"
+        |}'''.stripMargin()     | "query with a score of 10"
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        playListId
         |        playListTitle
-        |        albumsFirst(first:3){
+        |        albumsFirst(first:1){
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()               | "query with a score of 16"
+        |}'''.stripMargin()     | "query with a score of 50"
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -656,19 +658,19 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "mutation return query with a score of 30"
+        |    }'''.stripMargin() | "mutation return query with a score of 30"
     }
 
     def "test check valid query with exception [characterLimitReached]"() {
         when:
-        queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("query length has exceeded the maximum of 200 characters.")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("query length has exceeded the maximum of 200 characters.")
 
         where:
-        query = '''\
+            query = '''\
         |{
         |    playLists {
         |        playListId
@@ -689,14 +691,14 @@ class QueryComplexityCalculatorTest extends Specification {
 
     def "test check valid query with exception [depthLimitReached]"() {
         when:
-        queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("query depth has exceeded the maximum depth level of 3.")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("query depth has exceeded the maximum depth level of 3.")
 
         where:
-        query = '''\
+            query = '''\
         |{
         | list{
         |    d1{
@@ -715,14 +717,14 @@ class QueryComplexityCalculatorTest extends Specification {
 
     def "test check valid query with exception [scoreLimitReached]"() {
         when:
-        queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query)
 
         then:
-        def exception = thrown(GlitrException)
-        exception.getMessage().equals("query score has exceeded the maximum score level of 50.")
+            def exception = thrown(GlitrException)
+            exception.getMessage().equals("query score has exceeded the maximum score level of 50.")
 
         where:
-        query = '''\
+            query = '''\
         |{
         |    playLists {
         |        albumsFirst(first:30){
@@ -739,19 +741,19 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test check if query is mutation, case: #name"() {
         expect:
-        boolean isMutation = queryComplexityCalculator.isMutation(query);
-        isMutation == expectedResult
+            boolean isMutation = queryComplexityCalculator.isMutation(query);
+            isMutation == expectedResult
 
         where:
-        query                          | name                       || expectedResult
-        '''\
+            query                              | name                      || expectedResult
+            '''\
         |{
         | viewer{
         |    test
         |  }
-        |}'''.stripMargin()            | "query is not a mutation"  || false
+        |}'''.stripMargin()     | "query is not a mutation" || false
 
-        '''\
+            '''\
         |mutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -771,9 +773,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query is a mutation" || true
+        |    }'''.stripMargin() | "query is a mutation"     || true
 
-        '''\
+            '''\
         |{
         |    playLists {
         |        albumsFirst(first:30){
@@ -783,9 +785,9 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()  | "query is not a mutation" || false
+        |}'''.stripMargin()     | "query is not a mutation" || false
 
-        '''\
+            '''\
         |myMutation {
         |      playListMtn(input: {
         |        clientId: "abc"
@@ -805,7 +807,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin()       | "query is a mutation" || false
+        |    }'''.stripMargin() | "query is a mutation"     || false
 
 
     }
@@ -847,12 +849,12 @@ class QueryComplexityCalculatorTest extends Specification {
             queryScore == expectedScore
         where:
             bitrate           || expectedScore
-            "bitrateList{id}" || 9
+            "bitrateList{id}" || 5
             "_"               || 1
     }
 
     @Unroll
-    def "Calculate query complexity with specified multiplier"() {
+    def "Calculate query complexity with specified bitrateList multiplier = 4"() {
         setup:
             Glitr glitr = GlitrBuilder.newGlitr()
                     .withRelay()
@@ -866,7 +868,7 @@ class QueryComplexityCalculatorTest extends Specification {
             def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
             mutation {
                 saveVideoInfoMutation(input: {
-                    clientMutationId: \"mutationId-Sx160620160639713-1\"
+                    clientMutationId: "mutationId-Sx160620160639713-1"
                     videoMutation: {
                         title: "My video title"
                         bitrateList: [
@@ -888,8 +890,8 @@ class QueryComplexityCalculatorTest extends Specification {
             queryScore == expectedScore
         where:
             bitrate           || expectedScore
-            "bitrateList{id}" || 8
-            "_"               || 0
+            "bitrateList{id}" || 4
+            "id"              || 0
     }
 
 
@@ -914,7 +916,7 @@ class QueryComplexityCalculatorTest extends Specification {
             invocationTimes * queryComplexityCalculator.extractMultiplierFromListField(*_)
 
         where:
-            query                           || invocationTimes
+            query              || invocationTimes
             """
             {
                 videos {
@@ -927,19 +929,38 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-            """                              || 2
-            """
-            {
-                zZZVideos {
-                    edges {
-                        node {
-                            bitrateList {
-                                id
-                            }
-                        }
-                    }
+            """ || 3
+
+    }
+
+    @Unroll
+    def "Calculate query complexity with specified formula"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(1, 1, 1, 1))
+                    .build()
+
+        when:
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
+                {
+                    $query
                 }
-            }
-            """                              || 4
+            """);
+        then:
+            queryScore == expectedScore
+        where:
+            query                                                                     || expectedScore
+            "videosDepth{id}"                                                         || 1
+            "videos{edges{node{depth{id}}}}"                                          || 3
+            "childScore{first{second{id}}}"                                           || 4
+            "currentCollectionSize(first: 3){id}"                                     || 3
+            "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"     || 9
+            "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}" || 25
+            "duplicateVariables{first{second{id}}}"                                   || 8
+            "incorrectVariableDeclaration{id}"                                        || 0
     }
 }

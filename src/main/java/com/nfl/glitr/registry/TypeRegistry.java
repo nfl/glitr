@@ -50,7 +50,7 @@ public class TypeRegistry implements TypeResolver {
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
-    private final Map<String, Integer> queryComplexityMultipliersMap = new ConcurrentHashMap<>();
+    private final Map<String, String> queryComplexityMultipliersMap = new ConcurrentHashMap<>();
     private final Set<String> queryComplexityExcludeNodes = new HashSet<>();
     private final Map<Class, List<Object>> overrides;
 
@@ -234,26 +234,24 @@ public class TypeRegistry implements TypeResolver {
      * @param parentPath chain of processed properties in parent classes. <b>e.g.: viewer{@value NodeUtil#PATH_SEPARATOR}videoUrl{@value NodeUtil#PATH_SEPARATOR}messages</b>
      * @param parsedTypes collection of already processed types, to avoid a circular processing
      */
-    private void lookupComplexity(Class clazz, String parentPath, Set<Class> parsedTypes) {
+    private void lookupComplexity(Class clazz, String parentPath, Set<String> parsedTypes) {
         for (Method method : clazz.getDeclaredMethods()) {
-            String name = ReflectionUtil.sanitizeMethodName(method.getName());
-            String newPath = NodeUtil.buildPath(parentPath, name);
-
-            Optional<String> complexityOpt = getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class)
-                    .map(GlitrQueryComplexity::value);
-            if (complexityOpt.isPresent()) {
-                try {
-                    Integer complexity = Integer.valueOf(complexityOpt.get());
-                    queryComplexityMultipliersMap.put(newPath, complexity);
-                } catch (NumberFormatException e) {
-                    logger.warn("complexity of {} in class {} should be an Integer value", name, clazz.getName());
-                }
+            if (!ReflectionUtil.eligibleMethod(method)) {
+                continue;
             }
+
+            String name = ReflectionUtil.sanitizeMethodName(method.getName());
+            String newPath = NodeUtil.buildNewPath(parentPath, name);
+
+            getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class)
+                    .map(GlitrQueryComplexity::value)
+                    .ifPresent(x -> queryComplexityMultipliersMap.put(newPath, x));
 
             Optional<GlitrForwardPagingArguments> glitrForwardPagingArguments = getAnnotationOfMethodOrField(clazz, method, GlitrForwardPagingArguments.class);
             if (glitrForwardPagingArguments.isPresent()) {
-                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "edges") );
-                queryComplexityExcludeNodes.add(NodeUtil.buildPath(newPath, "node") );
+                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "edges") );
+                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "node") );
+                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "edges", "node") );
             }
 
             Class<?> returnType = ReflectionUtil.getSanitizedMethodReturnType(method);
@@ -262,8 +260,8 @@ public class TypeRegistry implements TypeResolver {
             }
 
             parsedTypes = Optional.ofNullable(parsedTypes).orElse(new HashSet<>());
-            if (!parsedTypes.contains(returnType)) {
-                parsedTypes.add(returnType);
+            if (!parsedTypes.contains(returnType.getCanonicalName() + ":" + method.getName())) {
+                parsedTypes.add(returnType.getCanonicalName() + ":" + method.getName());
                 lookupComplexity(returnType, newPath, parsedTypes);
             }
         }
@@ -623,7 +621,7 @@ public class TypeRegistry implements TypeResolver {
 
     public Optional<GraphQLType> detectScalar(Type type, String name) {
         // users can register their own GraphQLScalarTypes for given Java types
-        if(type instanceof ParameterizedType) {
+        if (type instanceof ParameterizedType) {
             type = ((ParameterizedType)type).getRawType();
         }
 
@@ -688,7 +686,7 @@ public class TypeRegistry implements TypeResolver {
         return nameRegistry;
     }
 
-    public Map<String, Integer> getQueryComplexityMultipliersMap() {
+    public Map<String, String> getQueryComplexityMultipliersMap() {
         return queryComplexityMultipliersMap;
     }
 

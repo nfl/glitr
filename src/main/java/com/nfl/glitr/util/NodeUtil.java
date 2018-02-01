@@ -11,7 +11,7 @@ public class NodeUtil {
     public static final String PATH_SEPARATOR = "->";
 
 
-    public static String buildPath(String parent, String... child) {
+    public static String buildNewPath(String parent, String... child) {
         return Optional.ofNullable(parent)
                 .map(p -> Stream.concat(Stream.of(p),Stream.of(child)).collect(Collectors.joining(PATH_SEPARATOR)))
                 .orElse(StringUtils.join(child, PATH_SEPARATOR));

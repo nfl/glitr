@@ -1,10 +1,15 @@
 package com.nfl.glitr.calculator;
 
 import com.nfl.glitr.exception.GlitrException;
+import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
+import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
+import com.nfl.glitr.registry.schema.GraphQLConnectionList;
 import graphql.language.*;
 import graphql.parser.Parser;
+import graphql.schema.*;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +18,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.nfl.glitr.util.NodeUtil.buildNewPath;
 import static org.apache.commons.lang3.StringUtils.substringBetween;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -45,8 +49,7 @@ public class QueryComplexityCalculator {
     private final int maxScoreLimit;
     private final double defaultMultiplier;
     private final Parser documentParser;
-    private Map<String, String> queryComplexityMultipliersMap = new HashMap<>();
-    private Set<String> queryComplexityExcludeNodes = new HashSet<>();
+    private GraphQLSchema schema;
 
     public QueryComplexityCalculator() {
         this.maxCharacterLimit = 10000;
@@ -72,13 +75,8 @@ public class QueryComplexityCalculator {
         this.documentParser = documentParser;
     }
 
-    public QueryComplexityCalculator withQueryComplexityExcludeNodes(Set<String> queryComplexityExcludeNodes) {
-        this.queryComplexityExcludeNodes = Optional.ofNullable(queryComplexityExcludeNodes).orElse(new HashSet<>());
-        return this;
-    }
-
-    public QueryComplexityCalculator withQueryComplexityMultipliersMap(Map<String, String> queryComplexityMultipliersMap) {
-        this.queryComplexityMultipliersMap = Optional.ofNullable(queryComplexityMultipliersMap).orElse(new HashMap<>());
+    public QueryComplexityCalculator withSchema(GraphQLSchema schema) {
+        this.schema = schema;
         return this;
     }
 
@@ -341,12 +339,37 @@ public class QueryComplexityCalculator {
      * @return {@link QueryComplexityNode}
      */
     public QueryComplexityNode queryScoreDetails(String query) {
-        String parent = null;
-        if (isMutation(query)) {
-            parent = getMutationName(query);
+        GraphQLFieldDefinition rootField = null;
+        if (schema != null) {
+            boolean mutationQuery = isMutation(query);
+            String root = mutationQuery ? getMutationName(query) : null;
+            GraphQLOutputType rootType = mutationQuery ? schema.getMutationType().getFieldDefinition(root).getType() : schema.getQueryType();
+            rootField = GraphQLFieldDefinition.newFieldDefinition().name("query_definition_container").type(rootType).build();
         }
 
-        return queryScoreDetails(parseRootNode(query), parent, 0, new HashMap<>());
+        QueryComplexityNode complexityNode = buildComplexitySchema(query);
+
+        return queryScoreDetails(complexityNode, 0, new HashMap<>(), rootField, false);
+    }
+
+    private QueryComplexityNode buildComplexitySchema(String query) {
+        Node rootNode = parseRootNode(query);
+        return buildComplexitySchema(rootNode, new QueryComplexityNode("query", true));
+    }
+
+    private QueryComplexityNode buildComplexitySchema(Node queryNode, QueryComplexityNode queryComplexityParentNode) {
+        for (Node child : (List<Node>) queryNode.getChildren()) {
+            QueryComplexityNode childComplexity = queryComplexityParentNode;
+            if (child instanceof Argument) {
+                queryComplexityParentNode.addArgument((Argument) child);
+            } else if (isAuthorizedField(child)) {
+                childComplexity = new QueryComplexityNode(((Field) child).getName());
+                queryComplexityParentNode.addChild(childComplexity);
+            }
+            buildComplexitySchema(child, childComplexity);
+        }
+
+        return queryComplexityParentNode;
     }
 
     private String getMutationName(String query) {
@@ -354,47 +377,76 @@ public class QueryComplexityCalculator {
     }
 
     @SuppressWarnings("unchecked")
-    private QueryComplexityNode queryScoreDetails(Node queryNode, String path, int depth, Map<String, Double> globalQueryContext) {
-        boolean authorizedField = isAuthorizedField(queryNode, path);
-        String nodeName = authorizedField ? ((Field) queryNode).getName() : queryNode.getClass().getSimpleName();
-        QueryComplexityNode.Builder resultBuilder = QueryComplexityNode.newBuilder(nodeName, authorizedField);
-        double currentNodeScore = 0d;
+    private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, int depth, Map<String, Double> nestedContext, GraphQLFieldDefinition graphQlObject, boolean connectionNode) {
+        Map<String, Double> context = refreshQueryContext(nestedContext, parentNode);
+
         double childScores = 0d;
+        for (QueryComplexityNode currentChild : parentNode.getChildren()) {
+            boolean childConnectionNode = isConnectionNode(graphQlObject, currentChild.getName());
+            int childDepth = !childConnectionNode && !currentChild.isIgnore() ? (depth + 1) : depth;
+            GraphQLFieldDefinition childObject = getGraphQLObject(graphQlObject, currentChild.getName());
 
-        if (authorizedField) {
-            depth++;
-            path = buildNewPath(path, nodeName);
-            refreshQueryContext(globalQueryContext, (Field) queryNode);
-        }
-
-        for (Node currentChild : (List<Node>) queryNode.getChildren()) {
-            if (currentChild.getClass() == Argument.class) {
-                continue;
-            }
-
-            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, path, depth, globalQueryContext);
+            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childDepth , context, childObject, childConnectionNode);
             childScores += childComplexityNode.getTotalWeight();
-            resultBuilder.addChild(childComplexityNode);
         }
 
-        if (authorizedField) {
-            Map<String, Double> multiplierContext = buildContext((Field) queryNode, globalQueryContext, depth, childScores);
-            currentNodeScore = extractMultiplierFromListField((Field) queryNode, path, multiplierContext);
-            resultBuilder.withWeight(currentNodeScore);
+        double currentNodeScore = 0d;
+        if (!connectionNode && !parentNode.isIgnore()) {
+            Map<String, Double> nodeContext = buildContext(parentNode, nestedContext, depth, childScores);
+            currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject);
+            parentNode.setWeight(currentNodeScore);
         }
+        parentNode.setTotalWeight(currentNodeScore + childScores);
 
-        return resultBuilder.build();
+        return parentNode;
     }
 
-    private void refreshQueryContext(Map<String, Double> queryContext, Field field) {
+    private GraphQLFieldDefinition getGraphQLObject(GraphQLFieldDefinition graphQlObject, String name) {
+        if (graphQlObject == null) {
+            return null;
+        }
+
+        GraphQLOutputType objType = graphQlObject.getType();
+        if (objType instanceof GraphQLList) {
+            return ((GraphQLObjectType) ((GraphQLList)objType).getWrappedType()).getFieldDefinition(name);
+        } else if (objType instanceof GraphQLNonNull) {
+                return ((GraphQLObjectType)((GraphQLNonNull)objType).getWrappedType()).getFieldDefinition(name);
+        } else if (objType instanceof GraphQLFieldsContainer) {
+            return ((GraphQLFieldsContainer) graphQlObject.getType()).getFieldDefinition(name);
+        }
+
+        return null;
+    }
+
+    private boolean isConnectionNode(GraphQLFieldDefinition graphQlObject, String name) {
+        if (graphQlObject == null) {
+            return false;
+        }
+
+        GraphQLType objType = graphQlObject.getType();
+        if (objType instanceof GraphQLConnectionList) {
+            return true;
+        }
+
+        if (objType instanceof GraphQLObjectType) {
+            GraphQLFieldDefinition fieldDefinition = ((GraphQLObjectType) objType).getFieldDefinition(name);
+            return fieldDefinition != null && fieldDefinition.getType() instanceof GraphQLConnectionList;
+        }
+
+        return false;
+    }
+
+    private Map<String, Double> refreshQueryContext(Map<String, Double> queryContext, QueryComplexityNode field) {
         int limit = getLimitArgIfPresent(field).orElse(0);
 
         Double parentCollectionsSize = queryContext.getOrDefault("totalCollectionsSize", 0d);
         Double totalCollectionsSize = parentCollectionsSize + limit;
         queryContext.put("totalCollectionsSize", totalCollectionsSize);
+
+        return new HashMap<>(queryContext);
     }
 
-    private Map buildContext(Field field, Map<String, Double> queryContext, int depth, double childScores) {
+    private Map buildContext(QueryComplexityNode field, Map<String, Double> queryContext, int depth, double childScores) {
         double totalCollectionsSize = queryContext.getOrDefault("totalCollectionsSize", 0d);
         int limit = getLimitArgIfPresent(field).orElse(0);
 
@@ -412,20 +464,15 @@ public class QueryComplexityCalculator {
         return multiplierContext;
     }
 
-    private boolean isAuthorizedField(Node node, String path) {
-        if (node == null) {
-            return false;
-        }
-
-        if (!(node instanceof Field)) {
-            return false;
-        }
-
-        path = buildNewPath(path, ((Field) node).getName());
-        return !queryComplexityExcludeNodes.contains(path);
+    private boolean isAuthorizedField(Node node) {
+        return node != null && node instanceof Field;
     }
 
-    private Optional<Integer> getLimitArgIfPresent(Field node) {
+    private Optional<Integer> getLimitArgIfPresent(QueryComplexityNode node) {
+        if (CollectionUtils.isEmpty(node.getArguments())) {
+            return Optional.empty();
+        }
+
         Integer limit = null;
 
         Optional<Argument> listLimit = node.getArguments().stream()
@@ -517,14 +564,27 @@ public class QueryComplexityCalculator {
      * *****************************************************************************************************************
      * </pre>
      *
-     * @param node - The field node we would like to test against
-     * @param path - Already tested nodes chain
-     * @param context - mutable global query context
+     * @param node The field node we would like to test against
+     * @param context mutable current branch context
+     * @param graphQlObject {@link GraphQLFieldDefinition}
      * @return the multiplier
      *
      **/
-    protected double extractMultiplierFromListField(Field node, String path, Map<String, Double> context) {
-        String multiplier = queryComplexityMultipliersMap.get(path);
+    protected double extractMultiplierFromListField(QueryComplexityNode node, Map<String, Double> context, GraphQLFieldDefinition graphQlObject) {
+        String multiplier = null;
+
+        Optional<List<GlitrMetaDefinition>> metaDefinitions = Optional.ofNullable(graphQlObject)
+                .map(GraphQLFieldDefinition::getDefinition)
+                .filter(x -> x instanceof GlitrFieldDefinition)
+                .map(x -> ((GlitrFieldDefinition)x).getMetaDefinitions())
+                .filter(CollectionUtils::isNotEmpty);
+
+        if (metaDefinitions.isPresent()) {
+            multiplier = metaDefinitions.get().stream()
+                    .filter(x -> "complexity_formula".equals(x.getName()))
+                    .findFirst()
+                    .map(GlitrMetaDefinition::getValue).orElse(null);
+        }
 
         // If there is an argument
         Optional<Integer> listLimit = getLimitArgIfPresent(node);
@@ -599,6 +659,15 @@ public class QueryComplexityCalculator {
      *          false --> if the node has children.
      */
     private boolean isLeaf(Node node) {
+        return node.getChildren().isEmpty();
+    }
+
+    /**
+     * @param node - Node to test against
+     * @return  true  --> if the node doesn't have children
+     *          false --> if the node has children.
+     */
+    private boolean isLeaf(QueryComplexityNode node) {
         return node.getChildren().isEmpty();
     }
 

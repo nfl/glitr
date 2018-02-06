@@ -1,11 +1,13 @@
 package com.nfl.glitr.relay;
 
-import graphql.schema.*;
+import com.nfl.glitr.registry.schema.GraphQLConnectionList;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
 
 import static graphql.Scalars.*;
-import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
@@ -49,7 +51,7 @@ public class RelayImpl extends graphql.relay.Relay implements Relay {
                 .description("A connection to a list of items.")
                 .field(newFieldDefinition()
                         .name("edges")
-                        .type(new GraphQLList(edgeType))
+                        .type(new GraphQLConnectionList(edgeType))
                         .build())
                 .field(newFieldDefinition()
                         .name("pageInfo")

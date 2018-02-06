@@ -1,5 +1,6 @@
 package com.nfl.glitr.data.query;
 
+import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.data.mutation.Bitrate;
 
@@ -22,6 +23,11 @@ public class Video extends AbstractContent implements Playable {
 
     public String getUrl() {
         return url;
+    }
+
+    @GlitrForwardPagingArguments
+    public List<Video> getChildren() {
+        return null;
     }
 
     @GlitrQueryComplexity("#{depth}")

@@ -956,6 +956,7 @@ class QueryComplexityCalculatorTest extends Specification {
             query                                                                     || expectedScore
             "videosDepth{id}"                                                         || 1
             "videos{edges{node{depth{id}}}}"                                          || 3
+            "videos{edges{node{children{edges{node{depth{id}}}}}}}"                   || 5
             "childScore{first{second{id}}}"                                           || 4
             "currentCollectionSize(first: 3){id}"                                     || 3
             "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"     || 9

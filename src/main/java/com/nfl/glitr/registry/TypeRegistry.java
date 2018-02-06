@@ -9,6 +9,8 @@ import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
 import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
+import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
+import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.registry.type.*;
 import com.nfl.glitr.relay.Node;
 import com.nfl.glitr.relay.Relay;
@@ -50,8 +52,6 @@ public class TypeRegistry implements TypeResolver {
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
-    private final Map<String, String> queryComplexityMultipliersMap = new ConcurrentHashMap<>();
-    private final Set<String> queryComplexityExcludeNodes = new HashSet<>();
     private final Map<Class, List<Object>> overrides;
 
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
@@ -125,8 +125,6 @@ public class TypeRegistry implements TypeResolver {
      * @return GraphQLType
      */
     public GraphQLType lookup(Class clazz) {
-        lookupComplexity(clazz, null,null);
-
         // do a first pass lookup
         lookupOutput(clazz);
         // go over all the types in the type map and do another pass to resolve the GraphQL type references
@@ -198,8 +196,6 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLObjectType createRelayMutationType(Class clazz) {
-        lookupComplexity(clazz, null,null);
-
         Map<String, Pair<Method, Class>> methods = ReflectionUtil.getMethodMap(clazz);
         addExtraMethodsToTheSchema(clazz, methods);
 
@@ -220,53 +216,6 @@ public class TypeRegistry implements TypeResolver {
         return builder.build();
     }
 
-    /**
-     * Check if the given class contains a property marked with a @{@link GlitrQueryComplexity} annotation and,
-     * if found, add it to query complexity multipliers map.
-     * <p>Since processing of the incoming {@code clazz} is recursive, it'll run until it has reached one of the following:
-     * <ul>
-     *    <li> Primitive (Integer, String, etc) </li>
-     *    <li> {@code Object} </li>
-     *    <li> {@code Map} </li>
-     *</ul>
-     *
-     * @param clazz class on which to preform introspection
-     * @param parentPath chain of processed properties in parent classes. <b>e.g.: viewer{@value NodeUtil#PATH_SEPARATOR}videoUrl{@value NodeUtil#PATH_SEPARATOR}messages</b>
-     * @param parsedTypes collection of already processed types, to avoid a circular processing
-     */
-    private void lookupComplexity(Class clazz, String parentPath, Set<String> parsedTypes) {
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (!ReflectionUtil.eligibleMethod(method)) {
-                continue;
-            }
-
-            String name = ReflectionUtil.sanitizeMethodName(method.getName());
-            String newPath = NodeUtil.buildNewPath(parentPath, name);
-
-            getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class)
-                    .map(GlitrQueryComplexity::value)
-                    .ifPresent(x -> queryComplexityMultipliersMap.put(newPath, x));
-
-            Optional<GlitrForwardPagingArguments> glitrForwardPagingArguments = getAnnotationOfMethodOrField(clazz, method, GlitrForwardPagingArguments.class);
-            if (glitrForwardPagingArguments.isPresent()) {
-                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "edges") );
-                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "node") );
-                queryComplexityExcludeNodes.add(NodeUtil.buildNewPath(newPath, "edges", "node") );
-            }
-
-            Class<?> returnType = ReflectionUtil.getSanitizedMethodReturnType(method);
-            if (returnType == null) {
-                continue;
-            }
-
-            parsedTypes = Optional.ofNullable(parsedTypes).orElse(new HashSet<>());
-            if (!parsedTypes.contains(returnType.getCanonicalName() + ":" + method.getName())) {
-                parsedTypes.add(returnType.getCanonicalName() + ":" + method.getName());
-                lookupComplexity(returnType, newPath, parsedTypes);
-            }
-        }
-    }
-
     private GraphQLFieldDefinition getGraphQLFieldDefinition(Class clazz, Pair<Method, Class> pair) {
         // GraphQL Field Name
         Method method = pair.getLeft();
@@ -282,12 +231,17 @@ public class TypeRegistry implements TypeResolver {
             description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
         }
 
+        Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
+        List<GlitrMetaDefinition> metaDefinitions = new ArrayList<>();
+        glitrQueryComplexity.ifPresent(queryComplexity -> metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value())));
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
                 .type(retrieveGraphQLOutputType(declaringClass, method))
                 .argument(createRelayInputArgument(declaringClass, method))
                 .dataFetcher(dataFetcher)
+                .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 // TODO: static value
                 // TODO: deprecation reason
                 .build();
@@ -684,13 +638,5 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<String, GraphQLType> getNameRegistry() {
         return nameRegistry;
-    }
-
-    public Map<String, String> getQueryComplexityMultipliersMap() {
-        return queryComplexityMultipliersMap;
-    }
-
-    public Set<String> getQueryComplexityExcludeNodes() {
-        return queryComplexityExcludeNodes;
     }
 }

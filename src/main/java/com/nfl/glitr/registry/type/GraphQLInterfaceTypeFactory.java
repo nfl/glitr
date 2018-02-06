@@ -2,18 +2,18 @@ package com.nfl.glitr.registry.type;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrDescription;
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
+import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
+import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.schema.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -76,11 +76,16 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
             type = new GraphQLNonNull(type);
         }
 
+        Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
+        List<GlitrMetaDefinition> metaDefinitions = new ArrayList<>();
+        glitrQueryComplexity.ifPresent(queryComplexity -> metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value())));
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
                 .dataFetcher(CompositeDataFetcherFactory.create(Collections.singletonList(new PropertyDataFetcher(name))))
                 .type((GraphQLOutputType) type)
+                .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 .build();
     }
 }

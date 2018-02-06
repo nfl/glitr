@@ -28,11 +28,6 @@ class CircularReferenceTest extends Specification {
             objType.name == Novel.simpleName
             objType.fieldDefinitions.name as Set == ["novel", "pageCount", "title", "reviewed"] as Set
             objType.interfaces.name as Set == [AbstractRead.simpleName] as Set
-        then: "And make sure there is no circular processing and complexity map populated only with one record where key is 'novel'"
-            def queryComplexityMap = glitr.typeRegistry.getQueryComplexityMultipliersMap()
-            queryComplexityMap.size() == 42
-            queryComplexityMap.get("novel") == "12"
-
     }
 
     def "Inspect Interface that has a field circular reference"() {
@@ -50,9 +45,5 @@ class CircularReferenceTest extends Specification {
             objType.name == Book.simpleName
             objType.fieldDefinitions.name as Set == ["title", "synopsis"] as Set
             objType.interfaces.name as Set == [Readable.simpleName] as Set
-        then: "And make sure there is no circular processing and complexity map populated only with one record where key is 'synopsis->synopsis'"
-            def queryComplexityMap = glitr.typeRegistry.getQueryComplexityMultipliersMap()
-            queryComplexityMap.size() == 42
-            queryComplexityMap.get(buildNewPath("synopsis","synopsis")) == "12"
     }
 }

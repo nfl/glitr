@@ -1,5 +1,7 @@
 package com.nfl.glitr.calculator;
 
+import graphql.language.Argument;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,30 +11,27 @@ import java.util.List;
 public class QueryComplexityNode {
 
     private String name;
-    private boolean field;
     private double weight;
     private double totalWeight;
-    private List<QueryComplexityNode> childes;
+    private List<Argument> arguments = new ArrayList<>();
+    private List<QueryComplexityNode> children = new ArrayList<>();
+    private boolean ignore;
 
 
-    private QueryComplexityNode() {
+    public QueryComplexityNode() {
     }
 
-    private QueryComplexityNode(Builder builder) {
-        name = builder.name;
-        field = builder.field;
-        weight = builder.weight;
-        childes = builder.childes;
-
-        double childesScore = 0;
-        if(childes != null) {
-            childesScore = childes.stream().mapToDouble(QueryComplexityNode::getTotalWeight).sum();
-        }
-        totalWeight = weight + childesScore;
+    public QueryComplexityNode(String name) {
+        this.name = name;
     }
 
-    public static Builder newBuilder(String name, boolean field) {
-        return new Builder(name, field);
+    public QueryComplexityNode(String name, boolean ignore) {
+        this.name = name;
+        this.ignore = ignore;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
@@ -43,12 +42,8 @@ public class QueryComplexityNode {
         return name;
     }
 
-    /**
-     *
-     * @return is this node a {@link graphql.language.Field} node
-     */
-    public boolean isField() {
-        return field;
+    public void setWeight(double weight) {
+        this.weight = weight;
     }
 
     /**
@@ -59,54 +54,66 @@ public class QueryComplexityNode {
         return weight;
     }
 
+    public void setTotalWeight(double totalWeight) {
+        this.totalWeight = totalWeight;
+    }
+
     /**
      *
-     * @return total weight, that includes current node weight and total weight of all first level childes
+     * @return total weight, that includes current node weight and total weight of all first level children
      */
     public double getTotalWeight() {
         return totalWeight;
     }
 
-    /**
-     *
-     * @return first level childes
-     */
-    public List<QueryComplexityNode> getChildes() {
-        return childes;
+    public List<Argument> getArguments() {
+        return arguments;
     }
 
+    public void setArguments(List<Argument> arguments) {
+        this.arguments = arguments;
+    }
 
-    public static final class Builder {
-        private String name;
-        private boolean field;
-        private double weight;
-        private List<QueryComplexityNode> childes;
-
-        private Builder(String name, boolean field) {
-            this.name = name;
-            this.field = field;
+    public void addArgument(Argument argument) {
+        if (arguments == null) {
+            arguments = new ArrayList<>();
         }
+        arguments.add(argument);
+    }
 
-        public Builder withWeight(double val) {
-            weight = val;
-            return this;
-        }
+    public void setChildren(List<QueryComplexityNode> children) {
+        this.children = children;
+    }
 
-        public Builder withChildes(List<QueryComplexityNode> val) {
-            childes = val;
-            return this;
+    public void addChild(QueryComplexityNode val) {
+        if (children == null) {
+            children = new ArrayList<>();
         }
+        children.add(val);
+    }
 
-        public Builder addChild(QueryComplexityNode val) {
-            if (childes == null) {
-                childes = new ArrayList<>();
-            }
-            childes.add(val);
-            return this;
-        }
+    /**
+     *
+     * @return first level children
+     */
+    public List<QueryComplexityNode> getChildren() {
+        return children;
+    }
 
-        public QueryComplexityNode build() {
-            return new QueryComplexityNode(this);
-        }
+    public boolean isIgnore() {
+        return ignore;
+    }
+
+    public void setIgnore(boolean ignore) {
+        this.ignore = ignore;
+    }
+
+    @Override
+    public String toString() {
+        return "QueryComplexityNode{" +
+                "name='" + name + '\'' +
+                ", weight=" + weight +
+                ", totalWeight=" + totalWeight +
+                '}';
     }
 }

@@ -44,4 +44,9 @@ public class Video extends AbstractContent implements Playable {
     public List<Video> getAllVariablesComplexityFormula() {
         return null;
     }
+
+    @GlitrQueryComplexity(ignore = true)
+    public List<Video> getIgnore() {
+        return null;
+    }
 }

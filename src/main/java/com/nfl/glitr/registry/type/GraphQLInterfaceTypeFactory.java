@@ -77,8 +77,11 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
         }
 
         Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
-        List<GlitrMetaDefinition> metaDefinitions = new ArrayList<>();
-        glitrQueryComplexity.ifPresent(queryComplexity -> metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value())));
+        Set<GlitrMetaDefinition> metaDefinitions = new HashSet<>();
+        glitrQueryComplexity.ifPresent(queryComplexity -> {
+            metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value()));
+            metaDefinitions.add(new GlitrMetaDefinition("complexity_ignore", queryComplexity.ignore()));
+        });
 
         return newFieldDefinition()
                 .name(name)

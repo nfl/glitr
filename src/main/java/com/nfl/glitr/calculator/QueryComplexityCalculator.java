@@ -18,6 +18,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.substringBetween;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -140,11 +142,13 @@ public class QueryComplexityCalculator {
             throw new GlitrException("query cannot be null or empty");
         }
 
-        return calculateMaxDepth(parseRootNode(query.trim()));
+        return calculateMaxDepth(buildComplexitySchema(query), getRootField(query), false);
     }
 
     /**
-     * @param queryNode - Root node to recursively iterate and find the deepest child.
+     * @param parentNode Root node to recursively iterate and find the deepest child.
+     * @param rootField Root GraphQLObject which contains all node's meta info.
+     * @param connectionNode Specify whether parentNode is connection node or not.
      * @return the maximum child depth as an integer.  We start at the queryNode.  We figure out what type of node this is.
      * It can be an OPERATION_DEFINITION, a SELECTION_SET, a FIELD, etc.  If it's a field and not a LEAF, we increase
      * the depth by 1.  A node is considered a LEAF when it doesn't have any children.  We continue and recursively go
@@ -207,17 +211,19 @@ public class QueryComplexityCalculator {
      ******************************************************************************************************************
      ******************************************************************************************************************
      */
-    private int calculateMaxDepth(Node queryNode) {
+    private int calculateMaxDepth(QueryComplexityNode parentNode, GraphQLFieldDefinition rootField, boolean connectionNode) {
         int depth = 0;
-
-        String nodeType = queryNode.getClass().getSimpleName().toUpperCase();
-        if (nodeType.equals(QUERY_FIELD) && !isLeaf(queryNode)) {
+        boolean ignoreNode = parentNode.isIgnore() || (rootField != null && isTrue(getGraphQLMeta(rootField, "complexity_ignore")));
+        if (!ignoreNode && !isLeaf(parentNode) && !connectionNode) {
             depth = 1;
         }
 
         int maxChildDepth = 0;
-        for (Node childNode : (List<Node>) queryNode.getChildren()) {
-            final int currentChildDepth = calculateMaxDepth(childNode);
+        for (QueryComplexityNode childNode : parentNode.getChildren()) {
+            boolean childConnectionNode = isConnectionNode(rootField, childNode.getName());
+            GraphQLFieldDefinition childObject = getGraphQLObject(rootField, childNode.getName());
+
+            final int currentChildDepth = calculateMaxDepth(childNode, childObject, childConnectionNode);
             maxChildDepth = Math.max(maxChildDepth, currentChildDepth);
         }
 
@@ -339,17 +345,11 @@ public class QueryComplexityCalculator {
      * @return {@link QueryComplexityNode}
      */
     public QueryComplexityNode queryScoreDetails(String query) {
-        GraphQLFieldDefinition rootField = null;
-        if (schema != null) {
-            boolean mutationQuery = isMutation(query);
-            String root = mutationQuery ? getMutationName(query) : null;
-            GraphQLOutputType rootType = mutationQuery ? schema.getMutationType().getFieldDefinition(root).getType() : schema.getQueryType();
-            rootField = GraphQLFieldDefinition.newFieldDefinition().name("query_definition_container").type(rootType).build();
+        if (StringUtils.isBlank(query)) {
+            throw new GlitrException("query cannot be null or empty");
         }
 
-        QueryComplexityNode complexityNode = buildComplexitySchema(query);
-
-        return queryScoreDetails(complexityNode, 0, new HashMap<>(), rootField, false);
+        return queryScoreDetails(buildComplexitySchema(query), getRootField(query), 0, new HashMap<>(), false);
     }
 
     private QueryComplexityNode buildComplexitySchema(String query) {
@@ -376,22 +376,34 @@ public class QueryComplexityCalculator {
         return trimToNull(substringBetween(query, "{", "("));
     }
 
+    private GraphQLFieldDefinition getRootField(String query) {
+        if (schema == null) {
+            return null;
+        }
+
+        boolean mutationQuery = isMutation(query);
+        String root = mutationQuery ? getMutationName(query) : null;
+        GraphQLOutputType rootType = mutationQuery ? schema.getMutationType().getFieldDefinition(root).getType() : schema.getQueryType();
+        return GraphQLFieldDefinition.newFieldDefinition().name("query_definition_container").type(rootType).build();
+    }
+
     @SuppressWarnings("unchecked")
-    private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, int depth, Map<String, Double> nestedContext, GraphQLFieldDefinition graphQlObject, boolean connectionNode) {
+    private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, GraphQLFieldDefinition graphQlObject, int depth, Map<String, Double> nestedContext, boolean connectionNode) {
         Map<String, Double> context = refreshQueryContext(nestedContext, parentNode);
 
         double childScores = 0d;
         for (QueryComplexityNode currentChild : parentNode.getChildren()) {
             boolean childConnectionNode = isConnectionNode(graphQlObject, currentChild.getName());
-            int childDepth = !childConnectionNode && !currentChild.isIgnore() ? (depth + 1) : depth;
             GraphQLFieldDefinition childObject = getGraphQLObject(graphQlObject, currentChild.getName());
+            Boolean ignoreComplexity = getGraphQLMeta(childObject, "complexity_ignore");
+            int childDepth = !childConnectionNode && !currentChild.isIgnore() && isNotTrue(ignoreComplexity) ? (depth + 1) : depth;
 
-            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childDepth , context, childObject, childConnectionNode);
+            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childObject, childDepth , context, childConnectionNode);
             childScores += childComplexityNode.getTotalWeight();
         }
 
         double currentNodeScore = 0d;
-        if (!connectionNode && !parentNode.isIgnore()) {
+        if (!connectionNode && !parentNode.isIgnore() && isNotTrue(getGraphQLMeta(graphQlObject, "complexity_ignore"))) {
             Map<String, Double> nodeContext = buildContext(parentNode, nestedContext, depth, childScores);
             currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject);
             parentNode.setWeight(currentNodeScore);
@@ -413,6 +425,24 @@ public class QueryComplexityCalculator {
                 return ((GraphQLObjectType)((GraphQLNonNull)objType).getWrappedType()).getFieldDefinition(name);
         } else if (objType instanceof GraphQLFieldsContainer) {
             return ((GraphQLFieldsContainer) graphQlObject.getType()).getFieldDefinition(name);
+        }
+
+        return null;
+    }
+
+    private <T> T getGraphQLMeta(GraphQLFieldDefinition graphQlObject, String name) {
+        Optional<Set<GlitrMetaDefinition>> metaDefinitions = Optional.ofNullable(graphQlObject)
+                .map(GraphQLFieldDefinition::getDefinition)
+                .filter(x -> x instanceof GlitrFieldDefinition)
+                .map(x -> ((GlitrFieldDefinition)x).getMetaDefinitions())
+                .filter(CollectionUtils::isNotEmpty);
+
+        if (metaDefinitions.isPresent()) {
+            return metaDefinitions.get().stream()
+                    .filter(metaDefinition -> name.equals(metaDefinition.getName()))
+                    .findFirst()
+                    .map(metaDefinition -> (T) metaDefinition.getValue())
+                    .orElse(null);
         }
 
         return null;
@@ -571,20 +601,7 @@ public class QueryComplexityCalculator {
      *
      **/
     protected double extractMultiplierFromListField(QueryComplexityNode node, Map<String, Double> context, GraphQLFieldDefinition graphQlObject) {
-        String multiplier = null;
-
-        Optional<List<GlitrMetaDefinition>> metaDefinitions = Optional.ofNullable(graphQlObject)
-                .map(GraphQLFieldDefinition::getDefinition)
-                .filter(x -> x instanceof GlitrFieldDefinition)
-                .map(x -> ((GlitrFieldDefinition)x).getMetaDefinitions())
-                .filter(CollectionUtils::isNotEmpty);
-
-        if (metaDefinitions.isPresent()) {
-            multiplier = metaDefinitions.get().stream()
-                    .filter(x -> "complexity_formula".equals(x.getName()))
-                    .findFirst()
-                    .map(GlitrMetaDefinition::getValue).orElse(null);
-        }
+        String multiplier = getGraphQLMeta(graphQlObject, "complexity_formula");
 
         // If there is an argument
         Optional<Integer> listLimit = getLimitArgIfPresent(node);

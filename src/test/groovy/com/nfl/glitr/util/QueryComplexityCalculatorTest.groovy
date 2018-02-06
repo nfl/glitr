@@ -362,6 +362,67 @@ class QueryComplexityCalculatorTest extends Specification {
     }
 
     @Unroll
+    def "test query depth calculation"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(1, 1, 1, 1))
+                    .build()
+
+        when:
+            def depthScore = glitr.getQueryComplexityCalculator().depthScore("""
+                {
+                    $query
+                }
+            """);
+        then:
+            depthScore == expectedScore
+        where:
+            query                                                                     || expectedScore
+            "videosDepth{id}"                                                         || 1
+            "videos{edges{node{depth{id}}}}"                                          || 2
+            "videos{edges{node{children{edges{node{depth{id}}}}}}}"                   || 3
+            "childScore{first{second{id}}}"                                           || 3
+            "currentCollectionSize(first: 3){id}"                                     || 1
+            "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"     || 2
+            "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}" || 3
+            "duplicateVariables{first{second{id}}}"                                   || 3
+            "incorrectVariableDeclaration{id}"                                        || 1
+    }
+
+    @Unroll
+    def "test query depth calculation with ignored nodes"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(1, 1, 1, 1))
+                    .build()
+
+        when:
+            def depthScore = glitr.getQueryComplexityCalculator().depthScore("""
+                {
+                    $query
+                }
+            """);
+        then:
+            depthScore == expectedScore
+        where:
+            query                                    || expectedScore
+            "ignore{id}"                             || 0
+            "ignore{ignore{id}}"                     || 0
+            "ignore{depth{id}}"                      || 1
+            "videosDepth{ignore{id}}"                || 1
+            "videos{edges{node{ignore{id}}}}"        || 1
+            "videos{edges{node{ignore{depth{id}}}}}" || 2
+    }
+
+    @Unroll
     def "test query score, case: #name"() {
         expect:
             int queryScore = queryComplexityCalculator.queryScore(query);
@@ -963,5 +1024,34 @@ class QueryComplexityCalculatorTest extends Specification {
             "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}" || 25
             "duplicateVariables{first{second{id}}}"                                   || 8
             "incorrectVariableDeclaration{id}"                                        || 0
+    }
+
+    @Unroll
+    def "Calculate query complexity with ignored nodes"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(1, 1, 1, 1))
+                    .build()
+
+        when:
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
+                {
+                    $query
+                }
+            """);
+        then:
+            queryScore == expectedScore
+        where:
+            query                                    || expectedScore
+            "ignore{id}"                             || 0
+            "ignore{ignore{id}}"                     || 0
+            "ignore{depth{id}}"                      || 1
+            "videosDepth{ignore{id}}"                || 1
+            "videos{edges{node{ignore{id}}}}"        || 1
+            "videos{edges{node{ignore{depth{id}}}}}" || 3
     }
 }

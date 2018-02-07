@@ -86,9 +86,10 @@ public class QueryComplexityCalculator {
 
     /**
      * @param query - graphql query string
+     * @param variables graphQL query variables
      * We want to validate the query or fail fast.
      */
-    public void validate(String query) {
+    public void validate(String query, Map<String, Object> variables) {
         if (characterLimitExceeded(query)) {
             throw new GlitrException(String.format("query length has exceeded the maximum of %d characters.", maxCharacterLimit));
         }
@@ -97,7 +98,7 @@ public class QueryComplexityCalculator {
             throw new GlitrException(String.format("query depth has exceeded the maximum depth level of %d.", maxDepthLimit));
         }
 
-        if (scoreLimitExceeded(query)){
+        if (scoreLimitExceeded(query, variables)){
             throw new GlitrException(String.format("query score has exceeded the maximum score level of %d.", maxScoreLimit));
         }
 
@@ -238,11 +239,12 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - graphql query string
-     * @return true if the {@link #queryScore(String) query's score} result is greater than the maximum allowed score.
+     * @param query graphql query string
+     * @param variables graphql query variables
+     * @return true if the {@link #queryScore(String, Map) query's score} result is greater than the maximum allowed score.
      */
-    public boolean scoreLimitExceeded(String query) {
-        return queryScore(query) > maxScoreLimit;
+    public boolean scoreLimitExceeded(String query, Map<String, Object> variables) {
+        return queryScore(query, variables) > maxScoreLimit;
     }
 
     /**
@@ -339,18 +341,20 @@ public class QueryComplexityCalculator {
     * ****************************************************************************************************************
     * </pre>
     * @param query string
+    * @param variables graphQL query variables
     * @return query score as an double.  The way the query score is calculated is by summing the multipliers of all nodes.
     **/
-    public double queryScore(String query) {
-        return queryScoreDetails(query).getTotalWeight();
+    public double queryScore(String query, Map<String, Object> variables) {
+        return queryScoreDetails(query, variables).getTotalWeight();
     }
 
     /**
      *
      * @param query  string
+     * @param variables graphQL query variables
      * @return {@link QueryComplexityNode}
      */
-    public QueryComplexityNode queryScoreDetails(String query) {
+    public QueryComplexityNode queryScoreDetails(String query, Map<String, Object> variables) {
         if (StringUtils.isBlank(query)) {
             throw new GlitrException("query cannot be null or empty");
         }
@@ -358,7 +362,7 @@ public class QueryComplexityCalculator {
         QueryComplexityNode entryPoint = buildComplexitySchema(query);
         GraphQLFieldDefinition rootField = getRootField(query, entryPoint.getName());
         boolean connection = rootField != null && rootField.getType() instanceof GraphQLConnectionList;
-        return queryScoreDetails(entryPoint, rootField, 0, new HashMap<>(), connection);
+        return queryScoreDetails(entryPoint, rootField, 0, new HashMap<>(), connection, variables);
     }
 
     private QueryComplexityNode buildComplexitySchema(String query) {
@@ -375,7 +379,7 @@ public class QueryComplexityCalculator {
         return (Field) Optional.ofNullable(rootNode)
                 .map(OperationDefinition::getChildren)
                 .filter(CollectionUtils::isNotEmpty)
-                .map(nodes -> nodes.get(0))
+                .flatMap(nodes -> nodes.stream().filter(node -> node instanceof SelectionSet).findFirst())
                 .map(Node::getChildren)
                 .filter(CollectionUtils::isNotEmpty)
                 .flatMap(nodes -> nodes.stream().filter(node -> node instanceof Field).findFirst())
@@ -412,8 +416,8 @@ public class QueryComplexityCalculator {
     }
 
     @SuppressWarnings("unchecked")
-    private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, GraphQLFieldDefinition graphQlObject, int depth, Map<String, Double> nestedContext, boolean connectionNode) {
-        Map<String, Double> context = refreshQueryContext(nestedContext, parentNode);
+    private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, GraphQLFieldDefinition graphQlObject, int depth, Map<String, Double> nestedContext, boolean connectionNode, Map<String, Object> queryVariables) {
+        Map<String, Double> context = refreshQueryContext(nestedContext, parentNode, queryVariables);
 
         Boolean ignoreComplexity = getGraphQLMeta(graphQlObject, COMPLEXITY_IGNORE_KEY);
         depth = !connectionNode && !parentNode.isIgnore() && isNotTrue(ignoreComplexity) ? (depth + 1) : depth;
@@ -422,14 +426,14 @@ public class QueryComplexityCalculator {
         for (QueryComplexityNode currentChild : parentNode.getChildren()) {
             boolean childConnectionNode = isConnectionNode(graphQlObject, currentChild.getName());
             GraphQLFieldDefinition childObject = getGraphQLObject(graphQlObject, currentChild.getName());
-            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childObject, depth , context, childConnectionNode);
+            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childObject, depth , context, childConnectionNode, queryVariables);
             childScores += childComplexityNode.getTotalWeight();
         }
 
         double currentNodeScore = 0d;
         if (!connectionNode && !parentNode.isIgnore() && isNotTrue(ignoreComplexity)) {
-            Map<String, Double> nodeContext = buildContext(parentNode, nestedContext, depth, childScores);
-            currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject);
+            Map<String, Double> nodeContext = buildContext(parentNode, nestedContext, depth, childScores, queryVariables);
+            currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject, queryVariables);
             parentNode.setWeight(currentNodeScore);
         }
         parentNode.setTotalWeight(currentNodeScore + childScores);
@@ -490,8 +494,8 @@ public class QueryComplexityCalculator {
         return false;
     }
 
-    private Map<String, Double> refreshQueryContext(Map<String, Double> queryContext, QueryComplexityNode field) {
-        int limit = getLimitArgIfPresent(field).orElse(0);
+    private Map<String, Double> refreshQueryContext(Map<String, Double> queryContext, QueryComplexityNode field, Map<String, Object> queryVariables) {
+        int limit = getLimitArgIfPresent(field, queryVariables).orElse(0);
 
         Double parentCollectionsSize = queryContext.getOrDefault("totalCollectionsSize", 0d);
         Double totalCollectionsSize = parentCollectionsSize + limit;
@@ -500,9 +504,9 @@ public class QueryComplexityCalculator {
         return new HashMap<>(queryContext);
     }
 
-    private Map buildContext(QueryComplexityNode field, Map<String, Double> queryContext, int depth, double childScores) {
+    private Map buildContext(QueryComplexityNode field, Map<String, Double> queryContext, int depth, double childScores, Map<String, Object> queryVariables) {
         double totalCollectionsSize = queryContext.getOrDefault("totalCollectionsSize", 0d);
-        int limit = getLimitArgIfPresent(field).orElse(0);
+        int limit = getLimitArgIfPresent(field, queryVariables).orElse(0);
 
         Map<String, Double> multiplierContext = new HashMap<>();
         multiplierContext.put("totalCollectionsSize", totalCollectionsSize);
@@ -522,19 +526,23 @@ public class QueryComplexityCalculator {
         return node != null && node instanceof Field;
     }
 
-    private Optional<Integer> getLimitArgIfPresent(QueryComplexityNode node) {
+    private Optional<Integer> getLimitArgIfPresent(QueryComplexityNode node, Map<String, Object> queryVariables) {
         if (CollectionUtils.isEmpty(node.getArguments())) {
             return Optional.empty();
         }
-
-        Integer limit = null;
 
         Optional<Argument> listLimit = node.getArguments().stream()
                 .filter(argument -> argument.getName().equals("first"))
                 .findFirst();
 
+        Integer limit = null;
         if (listLimit.isPresent()) {
-            limit = ((IntValue) listLimit.get().getValue()).getValue().intValue();
+            Value value = listLimit.get().getValue();
+            if (value instanceof VariableReference && queryVariables != null) {
+                limit = (Integer) queryVariables.get(((VariableReference) value).getName());
+            } else if (value instanceof IntValue) {
+                limit = ((IntValue) value).getValue().intValue();
+            }
         }
 
         return Optional.ofNullable(limit);
@@ -617,14 +625,15 @@ public class QueryComplexityCalculator {
      * @param node The field node we would like to test against
      * @param context mutable current branch context
      * @param graphQlObject {@link GraphQLFieldDefinition}
+     * @param queryVariables graphQL query variables
      * @return the multiplier
      *
      **/
-    protected double extractMultiplierFromListField(QueryComplexityNode node, Map<String, Double> context, GraphQLFieldDefinition graphQlObject) {
+    protected double extractMultiplierFromListField(QueryComplexityNode node, Map<String, Double> context, GraphQLFieldDefinition graphQlObject, Map<String, Object> queryVariables) {
         String multiplier = getGraphQLMeta(graphQlObject, COMPLEXITY_FORMULA_KEY);
 
         // If there is an argument
-        Optional<Integer> listLimit = getLimitArgIfPresent(node);
+        Optional<Integer> listLimit = getLimitArgIfPresent(node, queryVariables);
         if (listLimit.isPresent() && StringUtils.isBlank(multiplier)) {
             double collectionSize = listLimit.get();
             return collectionSize * defaultMultiplier;

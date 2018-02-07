@@ -425,7 +425,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query score, case: #name"() {
         expect:
-            int queryScore = queryComplexityCalculator.queryScore(query);
+            int queryScore = queryComplexityCalculator.queryScore(query, null);
             queryScore == expectedResult
 
         where:
@@ -569,7 +569,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query score limit, case: #name"() {
         expect:
-            boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query);
+            boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query, null);
             scoreLimitExceeded == expectedResult
 
         where:
@@ -676,7 +676,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test validate query, case: #name"() {
         expect:
-            queryComplexityCalculator.validate(query);
+            queryComplexityCalculator.validate(query, null);
 
         where:
             query                              | name
@@ -724,7 +724,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
     def "test check valid query with exception [characterLimitReached]"() {
         when:
-            queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query, null)
 
         then:
             def exception = thrown(GlitrException)
@@ -752,7 +752,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
     def "test check valid query with exception [depthLimitReached]"() {
         when:
-            queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query, null)
 
         then:
             def exception = thrown(GlitrException)
@@ -778,7 +778,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
     def "test check valid query with exception [scoreLimitReached]"() {
         when:
-            queryComplexityCalculator.validate(query)
+            queryComplexityCalculator.validate(query, null)
 
         then:
             def exception = thrown(GlitrException)
@@ -905,7 +905,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-        """);
+        """, null);
         then:
             queryScore == expectedScore
         where:
@@ -946,7 +946,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-        """);
+        """, null);
         then:
             queryScore == expectedScore
         where:
@@ -972,7 +972,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         when:
 
-            glitr.getQueryComplexityCalculator().queryScore(query);
+            glitr.getQueryComplexityCalculator().queryScore(query, null);
         then:
             invocationTimes * queryComplexityCalculator.extractMultiplierFromListField(*_)
 
@@ -1007,23 +1007,24 @@ class QueryComplexityCalculatorTest extends Specification {
 
         when:
             def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
-                {
+                $variables {
                     $query
                 }
-            """);
+            """, [limit: 3]);
         then:
             queryScore == expectedScore
         where:
-            query                                                                     || expectedScore
-            "videosDepth{id}"                                                         || 1
-            "videos{edges{node{depth{id}}}}"                                          || 3
-            "videos{edges{node{children{edges{node{depth{id}}}}}}}"                   || 5
-            "childScore{first{second{id}}}"                                           || 4
-            "currentCollectionSize(first: 3){id}"                                     || 3
-            "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"     || 9
-            "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}" || 25
-            "duplicateVariables{first{second{id}}}"                                   || 8
-            "incorrectVariableDeclaration{id}"                                        || 0
+            variables             || query                                                                           || expectedScore
+            ""                    || "videosDepth{id}"                                                               || 1
+            ""                    || "videos{edges{node{depth{id}}}}"                                                || 3
+            ""                    || "videos{edges{node{children{edges{node{depth{id}}}}}}}"                         || 5
+            ""                    || "childScore{first{second{id}}}"                                                 || 4
+            ""                    || "currentCollectionSize(first: 3){id}"                                           || 3
+            ""                    || "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"           || 9
+            'query($limit: Int!)' || 'currentCollectionSize(first: $limit){totalCollectionsSize(first: $limit){id}}' || 9
+            ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"       || 25
+            ""                    || "duplicateVariables{first{second{id}}}"                                         || 8
+            ""                    || "incorrectVariableDeclaration{id}"                                              || 0
     }
 
     @Unroll
@@ -1042,7 +1043,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 {
                     $query
                 }
-            """);
+            """, null);
         then:
             queryScore == expectedScore
         where:

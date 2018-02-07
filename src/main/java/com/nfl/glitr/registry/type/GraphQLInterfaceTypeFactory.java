@@ -16,6 +16,8 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 
@@ -79,8 +81,8 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
         Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
         Set<GlitrMetaDefinition> metaDefinitions = new HashSet<>();
         glitrQueryComplexity.ifPresent(queryComplexity -> {
-            metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value()));
-            metaDefinitions.add(new GlitrMetaDefinition("complexity_ignore", queryComplexity.ignore()));
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_FORMULA_KEY, queryComplexity.value()));
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
         });
 
         return newFieldDefinition()

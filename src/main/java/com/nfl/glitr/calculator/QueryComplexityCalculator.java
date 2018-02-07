@@ -18,6 +18,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.substringBetween;
@@ -142,7 +144,11 @@ public class QueryComplexityCalculator {
             throw new GlitrException("query cannot be null or empty");
         }
 
-        return calculateMaxDepth(buildComplexitySchema(query), getRootField(query), false);
+        QueryComplexityNode entryPoint = buildComplexitySchema(query);
+        GraphQLFieldDefinition rootField = getRootField(query, entryPoint.getName());
+        boolean connection = rootField != null && rootField.getType() instanceof GraphQLConnectionList;
+
+        return calculateMaxDepth(entryPoint, rootField, connection);
     }
 
     /**
@@ -213,7 +219,7 @@ public class QueryComplexityCalculator {
      */
     private int calculateMaxDepth(QueryComplexityNode parentNode, GraphQLFieldDefinition rootField, boolean connectionNode) {
         int depth = 0;
-        boolean ignoreNode = parentNode.isIgnore() || (rootField != null && isTrue(getGraphQLMeta(rootField, "complexity_ignore")));
+        boolean ignoreNode = parentNode.isIgnore() || (rootField != null && isTrue(getGraphQLMeta(rootField, COMPLEXITY_IGNORE_KEY)));
         if (!ignoreNode && !isLeaf(parentNode) && !connectionNode) {
             depth = 1;
         }
@@ -349,12 +355,31 @@ public class QueryComplexityCalculator {
             throw new GlitrException("query cannot be null or empty");
         }
 
-        return queryScoreDetails(buildComplexitySchema(query), getRootField(query), 0, new HashMap<>(), false);
+        QueryComplexityNode entryPoint = buildComplexitySchema(query);
+        GraphQLFieldDefinition rootField = getRootField(query, entryPoint.getName());
+        boolean connection = rootField != null && rootField.getType() instanceof GraphQLConnectionList;
+        return queryScoreDetails(entryPoint, rootField, 0, new HashMap<>(), connection);
     }
 
     private QueryComplexityNode buildComplexitySchema(String query) {
-        Node rootNode = parseRootNode(query);
-        return buildComplexitySchema(rootNode, new QueryComplexityNode("query", true));
+        OperationDefinition rootNode = parseRootNode(query);
+        Field entryPoint = getFirstFieldNode(rootNode);
+        if (entryPoint == null) {
+            return new QueryComplexityNode();
+        }
+
+        return buildComplexitySchema(entryPoint, new QueryComplexityNode(entryPoint.getName(), rootNode.getOperation() == OperationDefinition.Operation.MUTATION));
+    }
+
+    private Field getFirstFieldNode(OperationDefinition rootNode) {
+        return (Field) Optional.ofNullable(rootNode)
+                .map(OperationDefinition::getChildren)
+                .filter(CollectionUtils::isNotEmpty)
+                .map(nodes -> nodes.get(0))
+                .map(Node::getChildren)
+                .filter(CollectionUtils::isNotEmpty)
+                .flatMap(nodes -> nodes.stream().filter(node -> node instanceof Field).findFirst())
+                .orElse(null);
     }
 
     private QueryComplexityNode buildComplexitySchema(Node queryNode, QueryComplexityNode queryComplexityParentNode) {
@@ -376,34 +401,33 @@ public class QueryComplexityCalculator {
         return trimToNull(substringBetween(query, "{", "("));
     }
 
-    private GraphQLFieldDefinition getRootField(String query) {
+    private GraphQLFieldDefinition getRootField(String query, String entryPoint) {
         if (schema == null) {
             return null;
         }
 
         boolean mutationQuery = isMutation(query);
-        String root = mutationQuery ? getMutationName(query) : null;
-        GraphQLOutputType rootType = mutationQuery ? schema.getMutationType().getFieldDefinition(root).getType() : schema.getQueryType();
-        return GraphQLFieldDefinition.newFieldDefinition().name("query_definition_container").type(rootType).build();
+        GraphQLObjectType rootType = mutationQuery ? schema.getMutationType() : schema.getQueryType();
+        return rootType.getFieldDefinition(entryPoint);
     }
 
     @SuppressWarnings("unchecked")
     private QueryComplexityNode queryScoreDetails(QueryComplexityNode parentNode, GraphQLFieldDefinition graphQlObject, int depth, Map<String, Double> nestedContext, boolean connectionNode) {
         Map<String, Double> context = refreshQueryContext(nestedContext, parentNode);
 
+        Boolean ignoreComplexity = getGraphQLMeta(graphQlObject, COMPLEXITY_IGNORE_KEY);
+        depth = !connectionNode && !parentNode.isIgnore() && isNotTrue(ignoreComplexity) ? (depth + 1) : depth;
+
         double childScores = 0d;
         for (QueryComplexityNode currentChild : parentNode.getChildren()) {
             boolean childConnectionNode = isConnectionNode(graphQlObject, currentChild.getName());
             GraphQLFieldDefinition childObject = getGraphQLObject(graphQlObject, currentChild.getName());
-            Boolean ignoreComplexity = getGraphQLMeta(childObject, "complexity_ignore");
-            int childDepth = !childConnectionNode && !currentChild.isIgnore() && isNotTrue(ignoreComplexity) ? (depth + 1) : depth;
-
-            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childObject, childDepth , context, childConnectionNode);
+            QueryComplexityNode childComplexityNode = queryScoreDetails(currentChild, childObject, depth , context, childConnectionNode);
             childScores += childComplexityNode.getTotalWeight();
         }
 
         double currentNodeScore = 0d;
-        if (!connectionNode && !parentNode.isIgnore() && isNotTrue(getGraphQLMeta(graphQlObject, "complexity_ignore"))) {
+        if (!connectionNode && !parentNode.isIgnore() && isNotTrue(ignoreComplexity)) {
             Map<String, Double> nodeContext = buildContext(parentNode, nestedContext, depth, childScores);
             currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject);
             parentNode.setWeight(currentNodeScore);
@@ -524,10 +548,6 @@ public class QueryComplexityCalculator {
      * from the mutation body.  If it's not a mutation, we parse as is.
      */
     private OperationDefinition parseRootNode(String query) {
-        if (isMutation(query)) {
-            query = extractReturnQueryFromMutation(query);
-        }
-
         Document document;
         try {
             document = documentParser.parseDocument(query);
@@ -601,7 +621,7 @@ public class QueryComplexityCalculator {
      *
      **/
     protected double extractMultiplierFromListField(QueryComplexityNode node, Map<String, Double> context, GraphQLFieldDefinition graphQlObject) {
-        String multiplier = getGraphQLMeta(graphQlObject, "complexity_formula");
+        String multiplier = getGraphQLMeta(graphQlObject, COMPLEXITY_FORMULA_KEY);
 
         // If there is an argument
         Optional<Integer> listLimit = getLimitArgIfPresent(node);

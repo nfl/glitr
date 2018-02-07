@@ -3,7 +3,6 @@ package com.nfl.glitr.registry;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrDescription;
-import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
@@ -14,7 +13,6 @@ import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.registry.type.*;
 import com.nfl.glitr.relay.Node;
 import com.nfl.glitr.relay.Relay;
-import com.nfl.glitr.util.NodeUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.TypeResolutionEnvironment;
 import graphql.schema.*;
@@ -36,7 +34,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.nfl.glitr.util.ReflectionUtil.getAnnotationOfMethodOrField;
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -234,8 +233,8 @@ public class TypeRegistry implements TypeResolver {
         Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
         Set<GlitrMetaDefinition> metaDefinitions = new HashSet<>();
         glitrQueryComplexity.ifPresent(queryComplexity -> {
-            metaDefinitions.add(new GlitrMetaDefinition("complexity_formula", queryComplexity.value()));
-            metaDefinitions.add(new GlitrMetaDefinition("complexity_ignore", queryComplexity.ignore()));
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_FORMULA_KEY, queryComplexity.value()));
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
         });
 
         return newFieldDefinition()

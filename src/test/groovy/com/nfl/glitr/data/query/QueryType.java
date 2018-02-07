@@ -70,4 +70,9 @@ public class QueryType {
     public List<Video> getDuplicateVariables() {
         return null;
     }
+
+    @GlitrQueryComplexity(ignore = true)
+    public List<Video> getIgnore() {
+        return null;
+    }
 }

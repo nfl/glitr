@@ -1,7 +1,10 @@
 package com.nfl.glitr.registry.type;
 
 import com.nfl.glitr.annotation.GlitrDescription;
+import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
+import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
+import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -11,6 +14,8 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -145,12 +150,20 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
             description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
         }
 
+        Optional<GlitrQueryComplexity> glitrQueryComplexity = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrQueryComplexity.class);
+        Set<GlitrMetaDefinition> metaDefinitions = new HashSet<>();
+        glitrQueryComplexity.ifPresent(queryComplexity -> {
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_FORMULA_KEY, queryComplexity.value()));
+            metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
+        });
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
                 .dataFetcher(dataFetcher)
                 .type(typeRegistry.retrieveGraphQLOutputType(declaringClass, method))
                 .argument(typeRegistry.retrieveArguments(declaringClass, method))
+                .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 // TODO: static value
                 // TODO: deprecation reason
                 .build();

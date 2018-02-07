@@ -56,7 +56,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
 
         // is this an optional field
         boolean nullable = !method.isAnnotationPresent(GlitrNonNull.class)
-                && (field != null && !field.isAnnotationPresent(GlitrNonNull.class));
+                && (field == null || !field.isAnnotationPresent(GlitrNonNull.class));
 
         if (!nullable) {
             edgeGraphQLOutputType = new GraphQLNonNull(edgeGraphQLOutputType);

@@ -1,5 +1,6 @@
 package com.nfl.glitr.data.query;
 
+import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.data.mutation.Bitrate;
 
@@ -24,6 +25,11 @@ public class Video extends AbstractContent implements Playable {
         return url;
     }
 
+    @GlitrForwardPagingArguments
+    public List<Video> getChildren() {
+        return null;
+    }
+
     @GlitrQueryComplexity("#{depth}")
     public List<Video> getDepth() {
         return null;
@@ -36,6 +42,11 @@ public class Video extends AbstractContent implements Playable {
 
     @GlitrQueryComplexity("#{depth} + #{childScore} + #{currentCollectionSize} + #{totalCollectionsSize} + #{maxCharacterLimit} + #{maxDepthLimit} + #{maxScoreLimit} + #{defaultMultiplier} + 5")
     public List<Video> getAllVariablesComplexityFormula() {
+        return null;
+    }
+
+    @GlitrQueryComplexity(ignore = true)
+    public List<Video> getIgnore() {
         return null;
     }
 }

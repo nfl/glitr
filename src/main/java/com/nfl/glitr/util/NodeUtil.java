@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 
 public class NodeUtil {
 
+    public static final String COMPLEXITY_FORMULA_KEY = "complexity_formula";
+    public static final String COMPLEXITY_IGNORE_KEY = "complexity_ignore";
     public static final String PATH_SEPARATOR = "->";
 
 

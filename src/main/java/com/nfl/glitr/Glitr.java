@@ -31,13 +31,13 @@ public class Glitr {
         assertNotNull(queryRoot, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
-        if (nonNull(queryComplexityCalculator)) {
-            this.queryComplexityCalculator = queryComplexityCalculator.
-                    withQueryComplexityMultipliersMap(typeRegistry.getQueryComplexityMultipliersMap())
-                    .withQueryComplexityExcludeNodes(typeRegistry.getQueryComplexityExcludeNodes());
-        }
+
         Glitr.objectMapper = objectMapper;
         this.schema = buildSchema(queryRoot, mutationRoot, fieldVisibility);
+
+        if (nonNull(queryComplexityCalculator)) {
+            this.queryComplexityCalculator = queryComplexityCalculator.withSchema(this.schema);
+        }
     }
 
     public TypeRegistry getTypeRegistry() {

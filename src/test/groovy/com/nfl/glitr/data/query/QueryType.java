@@ -75,4 +75,8 @@ public class QueryType {
     public List<Video> getIgnore() {
         return null;
     }
+
+    public List<Playable> getAbstract() {
+        return null;
+    }
 }

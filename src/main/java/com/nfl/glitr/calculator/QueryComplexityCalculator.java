@@ -446,13 +446,15 @@ public class QueryComplexityCalculator {
             return null;
         }
 
-        GraphQLOutputType objType = graphQlObject.getType();
-        if (objType instanceof GraphQLList) {
-            return ((GraphQLObjectType) ((GraphQLList)objType).getWrappedType()).getFieldDefinition(name);
-        } else if (objType instanceof GraphQLNonNull) {
-                return ((GraphQLObjectType)((GraphQLNonNull)objType).getWrappedType()).getFieldDefinition(name);
-        } else if (objType instanceof GraphQLFieldsContainer) {
-            return ((GraphQLFieldsContainer) graphQlObject.getType()).getFieldDefinition(name);
+        try {
+            GraphQLOutputType objType = graphQlObject.getType();
+            if (objType instanceof GraphQLModifiedType) {
+                return ((GraphQLFieldsContainer) ((GraphQLModifiedType) objType).getWrappedType()).getFieldDefinition(name);
+            } else if (objType instanceof GraphQLFieldsContainer) {
+                return ((GraphQLFieldsContainer) objType).getFieldDefinition(name);
+            }
+        } catch (Exception e) {
+            logger.error("Cannot process graphQL object");
         }
 
         return null;

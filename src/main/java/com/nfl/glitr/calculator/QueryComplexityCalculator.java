@@ -454,7 +454,7 @@ public class QueryComplexityCalculator {
                 return ((GraphQLFieldsContainer) objType).getFieldDefinition(name);
             }
         } catch (Exception e) {
-            logger.error("Cannot process graphQL object");
+            logger.error(String.format("Cannot process property (%s) of graphQL object (%s)", name, graphQlObject.getName()), e);
         }
 
         return null;

@@ -1025,6 +1025,7 @@ class QueryComplexityCalculatorTest extends Specification {
             ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"       || 25
             ""                    || "duplicateVariables{first{second{id}}}"                                         || 8
             ""                    || "incorrectVariableDeclaration{id}"                                              || 0
+            ""                    || "abstract{url}"                                                                 || 6
     }
 
     @Unroll

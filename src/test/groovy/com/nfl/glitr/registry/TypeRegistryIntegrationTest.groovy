@@ -27,7 +27,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.description == GlitrDescription.DEFAULT_DESCRIPTION
 
         // Relay Identifiable field
-        def fieldDef = type.fieldDefinitions[5]
+        def fieldDef = type.fieldDefinitions[6]
         fieldDef.name == "node"
         fieldDef.description == null
         fieldDef.type instanceof GraphQLInterfaceType
@@ -44,7 +44,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType.description == "Built-in ID"
 
         // Nodes field
-        def fieldDef1 = type.fieldDefinitions[6]
+        def fieldDef1 = type.fieldDefinitions[7]
         fieldDef1.name == "nodes"
         fieldDef1.description == null
         fieldDef1.type instanceof GraphQLList
@@ -62,7 +62,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType1.description == "Built-in ID"
 
         // Other Video field
-        def fieldDef2 = type.fieldDefinitions[7]
+        def fieldDef2 = type.fieldDefinitions[8]
         fieldDef2.name == "otherVideos"
         fieldDef2.description == null
         fieldDef2.arguments.name as Set == ["first", "after"] as Set
@@ -74,7 +74,7 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDefType2.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
 
         // Video field
-        def fieldDef3 = type.fieldDefinitions[8]
+        def fieldDef3 = type.fieldDefinitions[9]
         fieldDef3.name == "video"
         fieldDef3.description == null
         fieldDef3.type instanceof GraphQLObjectType
@@ -91,7 +91,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType3.description == "Built-in ID"
 
         // Videos field
-        def fieldDef4 = type.fieldDefinitions[9]
+        def fieldDef4 = type.fieldDefinitions[10]
         fieldDef4.name == "videos"
         fieldDef4.description == null
         fieldDef4.arguments.name as Set == ["first", "after"] as Set
@@ -103,7 +103,7 @@ class TypeRegistryIntegrationTest extends Specification {
         fieldDefType4.fieldDefinitions.name as Set == ["edges", "pageInfo"] as Set
 
         // ZZZ Nodes field
-        def fieldDef5 = type.fieldDefinitions[11]
+        def fieldDef5 = type.fieldDefinitions[12]
         fieldDef5.name == "zZZNodes"
         fieldDef5.description == null
         fieldDef5.type instanceof GraphQLList
@@ -121,7 +121,7 @@ class TypeRegistryIntegrationTest extends Specification {
         inputWrappedType5.description == "Built-in ID"
 
         // ZZZ Videos field
-        def fieldDef6 = type.fieldDefinitions[12]
+        def fieldDef6 = type.fieldDefinitions[13]
         fieldDef6.name == "zZZVideos"
         fieldDef6.description == null
         fieldDef6.type instanceof GraphQLList

@@ -436,9 +436,24 @@ public class QueryComplexityCalculator {
             currentNodeScore = extractMultiplierFromListField(parentNode, nodeContext, graphQlObject, queryVariables);
             parentNode.setWeight(currentNodeScore);
         }
-        parentNode.setTotalWeight(currentNodeScore + childScores);
+        parentNode.setTotalWeight(getTotalWeight(parentNode, graphQlObject, queryVariables, currentNodeScore, childScores));
 
         return parentNode;
+    }
+
+    private double getTotalWeight(QueryComplexityNode node, GraphQLFieldDefinition graphQlObject, Map<String, Object> queryVariables, double currentNodeScore, double childScores) {
+        String multiplier = getGraphQLMeta(graphQlObject, COMPLEXITY_FORMULA_KEY);
+
+        Optional<Integer> listLimit = getLimitArgIfPresent(node, queryVariables);
+        if (listLimit.isPresent() && StringUtils.isBlank(multiplier)) {
+            double collectionSize = listLimit.get();
+            if (childScores != 0) {
+                childScores = collectionSize * childScores;
+            }
+            return (collectionSize * defaultMultiplier) + childScores;
+        } else {
+            return currentNodeScore + childScores;
+        }
     }
 
     private GraphQLFieldDefinition getGraphQLObject(GraphQLFieldDefinition graphQlObject, String name) {

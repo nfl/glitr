@@ -482,7 +482,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 50"                 || 50
+        |}'''.stripMargin()     | "query with a score of 70"                 || 70
 
             '''\
         |{
@@ -500,7 +500,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 70"                 || 70
+        |}'''.stripMargin()     | "query with a score of 130"                 || 130
 
             '''\
         |{
@@ -517,7 +517,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 60"                 || 60
+        |}'''.stripMargin()     | "query with a score of 100"                 || 100
 
             '''\
         |mutation {
@@ -561,7 +561,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin() | "mutation return query with a score of 80" || 80
+        |    }'''.stripMargin() | "mutation return query with a score of 130" || 130
 
 
     }
@@ -1022,7 +1022,7 @@ class QueryComplexityCalculatorTest extends Specification {
             ""                    || "currentCollectionSize(first: 3){id}"                                           || 3
             ""                    || "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"           || 9
             'query($limit: Int!)' || 'currentCollectionSize(first: $limit){totalCollectionsSize(first: $limit){id}}' || 9
-            ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"       || 25
+            ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"       || 69
             ""                    || "duplicateVariables{first{second{id}}}"                                         || 8
             ""                    || "incorrectVariableDeclaration{id}"                                              || 0
             ""                    || "abstract{url}"                                                                 || 6

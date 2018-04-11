@@ -1,9 +1,9 @@
 package com.nfl.glitr;
 
+import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.util.ObjectMapper;
-import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -86,7 +86,7 @@ public class Glitr {
         }
         GraphQLObjectType subscriptionType = null;
         if (subscriptionRoot != null) {
-            subscriptionType = typeRegistry.createRelayMutationType(subscriptionRoot);
+            subscriptionType = (GraphQLObjectType) typeRegistry.lookup(subscriptionRoot);
         }
         GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot);
 
@@ -102,6 +102,7 @@ public class Glitr {
         return GraphQLSchema.newSchema()
                 .query(queryType)
                 .mutation(mutationType)
+                .subscription(subscriptionType)
                 .build(typeRegistry.getTypeDictionary());
     }
 

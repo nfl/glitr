@@ -28,7 +28,7 @@ class GlitrAdditionalTypesTest extends Specification {
         when: "add additional types to type registry and reload the schema"
             glitr.typeRegistry.lookup(Man.class)
             glitr.typeRegistry.lookup(Cyborg.class)
-            glitr.reloadSchema(QueryRoot.class, null, null)
+            glitr.reloadSchema(QueryRoot.class, null, null, null)
         then: "Man and Cyborg are now part of the schema"
             glitr.typeRegistry.getType(typeResolutionEnvMan) != null
             glitr.typeRegistry.getType(typeResolutionEnvCyborg) != null

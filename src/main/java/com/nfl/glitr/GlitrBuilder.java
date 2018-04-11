@@ -1,6 +1,7 @@
 package com.nfl.glitr;
 
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
+import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.TypeRegistryBuilder;
 import com.nfl.glitr.registry.datafetcher.AnnotationBasedDataFetcherFactory;
@@ -9,7 +10,6 @@ import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.relay.type.CustomFieldArgumentsFunc;
 import com.nfl.glitr.relay.type.PagingOutputTypeConverter;
 import com.nfl.glitr.util.ObjectMapper;
-import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import graphql.schema.*;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.slf4j.Logger;
@@ -37,6 +37,7 @@ public class GlitrBuilder {
     private RelayConfig relayConfig = null;
     private Object queryRoot = null;
     private Object mutationRoot = null;
+    private Object subscriptionRoot = null;
     private GraphqlFieldVisibility fieldVisibility = null;
     private ObjectMapper objectMapper = null;
     private QueryComplexityCalculator queryComplexityCalculator;
@@ -62,6 +63,11 @@ public class GlitrBuilder {
 
     public GlitrBuilder withMutationRoot(Object mutationRoot) {
         this.mutationRoot = mutationRoot;
+        return this;
+    }
+
+    public GlitrBuilder withSubscriptionRoot(Object subscriptionRoot) {
+        this.subscriptionRoot = subscriptionRoot;
         return this;
     }
 
@@ -108,8 +114,8 @@ public class GlitrBuilder {
     public GlitrBuilder addCustomScalar(Class clazz, GraphQLScalarType scalarType) {
         if (javaTypeDeclaredAsScalarMap.containsKey(clazz)) {
             throw new IllegalArgumentException("Attempted to register an existing Java type as a Scalar." +
-                    " You have previously registered the following Java type "+ clazz.getName() +
-                    " with the following GraphQLScalarType: "+ javaTypeDeclaredAsScalarMap.get(clazz));
+                    " You have previously registered the following Java type " + clazz.getName() +
+                    " with the following GraphQLScalarType: " + javaTypeDeclaredAsScalarMap.get(clazz));
         }
 
         javaTypeDeclaredAsScalarMap.put(clazz, scalarType);
@@ -144,6 +150,9 @@ public class GlitrBuilder {
         this.addOverride(queryRoot.getClass(), queryRoot);
         if (mutationRoot != null) {
             this.addOverride(mutationRoot.getClass(), mutationRoot);
+        }
+        if (subscriptionRoot != null) {
+            this.addOverride(subscriptionRoot.getClass(), subscriptionRoot);
         }
 
         if (relayConfig != null) {
@@ -205,7 +214,8 @@ public class GlitrBuilder {
         pagingOutputTypeConverter.setRelayHelper(relayHelper);
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
+        Class subscriptionRootClass = subscriptionRoot != null ? subscriptionRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, relayHelper, mutationRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, relayHelper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
     }
 }

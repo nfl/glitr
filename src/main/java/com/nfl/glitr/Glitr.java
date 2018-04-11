@@ -22,18 +22,31 @@ public class Glitr {
     private static ObjectMapper objectMapper;
 
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable GraphqlFieldVisibility fieldVisibility, @Nullable ObjectMapper objectMapper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
-        this(typeRegistry, queryRoot, fieldVisibility, objectMapper, null, mutationRoot, queryComplexityCalculator);
+    public Glitr(TypeRegistry typeRegistry,
+                 Class queryRoot,
+                 @Nullable GraphqlFieldVisibility fieldVisibility,
+                 @Nullable ObjectMapper objectMapper,
+                 @Nullable Class mutationRoot,
+                 @Nullable Class subscriptionRoot,
+                 @Nullable QueryComplexityCalculator queryComplexityCalculator) {
+        this(typeRegistry, queryRoot, fieldVisibility, objectMapper, null, mutationRoot, subscriptionRoot, queryComplexityCalculator);
     }
 
-    public Glitr(TypeRegistry typeRegistry, Class queryRoot, @Nullable GraphqlFieldVisibility fieldVisibility, @Nullable ObjectMapper objectMapper, @Nullable RelayHelper relayHelper, @Nullable Class mutationRoot, @Nullable QueryComplexityCalculator queryComplexityCalculator) {
+    public Glitr(TypeRegistry typeRegistry,
+                 Class queryRoot,
+                 @Nullable GraphqlFieldVisibility fieldVisibility,
+                 @Nullable ObjectMapper objectMapper,
+                 @Nullable RelayHelper relayHelper,
+                 @Nullable Class mutationRoot,
+                 @Nullable Class subscriptionRoot,
+                 @Nullable QueryComplexityCalculator queryComplexityCalculator) {
         assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(queryRoot, "queryRoot class can't be null");
         this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
 
         Glitr.objectMapper = objectMapper;
-        this.schema = buildSchema(queryRoot, mutationRoot, fieldVisibility);
+        this.schema = buildSchema(queryRoot, mutationRoot, subscriptionRoot, fieldVisibility);
 
         if (nonNull(queryComplexityCalculator)) {
             this.queryComplexityCalculator = queryComplexityCalculator.withSchema(this.schema);
@@ -65,19 +78,23 @@ public class Glitr {
         return objectMapper;
     }
 
-    private GraphQLSchema buildSchema(Class queryRoot, Class mutationRoot, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLSchema buildSchema(Class queryRoot, Class mutationRoot, Class subscriptionRoot, GraphqlFieldVisibility fieldVisibility) {
         // create GraphQL Schema
         GraphQLObjectType mutationType = null;
         if (mutationRoot != null) {
             mutationType = typeRegistry.createRelayMutationType(mutationRoot);
         }
-
+        GraphQLObjectType subscriptionType = null;
+        if (subscriptionRoot != null) {
+            subscriptionType = typeRegistry.createRelayMutationType(subscriptionRoot);
+        }
         GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot);
 
         if (fieldVisibility != null) {
             return GraphQLSchema.newSchema()
                     .query(queryType)
                     .mutation(mutationType)
+                    .subscription(subscriptionType)
                     .fieldVisibility(fieldVisibility)
                     .build(typeRegistry.getTypeDictionary());
         }
@@ -88,8 +105,8 @@ public class Glitr {
                 .build(typeRegistry.getTypeDictionary());
     }
 
-    public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot, GraphqlFieldVisibility fieldVisibility) {
-        this.schema = buildSchema(queryRoot, mutationRoot, fieldVisibility);
+    public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot, Class subscriptionRoot, GraphqlFieldVisibility fieldVisibility) {
+        this.schema = buildSchema(queryRoot, mutationRoot, subscriptionRoot, fieldVisibility);
         return this.schema;
     }
 }

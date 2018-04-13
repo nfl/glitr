@@ -177,8 +177,9 @@ public class GlitrBuilder {
                 .build();
 
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
+        Class subscriptionRootClass = subscriptionRoot != null ? subscriptionRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, null, mutationRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
     }
 
     private Glitr buildGlitrWithRelaySupport() {

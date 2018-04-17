@@ -60,7 +60,6 @@ dependencies {
     compile("com.fasterxml.jackson.core:jackson-databind:2.6.2")
     compile ("net.objecthunter:exp4j:0.4.8")
 
-
     // Spock test dependencies
     testCompile("junit:junit:4.12")
     testCompile("cglib:cglib-nodep:3.2.4")  // for spock mocking, need later version for Java 8

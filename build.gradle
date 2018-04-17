@@ -47,7 +47,7 @@ dependencies {
 
     // Commons dependencies
     compile("org.apache.commons:commons-lang3:3.4")
-    compile("commons-beanutils:commons-beanutils:1.9.2")
+    compile("commons-beanutils:commons-beanutils:1.9.3")
 
     // Google dependencies
     compile("com.google.code.findbugs:jsr305:3.0.0")

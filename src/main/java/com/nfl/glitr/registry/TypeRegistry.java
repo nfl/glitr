@@ -469,6 +469,14 @@ public class TypeRegistry implements TypeResolver {
 
             // is this an optional field
             boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
+            if (nullable) { // check the field too
+                try {
+                    Field field = declaringClass.getDeclaredField(name);
+                    nullable = ReflectionUtil.isAnnotatedElementNullable(field);
+                } catch (NoSuchFieldException e) {
+                    // do nothing
+                }
+            }
 
             if (!nullable || name.equals("id")) {
                 graphQLOutputType = new GraphQLNonNull(graphQLOutputType);

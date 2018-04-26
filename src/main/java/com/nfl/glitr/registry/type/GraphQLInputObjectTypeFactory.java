@@ -8,6 +8,7 @@ import com.nfl.glitr.exception.GlitrException;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +74,15 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
         GraphQLInputType graphQLInputType = (GraphQLInputType) graphQLType;
 
         boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
+        if (nullable) { // check the field too
+            try {
+                Field field = declaringClass.getDeclaredField(name);
+                nullable = ReflectionUtil.isAnnotatedElementNullable(field);
+            } catch (NoSuchFieldException e) {
+                // do nothing
+            }
+        }
+
         if (!nullable || name.equals("id")) {
             graphQLInputType = new GraphQLNonNull(graphQLInputType);
         }

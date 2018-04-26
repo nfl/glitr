@@ -11,6 +11,7 @@ import com.nfl.glitr.util.ReflectionUtil;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.schema.*;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -74,6 +75,15 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
         }
 
         boolean nullable = ReflectionUtil.isAnnotatedElementNullable(method);
+        if (nullable) { // check the field too
+            try {
+                Field field = clazz.getDeclaredField(name);
+                nullable = ReflectionUtil.isAnnotatedElementNullable(field);
+            } catch (NoSuchFieldException e) {
+                // do nothing
+            }
+        }
+
         if (!nullable || name.equals("id")) {
             type = new GraphQLNonNull(type);
         }

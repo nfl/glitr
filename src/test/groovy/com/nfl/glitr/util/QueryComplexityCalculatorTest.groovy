@@ -429,18 +429,18 @@ class QueryComplexityCalculatorTest extends Specification {
             queryScore == expectedResult
 
         where:
-            query                              | name                                       || expectedResult
+            query                              | name                                        || expectedResult
             '''\
         |{
         | playListId
-        |}'''.stripMargin()     | "query with a score of 0"                  || 0
+        |}'''.stripMargin()     | "query with a score of 0"                   || 0
 
             '''\
         |{
         |    playLists {
         |        playListId
         |    }
-        |}'''.stripMargin()     | "query with a score of 10"                 || 10
+        |}'''.stripMargin()     | "query with a score of 10"                  || 10
 
             '''\
         |{
@@ -451,7 +451,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 40"                 || 40
+        |}'''.stripMargin()     | "query with a score of 40"                  || 40
 
             '''\
         |{
@@ -468,7 +468,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           albumId
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 110"                || 110
+        |}'''.stripMargin()     | "query with a score of 110"                 || 110
 
             '''\
         |{
@@ -482,7 +482,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |           }
         |        }
         |    }
-        |}'''.stripMargin()     | "query with a score of 70"                 || 70
+        |}'''.stripMargin()     | "query with a score of 70"                  || 70
 
             '''\
         |{
@@ -539,7 +539,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin() | "mutation return query with a score of 30" || 30
+        |    }'''.stripMargin() | "mutation return query with a score of 30"  || 30
 
             '''\
         |mutation {
@@ -1018,6 +1018,7 @@ class QueryComplexityCalculatorTest extends Specification {
             ""                    || "videosDepth{id}"                                                               || 1
             ""                    || "videos{edges{node{depth{id}}}}"                                                || 3
             ""                    || "videos{edges{node{children{edges{node{depth{id}}}}}}}"                         || 5
+            ""                    || "videos{edges{node{children{pageInfo{total}edges{node{depth{id}}}}}}}"          || 5
             ""                    || "childScore{first{second{id}}}"                                                 || 4
             ""                    || "currentCollectionSize(first: 3){id}"                                           || 3
             ""                    || "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"           || 9

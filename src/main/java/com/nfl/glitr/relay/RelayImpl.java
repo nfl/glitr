@@ -1,5 +1,8 @@
 package com.nfl.glitr.relay;
 
+import com.google.common.collect.Sets;
+import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
+import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.registry.schema.GraphQLConnectionList;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLNonNull;
@@ -7,6 +10,7 @@ import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
 
+import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -56,6 +60,7 @@ public class RelayImpl extends graphql.relay.Relay implements Relay {
                 .field(newFieldDefinition()
                         .name("pageInfo")
                         .type(new GraphQLNonNull(pageInfoType))
+                        .definition(new GlitrFieldDefinition(name, Sets.newHashSet(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, true))))
                         .build())
                 .fields(connectionFields)
                 .build();

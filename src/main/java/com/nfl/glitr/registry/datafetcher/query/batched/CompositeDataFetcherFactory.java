@@ -6,7 +6,6 @@ import com.nfl.glitr.registry.datafetcher.query.OverrideDataFetcher;
 import graphql.execution.batched.Batched;
 import graphql.execution.batched.UnbatchedDataFetcher;
 import graphql.schema.DataFetcher;
-import graphql.schema.FieldDataFetcher;
 import graphql.schema.PropertyDataFetcher;
 
 import java.lang.reflect.Method;
@@ -52,7 +51,7 @@ public class CompositeDataFetcherFactory {
 
         // let's see if there is at least one Batched in the list
         boolean isListContainsBatchedDataFetcher = fetchers.stream()
-                .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
+                .filter(f -> !(f instanceof PropertyDataFetcher))
                 .anyMatch(ReflectionUtil::isDataFetcherBatched);
 
         if (!isListContainsBatchedDataFetcher) {
@@ -61,7 +60,7 @@ public class CompositeDataFetcherFactory {
 
         // are they all batched?
         boolean isListOnlyBatchedDataFetcher = fetchers.stream()
-                .filter(f -> !(f instanceof PropertyDataFetcher) && !(f instanceof FieldDataFetcher))
+                .filter(f -> !(f instanceof PropertyDataFetcher))
                 .allMatch(ReflectionUtil::isDataFetcherBatched);
 
         if (!isListOnlyBatchedDataFetcher) {

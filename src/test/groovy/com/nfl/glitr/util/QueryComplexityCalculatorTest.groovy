@@ -1018,6 +1018,7 @@ class QueryComplexityCalculatorTest extends Specification {
             ""                    || "videosDepth{id}"                                                               || 1
             ""                    || "videos{edges{node{depth{id}}}}"                                                || 3
             ""                    || "videos{edges{node{children{edges{node{depth{id}}}}}}}"                         || 5
+            ""                    || "videos{edges{node{fragments{edges{node{... on Video{depth{id}}}}}}}}"          || 5
             ""                    || "videos{edges{node{children{pageInfo{total}edges{node{depth{id}}}}}}}"          || 5
             ""                    || "childScore{first{second{id}}}"                                                 || 4
             ""                    || "currentCollectionSize(first: 3){id}"                                           || 3
@@ -1027,6 +1028,54 @@ class QueryComplexityCalculatorTest extends Specification {
             ""                    || "duplicateVariables{first{second{id}}}"                                         || 8
             ""                    || "incorrectVariableDeclaration{id}"                                              || 0
             ""                    || "abstract{url}"                                                                 || 6
+    }
+
+    def "Calculate query complexity with fragment spread"() {
+        setup:
+            Glitr glitr = GlitrBuilder.newGlitr()
+                    .withRelay()
+                    .withQueryRoot(new QueryType())
+                    .withMutationRoot(new MutationType())
+                    .withObjectMapper(SerializationUtil.objectMapper)
+                    .withQueryComplexityCalculator(new QueryComplexityCalculator(1, 1, 1, 1))
+                    .build()
+
+        when:
+            def queryScore = glitr.getQueryComplexityCalculator().queryScore("""
+                {
+                    $query
+                }
+
+                $fragments
+            """, null);
+        then:
+            queryScore == 25
+        where:
+            query = '''
+                videos(first:5){
+                  edges{
+                    node{
+                      ...QueryTypeFragment
+                    }
+                  }
+                }'''
+
+
+            fragments = '''
+                fragment QueryTypeFragment on QueryType{
+                  id
+                  otherVideos{
+                    edges{
+                      node{
+                        ...VideoFragment
+                      }
+                    }
+                  }
+                }
+                
+                fragment VideoFragment on Video{
+                  depth{id}
+                }'''
     }
 
     @Unroll

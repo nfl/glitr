@@ -81,7 +81,7 @@ class TypeRegistryIntegrationTest extends Specification {
         GraphQLObjectType fieldDefType3 = (GraphQLObjectType) fieldDef3.type
         fieldDefType3.name == "Video"
         fieldDefType3.description == GlitrDescription.DEFAULT_DESCRIPTION
-        fieldDefType3.fieldDefinitions.size() == 10
+        fieldDefType3.fieldDefinitions.size() == 11
         def input3 = (GraphQLArgument) fieldDef3.arguments[0]
         input3.name == "id"
         input3.description == GlitrArgument.DEFAULT_DESCRIPTION
@@ -129,7 +129,7 @@ class TypeRegistryIntegrationTest extends Specification {
         GraphQLObjectType wrappedType6 = (GraphQLObjectType) fieldDefType6.wrappedType
         wrappedType6.name == "Video"
         wrappedType6.description == GlitrDescription.DEFAULT_DESCRIPTION
-        wrappedType6.fieldDefinitions.size() == 10
+        wrappedType6.fieldDefinitions.size() == 11
     }
 
     def "Inspect Simple Object type"() {
@@ -262,7 +262,7 @@ class TypeRegistryIntegrationTest extends Specification {
         then: "Make sure it inherits the fields of the super classes"
         type.name == Video.class.getSimpleName()
         type.description == GlitrDescription.DEFAULT_DESCRIPTION
-        type.fieldDefinitions.name as Set == ["ignore", "children", "allVariablesComplexityFormula", "bitrateList", "depth", "id", "lastModifiedDate", "title", "totalCollectionsSize", "url"] as Set
+        type.fieldDefinitions.name as Set == ["ignore", "children", "allVariablesComplexityFormula", "bitrateList", "depth", "id", "lastModifiedDate", "title", "totalCollectionsSize", "url", "fragments"] as Set
         then: "Make sure it implements the interfaces"
         type.interfaces.name as Set == [AbstractContent.class.simpleName, AbstractTimestamped.class.simpleName, Identifiable.simpleName, Playable.class.simpleName] as Set
     }

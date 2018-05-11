@@ -49,4 +49,9 @@ public class Video extends AbstractContent implements Playable {
     public List<Video> getIgnore() {
         return null;
     }
+
+    @GlitrForwardPagingArguments
+    public List<Video> getFragments() {
+        return null;
+    }
 }

@@ -16,6 +16,7 @@ public class QueryComplexityNode {
     private List<Argument> arguments = new ArrayList<>();
     private List<QueryComplexityNode> children = new ArrayList<>();
     private boolean ignore;
+    private String formula;
 
 
     public QueryComplexityNode() {
@@ -106,6 +107,14 @@ public class QueryComplexityNode {
 
     public void setIgnore(boolean ignore) {
         this.ignore = ignore;
+    }
+
+    public String getFormula() {
+        return formula;
+    }
+
+    public void setFormula(String formula) {
+        this.formula = formula;
     }
 
     @Override

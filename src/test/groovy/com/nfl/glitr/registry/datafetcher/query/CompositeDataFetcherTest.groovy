@@ -1,6 +1,8 @@
 package com.nfl.glitr.registry.datafetcher.query
 
 import graphql.Scalars
+import graphql.execution.ExecutionContextBuilder
+import graphql.execution.ExecutionId
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentBuilder
 import graphql.schema.PropertyDataFetcher
@@ -10,9 +12,13 @@ class CompositeDataFetcherTest extends Specification {
 
     def propertyDataFetcher = new PropertyDataFetcher("title")
     def overrideDataFetcher = new OverrideDataFetcher("title", new Override())
+    def execCtx = ExecutionContextBuilder.newExecutionContextBuilder()
+                                        .executionId(ExecutionId.generate())
+                                        .build();
     def env = DataFetchingEnvironmentBuilder.newDataFetchingEnvironment()
                                         .source(new DummyClass())
                                         .fieldType(Scalars.GraphQLString)
+                                        .executionContext(execCtx)
                                         .build()
 
     def "Should iterate over dataFetchers until override gets called & return null when not found"() {

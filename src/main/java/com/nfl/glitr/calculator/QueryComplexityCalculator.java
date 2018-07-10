@@ -236,102 +236,102 @@ public class QueryComplexityCalculator {
     }
 
     /**
-    * <pre>
-    *
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {
-    *     playLists{    multiplier = 10 (default)
-    *         id
-    *     }
-    * }
-    * score = 10
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {
-    *     playLists{               multiplier (default) = 10
-    *         id
-    *         tracks(first:4){     first = 4, multiplier (default) = 10
-    *              trackId
-    *         }
-    *     }
-    * }
-    * score = (10) + (4 * 10) = 50
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {
-    *     playLists{                      multiplier (default) = 10
-    *         id
-    *         tracks(first:4){            first = 4, multiplier (default) = 10
-    *             trackId
-    *             trackInfo{              multiplier (default) = 10
-    *                 runtime
-    *                 authors(first:2){   first = 2, multiplier (default) = 10
-    *                     authorName
-    *                 }
-    *             }
-    *         }
-    *     }
-    * }
-    * score = 10 + (4 * 10) + 10 + (2 * 10) = 70
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {
-    *     playLists{               multiplier (default) = 10
-    *         id
-    *         tracks(first:4){     first = 4, multiplier (default) = 10
-    *             trackId
-    *             trackInfo{       multiplier (default) = 10
-    *                 runtime
-    *             }
-    *         }
-    *     }
-    * }
-    * score = 10 + (4 * 10) + 10 = 60
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {
-    *     playLists{               multiplier (default) = 10
-    *         id
-    *         tracks(first:4){     first = 4, multiplier (default) = 10
-    *             trackId
-    *             trackInfo{       multiplier (default) = 10
-    *                 runtime
-    *             }
-    *         }
-    *     }
-    * }
-    * score = 10 + (4 * 10) + 10 = 60
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * {@literal @}GlitrQueryComplexity("#{depth} + #{childScore} + #{currentCollectionSize} + #{totalCollectionsSize}
-    *                                  + #{maxCharacterLimit} + #{maxDepthLimit} + #{maxScoreLimit} + #{defaultMultiplier} + 5")
-    *  private List trackInfo;
-    *
-    *  #{maxCharacterLimit} = 11, #{maxDepthLimit} = 22, #{maxScoreLimit} = 33, #{defaultMultiplier} = 10
-    *
-    * {
-    *     playLists{                      multiplier (default) = 10
-    *         id
-    *         tracks(first:4){            first = 4, multiplier (default) = 10
-    *             trackId
-    *             trackInfo(first:2){     #{depth} = 3, #{childScore} = 10, #{currentCollectionSize} = 2, #{totalCollectionsSize} = 6
-    *                 runtime
-    *                 author{             multiplier (default) = 10
-    *                     authorName
-    *                 }
-    *             }
-    *         }
-    *     }
-    * }
-    * score = 10 + (4 * 10) + (3 + 10 + 2 + 6 + 11 + 22 + 33 + 10 + 5) + 10 = 162
-    * ****************************************************************************************************************
-    * ****************************************************************************************************************
-    * </pre>
-    * @param query string
-    * @param variables graphQL query variables
-    * @return query score as an double.  The way the query score is calculated is by summing the multipliers of all nodes.
-    **/
+     * <pre>
+     *
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {
+     *     playLists{    multiplier = 10 (default)
+     *         id
+     *     }
+     * }
+     * score = 10
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {
+     *     playLists{               multiplier (default) = 10
+     *         id
+     *         tracks(first:4){     first = 4, multiplier (default) = 10
+     *              trackId
+     *         }
+     *     }
+     * }
+     * score = (10) + (4 * 10) = 50
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {
+     *     playLists{                      multiplier (default) = 10
+     *         id
+     *         tracks(first:4){            first = 4, multiplier (default) = 10
+     *             trackId
+     *             trackInfo{              multiplier (default) = 10
+     *                 runtime
+     *                 authors(first:2){   first = 2, multiplier (default) = 10
+     *                     authorName
+     *                 }
+     *             }
+     *         }
+     *     }
+     * }
+     * score = 10 + (4 * 10) + 10 + (2 * 10) = 70
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {
+     *     playLists{               multiplier (default) = 10
+     *         id
+     *         tracks(first:4){     first = 4, multiplier (default) = 10
+     *             trackId
+     *             trackInfo{       multiplier (default) = 10
+     *                 runtime
+     *             }
+     *         }
+     *     }
+     * }
+     * score = 10 + (4 * 10) + 10 = 60
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {
+     *     playLists{               multiplier (default) = 10
+     *         id
+     *         tracks(first:4){     first = 4, multiplier (default) = 10
+     *             trackId
+     *             trackInfo{       multiplier (default) = 10
+     *                 runtime
+     *             }
+     *         }
+     *     }
+     * }
+     * score = 10 + (4 * 10) + 10 = 60
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * {@literal @}GlitrQueryComplexity("#{depth} + #{childScore} + #{currentCollectionSize} + #{totalCollectionsSize}
+     *                                  + #{maxCharacterLimit} + #{maxDepthLimit} + #{maxScoreLimit} + #{defaultMultiplier} + 5")
+     *  private List trackInfo;
+     *
+     *  #{maxCharacterLimit} = 11, #{maxDepthLimit} = 22, #{maxScoreLimit} = 33, #{defaultMultiplier} = 10
+     *
+     * {
+     *     playLists{                      multiplier (default) = 10
+     *         id
+     *         tracks(first:4){            first = 4, multiplier (default) = 10
+     *             trackId
+     *             trackInfo(first:2){     #{depth} = 3, #{childScore} = 10, #{currentCollectionSize} = 2, #{totalCollectionsSize} = 6
+     *                 runtime
+     *                 author{             multiplier (default) = 10
+     *                     authorName
+     *                 }
+     *             }
+     *         }
+     *     }
+     * }
+     * score = 10 + (4 * 10) + (3 + 10 + 2 + 6 + 11 + 22 + 33 + 10 + 5) + 10 = 162
+     * ****************************************************************************************************************
+     * ****************************************************************************************************************
+     * </pre>
+     * @param query string
+     * @param variables graphQL query variables
+     * @return query score as an double.  The way the query score is calculated is by summing the multipliers of all nodes.
+     **/
     public double queryScore(String query, Map<String, Object> variables) {
         return queryScoreDetails(query, variables).getTotalWeight();
     }
@@ -441,15 +441,26 @@ public class QueryComplexityCalculator {
         }
 
         try {
-            if (objType instanceof GraphQLModifiedType) {
-                return ((GraphQLFieldsContainer) ((GraphQLModifiedType) objType).getWrappedType()).getFieldDefinition(name);
-            } else if (objType instanceof GraphQLFieldsContainer) {
-                return ((GraphQLFieldsContainer) objType).getFieldDefinition(name);
+            GraphQLFieldsContainer container = getWrappedContainer(objType);
+            if (container != null) {
+                return container.getFieldDefinition(name);
             }
         } catch (Exception e) {
             logger.error("Missed ({}) field of ({}) graphQL type", name, objType.getName());
         }
 
+        return null;
+    }
+
+    private GraphQLFieldsContainer getWrappedContainer(GraphQLType objType) {
+        if (objType instanceof GraphQLModifiedType) {
+            return getWrappedContainer(((GraphQLModifiedType) objType).getWrappedType());
+        }
+        if (objType instanceof GraphQLFieldsContainer) {
+            return (GraphQLFieldsContainer) objType;
+        }
+
+        logger.error("Not supported graphQLType {} ", objType);
         return null;
     }
 
@@ -498,25 +509,6 @@ public class QueryComplexityCalculator {
         } else {
             return currentNodeScore + childScores;
         }
-    }
-
-    private GraphQLFieldDefinition getGraphQLObject(GraphQLFieldDefinition graphQlObject, String name) {
-        if (graphQlObject == null) {
-            return null;
-        }
-
-        try {
-            GraphQLOutputType objType = graphQlObject.getType();
-            if (objType instanceof GraphQLModifiedType) {
-                return ((GraphQLFieldsContainer) ((GraphQLModifiedType) objType).getWrappedType()).getFieldDefinition(name);
-            } else if (objType instanceof GraphQLFieldsContainer) {
-                return ((GraphQLFieldsContainer) objType).getFieldDefinition(name);
-            }
-        } catch (Exception e) {
-            logger.error(String.format("Cannot process property (%s) of graphQL object (%s)", name, graphQlObject.getName()), e);
-        }
-
-        return null;
     }
 
     private <T> T getGraphQLMeta(GraphQLFieldDefinition graphQlObject, String name) {
@@ -851,4 +843,3 @@ public class QueryComplexityCalculator {
         return defaultMultiplier;
     }
 }
-

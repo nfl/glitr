@@ -2,6 +2,7 @@ package com.nfl.glitr.data.query;
 
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
+import com.nfl.glitr.annotation.GlitrNonNull;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 
 import java.util.List;
@@ -46,6 +47,7 @@ public class QueryType {
 
     //Query complexity formula declarations
 
+    @GlitrNonNull
     @GlitrQueryComplexity("#{depth}")
     public List<Video> getVideosDepth() {
         return null;

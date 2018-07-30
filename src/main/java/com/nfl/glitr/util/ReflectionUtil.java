@@ -23,7 +23,7 @@ public class ReflectionUtil {
     public final static String NAME_PREFIX = "class ";
 
 
-    public static  String getClassName(Type type) {
+    public static String getClassName(Type type) {
         String fullName = type.toString();
         if (fullName.startsWith(NAME_PREFIX)) {
             return fullName.substring(NAME_PREFIX.length());
@@ -41,6 +41,7 @@ public class ReflectionUtil {
 
     /**
      * Determines if the given method is eligible for inclusion in the GraphQL Schema
+     *
      * @param method to inspect
      * @return true if the method name starts with `get` or `is` and false otherwise or if the method or the corresponding field is annotated with GlitrIgnore
      */
@@ -71,6 +72,7 @@ public class ReflectionUtil {
 
     /**
      * Returns an alphabetically sorted Map of the method names to the actual Method and referencing class
+     *
      * @param clazz to inspect
      * @return method map
      */
@@ -78,7 +80,9 @@ public class ReflectionUtil {
         List<Method> methods = Arrays.asList(clazz.getMethods());
         methods.stream()
                 .filter(method -> Collections.frequency(methods, method.getName()) > 1)
-                .forEach(duplicateMethodName -> { throw new IllegalArgumentException("Method name duplicate for the given field [" + duplicateMethodName.getName() + "] in class [" + clazz.getSimpleName() + "]"); });
+                .forEach(duplicateMethodName -> {
+                    throw new IllegalArgumentException("Method name duplicate for the given field [" + duplicateMethodName.getName() + "] in class [" + clazz.getName() + "]");
+                });
 
         return new TreeMap<>(methods.stream()
                 .filter(ReflectionUtil::eligibleMethod)
@@ -87,6 +91,7 @@ public class ReflectionUtil {
 
     /**
      * Strip a string from the prefix `get` or `is` and un-capitalize.
+     *
      * @param name usually a getter name. e.g: `getTitle`
      * @return sanitized name `title`
      */
@@ -113,8 +118,8 @@ public class ReflectionUtil {
     }
 
     public static GlitrArgument[] getArgumentsFromAnnotations(Map<Class, Annotation> annotationMap) {
-        GlitrArgument[] singleAnnotationGlitrArguments = annotationMap.containsKey(GlitrArgument.class) ? new GlitrArgument[] {(GlitrArgument)annotationMap.get(GlitrArgument.class)}  : new GlitrArgument[0];
-        GlitrArgument[] groupedAnnotationGlitrArguments = annotationMap.containsKey(GlitrArguments.class) ? ((GlitrArguments)annotationMap.get(GlitrArguments.class)).value() : new GlitrArgument[0];
+        GlitrArgument[] singleAnnotationGlitrArguments = annotationMap.containsKey(GlitrArgument.class) ? new GlitrArgument[]{(GlitrArgument) annotationMap.get(GlitrArgument.class)} : new GlitrArgument[0];
+        GlitrArgument[] groupedAnnotationGlitrArguments = annotationMap.containsKey(GlitrArguments.class) ? ((GlitrArguments) annotationMap.get(GlitrArguments.class)).value() : new GlitrArgument[0];
         return ArrayUtils.addAll(singleAnnotationGlitrArguments, groupedAnnotationGlitrArguments);
     }
 
@@ -135,7 +140,7 @@ public class ReflectionUtil {
 
     /**
      * Tells whether a given data fetcher supports batching
-     *  {code @Batched} on the get method or instance of {code BatchedDataFetcher}
+     * {code @Batched} on the get method or instance of {code BatchedDataFetcher}
      *
      * @param supplied data fetcher
      * @return true if batched, false otherwise
@@ -189,7 +194,7 @@ public class ReflectionUtil {
 
         if (Collection.class.isAssignableFrom(returnType) && method.getGenericReturnType() instanceof ParameterizedType) {
             try {
-                ParameterizedType pType = (ParameterizedType)method.getGenericReturnType();
+                ParameterizedType pType = (ParameterizedType) method.getGenericReturnType();
                 returnType = (Class<?>) pType.getActualTypeArguments()[0];
 
                 if (!isSupportedType(returnType)) {
@@ -209,6 +214,7 @@ public class ReflectionUtil {
 
     /**
      * Retrieves the GraphQL documentation description value if present on an element
+     *
      * @param element that may be annotated with the GlitrDescription
      * @return GlitrDescription.value if present or GlitrDescription.DEFAULT_DESCRIPTION otherwise
      */

@@ -9,7 +9,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import spock.lang.Specification
 
-import static com.nfl.glitr.util.NodeUtil.buildNewPath
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName
 
 class CircularReferenceTest extends Specification {
 
@@ -20,14 +20,14 @@ class CircularReferenceTest extends Specification {
             GraphQLType type = glitr.typeRegistry.lookup(AbstractRead.class)
         then: "Make sure an interface is created"
             type instanceof GraphQLInterfaceType
-            type.name == AbstractRead.simpleName
+            type.name == compatibleClassName(AbstractRead)
         then: "And make sure the implementing type has the interface registered"
             def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Novel(),
                     null, null, null, null, null))
             objType.class == GraphQLObjectType
-            objType.name == Novel.simpleName
+            objType.name == compatibleClassName(Novel)
             objType.fieldDefinitions.name as Set == ["novel", "pageCount", "title", "reviewed"] as Set
-            objType.interfaces.name as Set == [AbstractRead.simpleName] as Set
+            objType.interfaces.name as Set == [compatibleClassName(AbstractRead)] as Set
     }
 
     def "Inspect Interface that has a field circular reference"() {
@@ -37,13 +37,13 @@ class CircularReferenceTest extends Specification {
             GraphQLType type = glitr.typeRegistry.lookup(Readable.class)
         then: "Make sure an interface is created"
             type instanceof GraphQLInterfaceType
-            type.name == Readable.simpleName
+            type.name == compatibleClassName(Readable)
         then: "And make sure the implementing type has the interface registered"
             def objType = glitr.typeRegistry.getType(new TypeResolutionEnvironment(new Book(),
                     null, null, null, null, null))
             objType.class == GraphQLObjectType
-            objType.name == Book.simpleName
+            objType.name == compatibleClassName(Book)
             objType.fieldDefinitions.name as Set == ["title", "synopsis"] as Set
-            objType.interfaces.name as Set == [Readable.simpleName] as Set
+            objType.interfaces.name as Set == [compatibleClassName(Readable)] as Set
     }
 }

@@ -5,6 +5,7 @@ import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
 import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
+import com.nfl.glitr.util.NamingUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.*;
 import org.apache.commons.lang3.tuple.Pair;
@@ -70,7 +71,7 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
         graphQLInterfaceTypes.addAll(graphQLAbstractClassTypes);
 
         GraphQLObjectType.Builder builder = newObject()
-                .name(clazz.getSimpleName())
+                .name(NamingUtil.compatibleClassName(clazz))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .withInterfaces(graphQLInterfaceTypes.toArray(new GraphQLInterfaceType[graphQLInterfaceTypes.size()]))
                 .fields(fields);
@@ -117,7 +118,7 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
      * @return list of {@link GraphQLInterfaceType}
      */
     public List<GraphQLInterfaceType> retrieveInterfacesForType(Class clazz) {
-        List<GraphQLInterfaceType>  interfaceTypes = new ArrayList<>();
+        List<GraphQLInterfaceType> interfaceTypes = new ArrayList<>();
 
         LinkedList<Class> queue = new LinkedList<>();
         queue.add(clazz);
@@ -126,7 +127,7 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
             Class aClass = queue.poll();
             Class<?>[] interfacesForClass = aClass.getInterfaces();
             queue.addAll(Arrays.asList(interfacesForClass));
-            for (Class interfaceClass: interfacesForClass) {
+            for (Class interfaceClass : interfacesForClass) {
                 GraphQLInterfaceType graphQLInterfaceType = (GraphQLInterfaceType) typeRegistry.lookupOutput(interfaceClass);
                 interfaceTypes.add(graphQLInterfaceType);
             }

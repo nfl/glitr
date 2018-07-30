@@ -1,5 +1,6 @@
 package com.nfl.glitr.registry.type;
 
+import com.nfl.glitr.util.NamingUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLType;
@@ -24,7 +25,7 @@ public class GraphQLEnumTypeFactory implements DelegateTypeFactory {
      */
     public static GraphQLEnumType createEnumType(Class clazz) {
         GraphQLEnumType.Builder builder = newEnum()
-                .name(clazz.getSimpleName())
+                .name(NamingUtil.compatibleClassName(clazz))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz));
 
         for (Object constant : clazz.getEnumConstants()) {

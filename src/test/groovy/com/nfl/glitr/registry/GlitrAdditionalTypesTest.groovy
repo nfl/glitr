@@ -9,6 +9,8 @@ import com.nfl.glitr.util.SerializationUtil
 import graphql.TypeResolutionEnvironment
 import spock.lang.Specification
 
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName
+
 class GlitrAdditionalTypesTest extends Specification {
 
     def "Register Additional types"() {
@@ -32,7 +34,7 @@ class GlitrAdditionalTypesTest extends Specification {
         then: "Man and Cyborg are now part of the schema"
             glitr.typeRegistry.getType(typeResolutionEnvMan) != null
             glitr.typeRegistry.getType(typeResolutionEnvCyborg) != null
-            glitr.schema.getType(Man.class.simpleName) != null
-            glitr.schema.getType(Cyborg.class.simpleName) != null
+            glitr.schema.getType(compatibleClassName(Man)) != null
+            glitr.schema.getType(compatibleClassName(Cyborg)) != null
     }
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.relay.RelayHelper;
+import com.nfl.glitr.util.NamingUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrNonNull;
@@ -22,6 +23,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName;
 
 /**
  *  Output type converter function for paging arguments annotations.
@@ -52,7 +55,7 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         Class endEdgeClass =  ReflectionUtil.getClassFromType(endEdgeType);
 
         // find that class from the registry (or lookup if first time)
-        GraphQLOutputType edgeGraphQLOutputType = (GraphQLOutputType) typeRegistry.convertToGraphQLOutputType(endEdgeType, endEdgeClass.getSimpleName());
+        GraphQLOutputType edgeGraphQLOutputType = (GraphQLOutputType) typeRegistry.convertToGraphQLOutputType(endEdgeType, compatibleClassName(endEdgeClass));
 
         // is this an optional field
         boolean nullable = !method.isAnnotationPresent(GlitrNonNull.class)
@@ -63,12 +66,12 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         }
 
         // build a relay edge
-        GraphQLObjectType edgeType = relayHelper.edgeType(endEdgeClass.getSimpleName(),
+        GraphQLObjectType edgeType = relayHelper.edgeType(compatibleClassName(endEdgeClass),
                                                     edgeGraphQLOutputType,
                                                     relayHelper.getNodeInterface(),
                                                     Collections.emptyList());
         // build the relay connection
-        GraphQLObjectType connectionType = relayHelper.connectionType(endEdgeClass.getSimpleName(), edgeType, Lists.newArrayList());
+        GraphQLObjectType connectionType = relayHelper.connectionType(compatibleClassName(endEdgeClass), edgeType, Lists.newArrayList());
 
         // check if a connection with this name already exists
         Map<String, GraphQLType> nameRegistry = typeRegistry.getNameRegistry();

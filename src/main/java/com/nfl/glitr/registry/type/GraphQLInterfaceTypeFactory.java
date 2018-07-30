@@ -7,6 +7,7 @@ import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
 import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
+import com.nfl.glitr.util.NamingUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.schema.*;
@@ -53,7 +54,7 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
                 .collect(Collectors.toList());
 
         return newInterface()
-                .name(clazz.getSimpleName())
+                .name(NamingUtil.compatibleClassName(clazz))
                 .definition(new InterfaceTypeDefinition(clazz.getCanonicalName()))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .typeResolver(typeRegistry)

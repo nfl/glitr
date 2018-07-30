@@ -1014,20 +1014,20 @@ class QueryComplexityCalculatorTest extends Specification {
         then:
             queryScore == expectedScore
         where:
-            variables             || query                                                                           || expectedScore
-            ""                    || "videosDepth{id}"                                                               || 1
-            ""                    || "videos{edges{node{depth{id}}}}"                                                || 3
-            ""                    || "videos{edges{node{children{edges{node{depth{id}}}}}}}"                         || 5
-            ""                    || "videos{edges{node{fragments{edges{node{... on Video{depth{id}}}}}}}}"          || 5
-            ""                    || "videos{edges{node{children{pageInfo{total}edges{node{depth{id}}}}}}}"          || 5
-            ""                    || "childScore{first{second{id}}}"                                                 || 4
-            ""                    || "currentCollectionSize(first: 3){id}"                                           || 3
-            ""                    || "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"           || 9
-            'query($limit: Int!)' || 'currentCollectionSize(first: $limit){totalCollectionsSize(first: $limit){id}}' || 9
-            ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"       || 69
-            ""                    || "duplicateVariables{first{second{id}}}"                                         || 8
-            ""                    || "incorrectVariableDeclaration{id}"                                              || 0
-            ""                    || "abstract{url}"                                                                 || 6
+            variables             || query                                                                                           || expectedScore
+            ""                    || "videosDepth{id}"                                                                               || 1
+            ""                    || "videos{edges{node{depth{id}}}}"                                                                || 3
+            ""                    || "videos{edges{node{children{edges{node{depth{id}}}}}}}"                                         || 5
+            ""                    || "videos{edges{node{fragments{edges{node{... on com_nfl_glitr_data_query_Video{depth{id}}}}}}}}" || 5
+            ""                    || "videos{edges{node{children{pageInfo{total}edges{node{depth{id}}}}}}}"                          || 5
+            ""                    || "childScore{first{second{id}}}"                                                                 || 4
+            ""                    || "currentCollectionSize(first: 3){id}"                                                           || 3
+            ""                    || "currentCollectionSize(first: 3){totalCollectionsSize(first: 3){id}}"                           || 9
+            'query($limit: Int!)' || 'currentCollectionSize(first: $limit){totalCollectionsSize(first: $limit){id}}'                 || 9
+            ""                    || "zZZVideos(first: 3){allVariablesComplexityFormula(first: 3){first{id}}}"                       || 69
+            ""                    || "duplicateVariables{first{second{id}}}"                                                         || 8
+            ""                    || "incorrectVariableDeclaration{id}"                                                              || 0
+            ""                    || "abstract{url}"                                                                                 || 6
     }
 
     def "Calculate query complexity with fragment spread"() {

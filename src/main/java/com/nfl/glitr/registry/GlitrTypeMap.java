@@ -4,11 +4,12 @@ import com.nfl.glitr.exception.GlitrException;
 import graphql.schema.GraphQLType;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName;
 
 /**
  * A map implementation to sync the two kinds of registries currently in {@link com.nfl.glitr.registry.TypeRegistry}.
@@ -33,7 +34,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public Object putIfAbsent(Object key, Object value) {
         if (isClass(key)) {
-            nameRegistry.putIfAbsent(((Class) key).getSimpleName(), (GraphQLType) value);
+            nameRegistry.putIfAbsent(compatibleClassName((Class) key), (GraphQLType) value);
             return classRegistry.putIfAbsent((Class) key, (GraphQLType) value);
         } else if (isString(key)) {
             return nameRegistry.putIfAbsent((String) key, (GraphQLType) value);
@@ -44,7 +45,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public boolean remove(Object key, Object value) {
         if (isClass(key)) {
-            nameRegistry.remove(((Class) key).getSimpleName(), value);
+            nameRegistry.remove(compatibleClassName((Class) key), value);
             return classRegistry.remove(key, value);
         } else if (isString(key)) {
             return nameRegistry.remove(key, value);
@@ -55,7 +56,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public boolean replace(Object key, Object oldValue, Object newValue) {
         if (isClass(key)) {
-            nameRegistry.replace(((Class) key).getSimpleName(), (GraphQLType) oldValue, (GraphQLType) newValue);
+            nameRegistry.replace(compatibleClassName((Class) key), (GraphQLType) oldValue, (GraphQLType) newValue);
             return classRegistry.replace((Class) key, (GraphQLType) oldValue, (GraphQLType) newValue);
         } else if (isString(key)) {
             return nameRegistry.replace((String) key, (GraphQLType) oldValue, (GraphQLType) newValue);
@@ -66,7 +67,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public Object replace(Object key, Object value) {
         if (isClass(key)) {
-            nameRegistry.replace(((Class) key).getSimpleName(), (GraphQLType) value);
+            nameRegistry.replace(compatibleClassName((Class) key), (GraphQLType) value);
             return classRegistry.replace((Class) key, (GraphQLType) value);
         } else if (isString(key)) {
             return nameRegistry.replace((String) key, (GraphQLType) value);
@@ -107,7 +108,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public Object put(Object key, Object value) {
         if (isClass(key)) {
-            nameRegistry.put(((Class) key).getSimpleName(), (GraphQLType) value);
+            nameRegistry.put(compatibleClassName((Class) key), (GraphQLType) value);
             return classRegistry.put((Class) key, (GraphQLType) value);
         } else if (isString(key)) {
             return nameRegistry.put((String) key, (GraphQLType) value);
@@ -118,7 +119,7 @@ public class GlitrTypeMap implements ConcurrentMap {
     @Override
     public Object remove(Object key) {
         if (isClass(key)) {
-            nameRegistry.remove(((Class) key).getSimpleName());
+            nameRegistry.remove(compatibleClassName((Class) key));
             return classRegistry.remove(key);
         } else if (isString(key)) {
             return nameRegistry.remove(key);
@@ -144,7 +145,7 @@ public class GlitrTypeMap implements ConcurrentMap {
         if (isClass(next)) {
             for (Object o : m.entrySet()) {
                 Entry pair = (Entry) o;
-                nameRegistry.put(((Class) pair.getKey()).getSimpleName(), (GraphQLType) pair.getValue());
+                nameRegistry.put(compatibleClassName((Class) pair.getKey()), (GraphQLType) pair.getValue());
                 classRegistry.put((Class) pair.getKey(), (GraphQLType) pair.getValue());
             }
         } else if (isString(next)) {

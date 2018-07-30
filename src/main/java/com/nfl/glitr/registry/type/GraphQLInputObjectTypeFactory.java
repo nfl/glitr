@@ -3,6 +3,7 @@ package com.nfl.glitr.registry.type;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.registry.TypeRegistry;
+import com.nfl.glitr.util.NamingUtil;
 import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.exception.GlitrException;
 import graphql.schema.*;
@@ -48,7 +49,7 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
                 .collect(Collectors.toList());
 
         GraphQLInputObjectType.Builder builder = newInputObject()
-                .name(clazz.getSimpleName())
+                .name(NamingUtil.compatibleClassName(clazz))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .fields(fields);
 

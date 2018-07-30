@@ -5,9 +5,14 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.additionalTypes.Cyborg
 import com.nfl.glitr.data.query.additionalTypes.Man
 import com.nfl.glitr.data.query.additionalTypes.QueryRoot
+import com.nfl.glitr.dummy.Subscription
+import com.nfl.glitr.dummy.Viewer
+import com.nfl.glitr.util.NamingUtil
 import com.nfl.glitr.util.SerializationUtil
 import graphql.TypeResolutionEnvironment
 import spock.lang.Specification
+
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName
 
 class GlitrAdditionalTypesTest extends Specification {
 
@@ -32,7 +37,7 @@ class GlitrAdditionalTypesTest extends Specification {
         then: "Man and Cyborg are now part of the schema"
             glitr.typeRegistry.getType(typeResolutionEnvMan) != null
             glitr.typeRegistry.getType(typeResolutionEnvCyborg) != null
-            glitr.schema.getType(Man.class.simpleName) != null
-            glitr.schema.getType(Cyborg.class.simpleName) != null
+            glitr.schema.getType(compatibleClassName(Man)) != null
+            glitr.schema.getType(compatibleClassName(Cyborg)) != null
     }
 }

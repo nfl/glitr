@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
@@ -84,7 +85,7 @@ public class TypeRegistry implements TypeResolver {
             this.nodeInterface = relay.nodeInterface(this);
             // register Node so we don't inadvertently recreate it later
             this.registry.put(Node.class, this.nodeInterface);
-            this.nameRegistry.put(Node.class.getSimpleName(), this.nodeInterface);
+            this.nameRegistry.put(compatibleClassName(Node.class), this.nodeInterface);
         }
         this.explicitRelayNodeScanEnabled = explicitRelayNodeScanEnabled;
     }
@@ -106,7 +107,7 @@ public class TypeRegistry implements TypeResolver {
 
     @Override
     public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-        return (GraphQLObjectType)registry.get(env.getObject().getClass());
+        return (GraphQLObjectType) registry.get(env.getObject().getClass());
     }
 
     public Map<Class, GraphQLType> getRegistry() {
@@ -148,19 +149,19 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLType lookupOutput(Class clazz) {
         if (registry.containsKey(clazz)) {
             return registry.get(clazz);
-        } else if (nameRegistry.containsKey(clazz.getSimpleName())) {
-            return nameRegistry.get(clazz.getSimpleName());
+        } else if (nameRegistry.containsKey(compatibleClassName(clazz))) {
+            return nameRegistry.get(compatibleClassName(clazz));
         }
 
         // put a type reference in while building the type to work around circular references
-        registry.put(clazz, new GraphQLTypeReference(clazz.getSimpleName()));
-        nameRegistry.put(clazz.getSimpleName(), new GraphQLTypeReference(clazz.getSimpleName()));
+        registry.put(clazz, new GraphQLTypeReference(compatibleClassName(clazz)));
+        nameRegistry.put(compatibleClassName(clazz), new GraphQLTypeReference(compatibleClassName(clazz)));
 
         GraphQLOutputType type = graphQLTypeFactory.createGraphQLOutputType(clazz);
 
         if (type != null) {
             registry.put(clazz, type);
-            nameRegistry.put(clazz.getSimpleName(), type);
+            nameRegistry.put(compatibleClassName(clazz), type);
         } else {
             throw new IllegalArgumentException("Unable to create GraphQLOutputType for: " + clazz.getCanonicalName());
         }
@@ -178,15 +179,15 @@ public class TypeRegistry implements TypeResolver {
     public GraphQLType lookupInput(Class clazz) {
         if (registry.containsKey(clazz) && !(registry.get(clazz) instanceof GraphQLTypeReference)) {
             return registry.get(clazz);
-        } else if (nameRegistry.containsKey(clazz.getSimpleName()) && !(nameRegistry.get(clazz.getSimpleName()) instanceof GraphQLTypeReference)) {
-            return nameRegistry.get(clazz.getSimpleName());
+        } else if (nameRegistry.containsKey(compatibleClassName(clazz)) && !(nameRegistry.get(compatibleClassName(clazz)) instanceof GraphQLTypeReference)) {
+            return nameRegistry.get(compatibleClassName(clazz));
         }
 
         GraphQLInputType type = graphQLTypeFactory.createGraphQLInputType(clazz);
 
         if (type != null) {
             registry.put(clazz, type);
-            nameRegistry.put(clazz.getSimpleName(), type);
+            nameRegistry.put(compatibleClassName(clazz), type);
         } else {
             throw new IllegalArgumentException("Unable to create GraphQLInputType for: " + clazz.getCanonicalName());
         }
@@ -208,7 +209,7 @@ public class TypeRegistry implements TypeResolver {
         }
 
         GraphQLObjectType.Builder builder = newObject()
-                .name(clazz.getSimpleName())
+                .name(compatibleClassName(clazz))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
                 .fields(fields);
 
@@ -260,12 +261,12 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLArgument createRelayInputArgument(Class methodDeclaringClass, Method method) {
         GlitrArgument[] annotatedGetterGlitrArguments = ReflectionUtil.getArgumentsFromMethod(method);
         if (annotatedGetterGlitrArguments.length != 1) {
-            throw new IllegalArgumentException("Only one @GlitrArgument annotation can be placed on a relay mutation for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+            throw new IllegalArgumentException("Only one @GlitrArgument annotation can be placed on a relay mutation for class " + methodDeclaringClass.getName() + " and method " + method.getName());
         }
 
         GlitrArgument arg = annotatedGetterGlitrArguments[0];
         if (!arg.name().equals("input")) {
-            throw new IllegalArgumentException("@GlitrArgument annotation name must be `input` for class "+methodDeclaringClass.getSimpleName()+" and method "+ method.getName());
+            throw new IllegalArgumentException("@GlitrArgument annotation name must be `input` for class " + methodDeclaringClass.getName() + " and method " + method.getName());
         }
 
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
@@ -291,7 +292,7 @@ public class TypeRegistry implements TypeResolver {
      * We allow defining GraphQL additional fields outside of the inspected class. In fact, if the getter-method name
      * conflicts with an existing method defined in the inspected class, it won't be added.
      *
-     * @param clazz inspected class
+     * @param clazz   inspected class
      * @param methods original set of eligible methods defined in the inspected class
      */
     public void addExtraMethodsToTheSchema(Class clazz, Map<String, Pair<Method, Class>> methods) {
@@ -356,7 +357,7 @@ public class TypeRegistry implements TypeResolver {
     private DataFetcher getDataFetcherFromAnnotationsOnField(Class declaringClass, Method method, Field field) {
         if (field != null) {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
-            for (Annotation annotation: fieldAnnotations) {
+            for (Annotation annotation : fieldAnnotations) {
                 // custom fetchers
                 Class annotationType = annotation.annotationType();
                 if (annotationToDataFetcherFactoryMap.containsKey(annotationType)) {
@@ -375,7 +376,7 @@ public class TypeRegistry implements TypeResolver {
 
     private DataFetcher getDataFetcherFromAnnotationsOnGetter(Class declaringClass, Method method) {
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
-        for (Annotation annotation: methodAnnotations) {
+        for (Annotation annotation : methodAnnotations) {
             // custom fetchers
             Class annotationType = annotation.annotationType();
             if (annotationToDataFetcherFactoryMap.containsKey(annotationType)) {
@@ -491,7 +492,7 @@ public class TypeRegistry implements TypeResolver {
 
         if (field != null) {
             Annotation[] fieldAnnotations = field.getDeclaredAnnotations();
-            for (Annotation annotation: fieldAnnotations) {
+            for (Annotation annotation : fieldAnnotations) {
                 // custom OutputType
                 if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
                     Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
@@ -509,7 +510,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLOutputType getGraphQLOutputTypeFromAnnotationsOnGetter(Class declaringClass, Method method) {
         GraphQLOutputType graphQLOutputType = null;
         Annotation[] methodAnnotations = method.getDeclaredAnnotations();
-        for (Annotation annotation: methodAnnotations) {
+        for (Annotation annotation : methodAnnotations) {
             // custom OutputType
             if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
                 Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
@@ -524,24 +525,24 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLList createListOutputTypeFromParametrizedType(Type type, boolean fromInterface) {
-        ParameterizedType parameterizedType = (ParameterizedType)type;
+        ParameterizedType parameterizedType = (ParameterizedType) type;
         Type typeArgument = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
         return new GraphQLList(convertToGraphQLOutputType(typeArgument, null, fromInterface));
     }
 
     private GraphQLList createListOutputTypeFromArrayType(Type type, boolean fromInterface) {
-        Class componentType = ((Class)type).getComponentType();
+        Class componentType = ((Class) type).getComponentType();
         return new GraphQLList(convertToGraphQLOutputType(componentType, null, fromInterface));
     }
 
     private GraphQLList createListInputTypeFromParametrizedType(Type type) {
-        ParameterizedType parameterizedType = (ParameterizedType)type;
+        ParameterizedType parameterizedType = (ParameterizedType) type;
         Type typeArgument = ReflectionUtil.getActualTypeArgumentFromType(parameterizedType);
         return new GraphQLList(convertToGraphQLInputType(typeArgument, null));
     }
 
     private GraphQLList createListInputTypeFromArrayType(Type type) {
-        Class componentType = ((Class)type).getComponentType();
+        Class componentType = ((Class) type).getComponentType();
         return new GraphQLList(convertToGraphQLInputType(componentType, null));
     }
 
@@ -564,7 +565,7 @@ public class TypeRegistry implements TypeResolver {
             }
             return createListOutputTypeFromArrayType(type, fromInterface);
         } else if (fromInterface) { // to avoid circular references we will process the Interface field type later
-            return new GraphQLTypeReference(((Class) type).getSimpleName());
+            return new GraphQLTypeReference(compatibleClassName((Class) type));
         }
         return lookupOutput((Class) type);
     }
@@ -573,7 +574,7 @@ public class TypeRegistry implements TypeResolver {
         ParameterizedType parameterizedType = (ParameterizedType) type;
         Type containerType = parameterizedType.getRawType();
 
-        if (Collection.class.isAssignableFrom((Class)containerType)) {
+        if (Collection.class.isAssignableFrom((Class) containerType)) {
             return createListOutputTypeFromParametrizedType(type, fromInterface);
         } else if (containerType == rx.Observable.class) {
             Type[] fieldArgTypes = parameterizedType.getActualTypeArguments();
@@ -586,7 +587,7 @@ public class TypeRegistry implements TypeResolver {
     public Optional<GraphQLType> detectScalar(Type type, String name) {
         // users can register their own GraphQLScalarTypes for given Java types
         if (type instanceof ParameterizedType) {
-            type = ((ParameterizedType)type).getRawType();
+            type = ((ParameterizedType) type).getRawType();
         }
 
         if (javaTypeDeclaredAsScalarMap.containsKey(type)) {
@@ -636,10 +637,10 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLType getGraphQLTypeForInputParameterizedType(Type type) {
-        ParameterizedType parameterizedType = (ParameterizedType)type;
+        ParameterizedType parameterizedType = (ParameterizedType) type;
         Type containerType = parameterizedType.getRawType();
 
-        if (Collection.class.isAssignableFrom((Class)containerType)) {
+        if (Collection.class.isAssignableFrom((Class) containerType)) {
             return createListInputTypeFromParametrizedType(type);
         } else {
             throw new IllegalArgumentException("Unable to convert type " + type.getTypeName() + " to GraphQLInputType");

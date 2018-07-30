@@ -4,22 +4,24 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLType
 import spock.lang.Specification
 
+import static com.nfl.glitr.util.NamingUtil.compatibleClassName
+
 class GraphQLEnumTypeFactoryTest extends Specification {
 
     def "Java enum type to GraphQLEnumType"() {
         setup:
-        GraphQLEnumTypeFactory factory = new GraphQLEnumTypeFactory();
+            GraphQLEnumTypeFactory factory = new GraphQLEnumTypeFactory()
         when:
-        GraphQLType graphQLType = factory.create(ProfileType)
+            GraphQLType graphQLType = factory.create(ProfileType)
         then:
-        graphQLType instanceof GraphQLEnumType
-        def profileType = (GraphQLEnumType) graphQLType
-        profileType.name == ProfileType.simpleName
-        profileType.values.value == ProfileType.values()
+            graphQLType instanceof GraphQLEnumType
+            def profileType = (GraphQLEnumType) graphQLType
+            profileType.name == compatibleClassName(ProfileType)
+            profileType.values.value == ProfileType.values()
     }
 
 
-    public enum ProfileType {
+    enum ProfileType {
         PLAYER,
         COACH,
         CHEERLEADER

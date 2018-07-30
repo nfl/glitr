@@ -5,9 +5,6 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.additionalTypes.Cyborg
 import com.nfl.glitr.data.query.additionalTypes.Man
 import com.nfl.glitr.data.query.additionalTypes.QueryRoot
-import com.nfl.glitr.dummy.Subscription
-import com.nfl.glitr.dummy.Viewer
-import com.nfl.glitr.util.NamingUtil
 import com.nfl.glitr.util.SerializationUtil
 import graphql.TypeResolutionEnvironment
 import spock.lang.Specification

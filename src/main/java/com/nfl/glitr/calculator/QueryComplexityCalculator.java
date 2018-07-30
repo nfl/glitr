@@ -118,8 +118,16 @@ public class QueryComplexityCalculator {
             throw new GlitrException("query cannot be null or empty");
         }
 
-        if (isMutation(query)){
-            query = extractReturnQueryFromMutation(query);
+        try {
+            Document document = parseRootNode(query);
+            OperationDefinition operationDefinition = getFirstByType(document.getChildren(), OperationDefinition.class)
+                    .orElseThrow(() -> new GlitrException("Cannot find 'OperationDefinition' node"));
+
+            if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION){
+                query = extractReturnQueryFromMutation(operationDefinition);
+            }
+        } catch (Exception e) {
+            logger.error("Cannot parse mutation query", e);
         }
 
         return query.trim().length();
@@ -811,20 +819,17 @@ public class QueryComplexityCalculator {
     }
 
     /**
-     * @param query - graphql query string
+     * @param mutationNode - graphql mutation node
      * @return the query that is returned by the mutation response body
      */
-    private String extractReturnQueryFromMutation(String query){
-        //We need to find the end of the mutation input, which is '})'
-        int endOfMutationInput = query.indexOf("})");
-
-        if (endOfMutationInput == -1){
-            throw new GlitrException("Malformed mutation query");
-        }
-
-        // We return the string after the index and we also remove the last } which is part of the entire mutation query which we don't need.
-        return query.substring(endOfMutationInput + 2, query.lastIndexOf("}")).trim();
-
+    private String extractReturnQueryFromMutation(Node mutationNode){
+        SelectionSet selectionSet = getFirstByType(mutationNode.getChildren(), SelectionSet.class)
+                .orElseThrow(() -> new GlitrException("Cannot find 'SelectionSet' node in " + AstPrinter.printAst(mutationNode)));
+        Field field = getFirstByType(selectionSet.getChildren(), Field.class)
+                .orElseThrow(() -> new GlitrException("Cannot find 'Field' node in " + AstPrinter.printAst(selectionSet)));
+        SelectionSet mutationSelectQuery = getFirstByType(field.getChildren(), SelectionSet.class)
+                .orElseThrow(() -> new GlitrException("Cannot find 'Field' node in" + AstPrinter.printAst(field)));
+        return AstPrinter.printAst(mutationSelectQuery);
     }
 
     public int getMaxCharacterLimit() {

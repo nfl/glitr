@@ -75,7 +75,7 @@ class QueryComplexityCalculatorTest extends Specification {
         |          }
         |        }
         |      }
-        |    }'''.stripMargin() | "query with 186 chars on the return mutation query" || 186
+        |    }'''.stripMargin() | "query with 118 chars on the return mutation query" || 118
     }
 
     def "test query character score with exception [empty query]"() {

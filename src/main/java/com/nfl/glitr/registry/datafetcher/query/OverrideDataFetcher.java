@@ -54,14 +54,18 @@ public class OverrideDataFetcher implements DataFetcher {
         try {
             return overrideMethod.invoke(obj, environment);
         } catch (InvocationTargetException e) {
-            logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} obj={} and environment={}", overrideMethod, obj, environment, e);
+
             // If the override method threw a RuntimeException just send it up
-            if (e.getTargetException() instanceof RuntimeException)
+            if (e.getTargetException() instanceof RuntimeException) {
+                logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} of {}", overrideMethod.getName(), obj.getClass().getSimpleName(), e.getTargetException());
                 throw (RuntimeException) e.getTargetException();
+            }
+
             // Otherwise, wrap it up in a Glitr Exception
+            logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} of {}", overrideMethod.getName(), obj.getClass().getSimpleName());
             throw new GlitrException("Overwrite method exception", e.getTargetException());
         } catch (Exception e) {
-            logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} obj={} and environment={}", overrideMethod, obj, environment, e);
+            logger.error("Something went wrong - Unable to fetch result for overrideMethod={{}} of {}", overrideMethod.getName(), obj.getClass().getSimpleName());
         }
         return null;
     }

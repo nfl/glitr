@@ -6,9 +6,13 @@ import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.registry.schema.GraphQLConnectionList;
 import graphql.language.*;
 import graphql.parser.Parser;
+import graphql.parser.antlr.GraphqlLexer;
 import graphql.schema.*;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonToken;
+import org.antlr.v4.runtime.InputMismatchException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,6 +25,7 @@ import java.util.regex.Pattern;
 
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /*
      This class is used as a tool to compute complexity of a graphql string query.
@@ -127,7 +132,7 @@ public class QueryComplexityCalculator {
                 query = extractReturnQueryFromMutation(operationDefinition);
             }
         } catch (Exception e) {
-            logger.error("Cannot parse mutation query", e);
+            logger.error("Cannot parse inbound query", e);
         }
 
         return query.trim().length();
@@ -616,7 +621,11 @@ public class QueryComplexityCalculator {
         try {
             return documentParser.parseDocument(query);
         } catch (Exception e) {
-            throw new GlitrException(String.format("Cannot parse query %s", query));
+            String humanMessage = null;
+            if (e.getCause() instanceof InputMismatchException && ((InputMismatchException) e.getCause()).getOffendingToken() instanceof CommonToken) {
+                humanMessage = ((CommonToken) ((InputMismatchException) e.getCause()).getOffendingToken()).toString(new GraphqlLexer(CharStreams.fromString(query)));
+            }
+            throw new GlitrException(String.format("Cannot parse query %s %s", defaultString(humanMessage), query));
         }
     }
 

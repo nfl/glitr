@@ -273,17 +273,21 @@ public class TypeRegistry implements TypeResolver {
             inputType = new GraphQLNonNull(inputType);
         }
 
-        // Default values need to match type so we replace our default String with null
-        Object defaultValue = null;
-        if (!arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE)) {
-            defaultValue = arg.defaultValue();
+        Object defaultValueInput = arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE) ? null : arg.defaultValue();
+        if (defaultValueInput != null && arg.type().isEnum()) {
+            try {
+                defaultValueInput = Enum.valueOf(arg.type(), arg.defaultValue());
+            } catch (IllegalArgumentException iae) {
+                defaultValueInput = null;
+                logger.error("Invalid enum detected as defaultValue [" + arg.defaultValue() + "].  Defaulting to empty defaultValue.", iae);
+            }
         }
 
         return newArgument()
                 .name(arg.name())
                 .description(arg.description())
                 .type(inputType)
-                .defaultValue(defaultValue)
+                .defaultValue(defaultValueInput)
                 .build();
     }
 
@@ -448,11 +452,21 @@ public class TypeRegistry implements TypeResolver {
             inputType = new GraphQLNonNull(inputType);
         }
 
+        Object defaultValueInput = arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE) ? null : arg.defaultValue();
+        if (defaultValueInput != null && arg.type().isEnum()) {
+            try {
+                defaultValueInput = Enum.valueOf(arg.type(), arg.defaultValue());
+            } catch (IllegalArgumentException iae) {
+                defaultValueInput = null;
+                logger.error("Invalid enum detected as defaultValue [" + arg.defaultValue() + "].  Defaulting to empty defaultValue.", iae);
+            }
+        }
+
         return newArgument()
                 .name(arg.name())
                 .description(arg.description())
                 .type(inputType)
-                .defaultValue(arg.defaultValue().equalsIgnoreCase(GlitrArgument.NO_DEFAULT_VALUE) ? null : arg.defaultValue())
+                .defaultValue(defaultValueInput)
                 .build();
     }
 

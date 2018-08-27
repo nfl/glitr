@@ -234,7 +234,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("Cannot parse query {playLists{playListId}")
+            exception.getMessage().equals("Cannot parse query [@5,22:21='<EOF>',<EOF>,1:22] {playLists{playListId}")
 
         where:
             query = '''{playLists{playListId}'''.stripMargin()

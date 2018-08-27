@@ -132,7 +132,7 @@ public class QueryComplexityCalculator {
                 query = extractReturnQueryFromMutation(operationDefinition);
             }
         } catch (Exception e) {
-            logger.error("Cannot parse income query", e);
+            logger.error("Cannot parse inbound query", e);
         }
 
         return query.trim().length();

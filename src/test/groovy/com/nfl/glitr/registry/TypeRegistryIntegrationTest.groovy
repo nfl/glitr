@@ -40,7 +40,7 @@ class TypeRegistryIntegrationTest extends Specification {
         input.description == GlitrArgument.DEFAULT_DESCRIPTION
         input.type instanceof GraphQLNonNull
         def inputWrappedType = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
-        inputWrappedType.name == "ID"
+        inputWrappedType.name == "NonBlankID"
         inputWrappedType.description == "Built-in ID"
 
         // Nodes field
@@ -58,7 +58,7 @@ class TypeRegistryIntegrationTest extends Specification {
         input1.description == GlitrArgument.DEFAULT_DESCRIPTION
         input1.type instanceof GraphQLNonNull
         def inputWrappedType1 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
-        inputWrappedType1.name == "ID"
+        inputWrappedType1.name == "NonBlankID"
         inputWrappedType1.description == "Built-in ID"
 
         // Other Video field
@@ -87,7 +87,7 @@ class TypeRegistryIntegrationTest extends Specification {
         input3.description == GlitrArgument.DEFAULT_DESCRIPTION
         input3.type instanceof GraphQLNonNull
         def inputWrappedType3 = (GraphQLScalarType) ((GraphQLNonNull)input3.type).wrappedType
-        inputWrappedType3.name == "ID"
+        inputWrappedType3.name == "NonBlankID"
         inputWrappedType3.description == "Built-in ID"
 
         // Videos field
@@ -117,7 +117,7 @@ class TypeRegistryIntegrationTest extends Specification {
         input5.description == GlitrArgument.DEFAULT_DESCRIPTION
         input5.type instanceof GraphQLNonNull
         def inputWrappedType5 = (GraphQLScalarType) ((GraphQLNonNull)input.type).wrappedType
-        inputWrappedType5.name == "ID"
+        inputWrappedType5.name == "NonBlankID"
         inputWrappedType5.description == "Built-in ID"
 
         // ZZZ Videos field

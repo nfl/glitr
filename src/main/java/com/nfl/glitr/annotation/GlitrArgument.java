@@ -18,7 +18,11 @@ public @interface GlitrArgument {
 
     String name();
     Class type();
-    boolean nullable() default true;
+
+    int NULLABILITY_OPEN = 0;
+    int NULLABILITY_NON_NULL = 1;
+    int NULLABILITY_NON_BLANK = 2;
+    int nullability() default NULLABILITY_OPEN;
 
     String DEFAULT_DESCRIPTION = "";
     String description() default DEFAULT_DESCRIPTION;

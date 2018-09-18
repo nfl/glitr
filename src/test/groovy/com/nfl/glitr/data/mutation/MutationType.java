@@ -7,10 +7,12 @@ import com.nfl.glitr.registry.mutation.RelayMutationDataFetcher;
 import com.nfl.glitr.registry.mutation.RelayMutation;
 import graphql.schema.DataFetchingEnvironment;
 
+import static com.nfl.glitr.annotation.GlitrArgument.NULLABILITY_NON_NULL;
+
 public class MutationType {
 
     @GlitrDescription("Saves Info related to a video")
-    @GlitrArguments({@GlitrArgument(name = "input", type = VideoMutationInput.class, nullable = false, defaultValue = "{default input}")})
+    @GlitrArguments({@GlitrArgument(name = "input", type = VideoMutationInput.class, nullability = NULLABILITY_NON_NULL, defaultValue = "{default input}")})
     public VideoMutationPayload getSaveVideoInfoMutation(DataFetchingEnvironment env) {
         SaveVideoInfo saveVideoInfo = new SaveVideoInfo();
         RelayMutationDataFetcher relayMutationDataFetcher = new RelayMutationDataFetcher(VideoMutationInput.class, saveVideoInfo);

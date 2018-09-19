@@ -384,7 +384,7 @@ public class TypeRegistry implements TypeResolver {
         }
 
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
-        if (arg.nullability() == NON_NULL) {
+        if (arg.nullability() == NON_NULL || arg.nullability() == NON_BLANK) {
             inputType = new GraphQLNonNull(inputType);
         }
 
@@ -563,7 +563,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLArgument getGraphQLArgument(GlitrArgument arg) {
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name(), ImmutableMap.of(ARG_NULLABILITY, arg.nullability(), ARG_VIEW_ARGUMENT, true));
 
-        if (arg.nullability() == NON_NULL || arg.name().equals("id")) {
+        if (arg.nullability() == NON_NULL || arg.nullability() == NON_BLANK || arg.name().equals("id")) {
             inputType = new GraphQLNonNull(inputType);
         }
 

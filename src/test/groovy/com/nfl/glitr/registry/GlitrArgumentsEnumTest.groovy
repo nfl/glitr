@@ -23,7 +23,7 @@ class GlitrArgumentsEnumTest extends Specification {
         when:
             GraphQLObjectType type = (GraphQLObjectType) glitr.typeRegistry.lookup(QueryRoot.class)
         then: "Video has empty default value"
-            type.getFieldDefinition("defaultVideo").getArgument("video_default").getType() instanceof GraphQLScalarType
+            type.getFieldDefinition("defaultVideo").getArgument("video_default").getType() instanceof GraphQLNonNull
             type.getFieldDefinition("defaultVideo").getArgument("video_default").defaultValue == null;
         then: "Video has non-enum default value"
             ((GraphQLNonNull) type.getFieldDefinition("nonEnumVideo").getArgument("video_non_enum").getType()).wrappedType instanceof GraphQLScalarType

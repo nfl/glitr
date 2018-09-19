@@ -7,7 +7,7 @@ import com.nfl.glitr.annotation.GlitrQueryComplexity;
 
 import java.util.List;
 
-import static com.nfl.glitr.annotation.GlitrArgument.NULLABILITY_NON_NULL;
+import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_NULL;
 
 public class QueryType {
 
@@ -16,17 +16,17 @@ public class QueryType {
         return null;
     }
 
-    @GlitrArgument(name = "id", type = String.class , nullability = NULLABILITY_NON_NULL)
+    @GlitrArgument(name = "id", type = String.class , nullability = NON_NULL)
     public Video getVideo() {
         return null;
     }
 
-    @GlitrArgument(name = "id", type = String.class, nullability = NULLABILITY_NON_NULL)
+    @GlitrArgument(name = "id", type = String.class, nullability = NON_NULL)
     public com.nfl.glitr.relay.Node getNode() {
         return null;
     }
 
-    @GlitrArgument(name = "ids", type = String[].class, nullability = NULLABILITY_NON_NULL)
+    @GlitrArgument(name = "ids", type = String[].class, nullability = NON_NULL)
     public List<com.nfl.glitr.relay.Node> getNodes() {
         return null;
     }
@@ -36,7 +36,7 @@ public class QueryType {
         return null;
     }
 
-    @GlitrArgument(name = "ids", type = String[].class, nullability = NULLABILITY_NON_NULL)
+    @GlitrArgument(name = "ids", type = String[].class, nullability = NON_NULL)
     public List<com.nfl.glitr.relay.Node> getZZZNodes() {
         return null;
     }

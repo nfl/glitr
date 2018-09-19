@@ -19,14 +19,15 @@ public @interface GlitrArgument {
     String name();
     Class type();
 
-    int NULLABILITY_OPEN = 0;
-    int NULLABILITY_NON_NULL = 1;
-    int NULLABILITY_NON_BLANK = 2;
-    int nullability() default NULLABILITY_OPEN;
+    nullability nullability() default nullability.OPEN;
 
     String DEFAULT_DESCRIPTION = "";
     String description() default DEFAULT_DESCRIPTION;
 
     String NO_DEFAULT_VALUE = "No Default Value";
     String defaultValue() default NO_DEFAULT_VALUE;
+
+    enum nullability {
+        OPEN, NON_NULL, NON_BLANK
+    }
 }

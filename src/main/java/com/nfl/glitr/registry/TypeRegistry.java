@@ -39,6 +39,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_BLANK;
+import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_NULL;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
@@ -382,7 +384,7 @@ public class TypeRegistry implements TypeResolver {
         }
 
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
-        if (arg.nullability() == GlitrArgument.NULLABILITY_NON_NULL) {
+        if (arg.nullability() == NON_NULL) {
             inputType = new GraphQLNonNull(inputType);
         }
 
@@ -561,7 +563,7 @@ public class TypeRegistry implements TypeResolver {
     private GraphQLArgument getGraphQLArgument(GlitrArgument arg) {
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name(), ImmutableMap.of(ARG_NULLABILITY, arg.nullability(), ARG_VIEW_ARGUMENT, true));
 
-        if (arg.nullability() == GlitrArgument.NULLABILITY_NON_NULL || arg.name().equals("id")) {
+        if (arg.nullability() == NON_NULL || arg.name().equals("id")) {
             inputType = new GraphQLNonNull(inputType);
         }
 
@@ -731,7 +733,7 @@ public class TypeRegistry implements TypeResolver {
             return Optional.of(GraphQLID);
         } else if (type == Integer.class || type == int.class) {
             return Optional.of(GraphQLInt);
-        } else if (type == String.class && Optional.ofNullable(args).map(x -> ((Integer)x.get(ARG_NULLABILITY)) == GlitrArgument.NULLABILITY_NON_BLANK).orElse(false)) {
+        } else if (type == String.class && Optional.ofNullable(args).map(x -> x.get(ARG_NULLABILITY) == NON_BLANK).orElse(false)) {
             return Optional.of(GraphQLNonBlankString);
         } else if (type == String.class) {
             return Optional.of(GraphQLString);

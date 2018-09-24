@@ -16,17 +16,17 @@ public class QueryType {
         return null;
     }
 
-    @GlitrArgument(name = "id", type = String.class , nullability = NON_NULL)
+    @GlitrArgument(name = "id", type = String.class, required = true)
     public Video getVideo() {
         return null;
     }
 
-    @GlitrArgument(name = "id", type = String.class, nullability = NON_NULL)
+    @GlitrArgument(name = "id", type = String.class, required = true)
     public com.nfl.glitr.relay.Node getNode() {
         return null;
     }
 
-    @GlitrArgument(name = "ids", type = String[].class, nullability = NON_NULL)
+    @GlitrArgument(name = "ids", type = String[].class, required = true)
     public List<com.nfl.glitr.relay.Node> getNodes() {
         return null;
     }
@@ -36,7 +36,7 @@ public class QueryType {
         return null;
     }
 
-    @GlitrArgument(name = "ids", type = String[].class, nullability = NON_NULL)
+    @GlitrArgument(name = "ids", type = String[].class, required = true)
     public List<com.nfl.glitr.relay.Node> getZZZNodes() {
         return null;
     }

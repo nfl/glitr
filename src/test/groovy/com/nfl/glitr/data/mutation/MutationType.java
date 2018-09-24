@@ -3,16 +3,14 @@ package com.nfl.glitr.data.mutation;
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrArguments;
 import com.nfl.glitr.annotation.GlitrDescription;
-import com.nfl.glitr.registry.mutation.RelayMutationDataFetcher;
 import com.nfl.glitr.registry.mutation.RelayMutation;
+import com.nfl.glitr.registry.mutation.RelayMutationDataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-
-import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_NULL;
 
 public class MutationType {
 
     @GlitrDescription("Saves Info related to a video")
-    @GlitrArguments({@GlitrArgument(name = "input", type = VideoMutationInput.class, nullability = NON_NULL, defaultValue = "{default input}")})
+    @GlitrArguments({@GlitrArgument(name = "input", type = VideoMutationInput.class, required = true, defaultValue = "{default input}")})
     public VideoMutationPayload getSaveVideoInfoMutation(DataFetchingEnvironment env) {
         SaveVideoInfo saveVideoInfo = new SaveVideoInfo();
         RelayMutationDataFetcher relayMutationDataFetcher = new RelayMutationDataFetcher(VideoMutationInput.class, saveVideoInfo);

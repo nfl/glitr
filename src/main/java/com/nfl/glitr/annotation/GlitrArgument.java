@@ -3,13 +3,16 @@ package com.nfl.glitr.annotation;
 import java.lang.annotation.*;
 
 /**
+ * <pre>
  * Identifies and defines the GraphQL arguments available for a given field
  *
- *         name: name of the GraphQL argument
+ *  name: name of the GraphQL argument
  *         type: Java Class for the argument
- *     nullable: whether the GraphQL argument is optional
+ *     required: whether the GraphQL argument is optional
+ *  nullability: flag that doesn't have an any glitr level support and is designed to be used on the client endpoint
  * defaultValue: default value
  *  description: description
+ * </pre>
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -19,6 +22,7 @@ public @interface GlitrArgument {
     String name();
     Class type();
 
+    boolean required() default false;
     nullability nullability() default nullability.OPEN;
 
     String DEFAULT_DESCRIPTION = "";

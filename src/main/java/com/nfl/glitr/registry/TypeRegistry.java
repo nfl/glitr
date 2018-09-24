@@ -1,6 +1,5 @@
 package com.nfl.glitr.registry;
 
-import com.google.common.collect.ImmutableMap;
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
 import com.nfl.glitr.annotation.GlitrDescription;
@@ -16,11 +15,7 @@ import com.nfl.glitr.relay.Node;
 import com.nfl.glitr.relay.Relay;
 import com.nfl.glitr.util.ReflectionUtil;
 import graphql.TypeResolutionEnvironment;
-import graphql.language.IntValue;
-import graphql.language.StringValue;
 import graphql.schema.*;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +34,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_BLANK;
-import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_NULL;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
@@ -55,114 +48,6 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class TypeRegistry implements TypeResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
-
-    private static final String ARG_NULLABILITY = "nullability";
-    private static final String ARG_VIEW_ARGUMENT = "viewArgument";
-    private static final GraphQLScalarType GraphQLNonBlankString = new GraphQLScalarType("NonBlankString", "Built-in Non Blank String", new Coercing<String, String>() {
-        @Override
-        public String serialize(Object input) {
-            if (StringUtils.isBlank((String) input)) {
-                throw new CoercingSerializeException(
-                        "Expected non blank 'StrValue'."
-                );
-            }
-            return input.toString();
-        }
-
-        @Override
-        public String parseValue(Object input) {
-            if (StringUtils.isBlank((CharSequence) input)) {
-                throw new CoercingParseValueException(
-                        "Expected non blank 'StrValue'."
-                );
-            }
-            return serialize(input);
-        }
-
-        @Override
-        public String parseLiteral(Object input) {
-            if (!(input instanceof StringValue)) {
-                throw new CoercingParseLiteralException(
-                        "Expected AST type 'StrValue' but was '" + typeName(input) + "'."
-                );
-            }
-            if (StringUtils.isBlank(((StringValue) input).getValue())) {
-                throw new CoercingParseLiteralException(
-                        "Expected non blank 'StrValue'."
-                );
-            }
-            return ((StringValue) input).getValue();
-        }
-    });
-    public static final GraphQLScalarType GraphQLNonBlankID = new GraphQLScalarType("NonBlankID", "Built-in ID", new Coercing<Object, Object>() {
-
-        private String convertImpl(Object input) {
-            if (input instanceof String) {
-                return (String) input;
-            }
-            if (input instanceof Integer) {
-                return String.valueOf(input);
-            }
-            if (input instanceof Long) {
-                return String.valueOf(input);
-            }
-            if (input instanceof UUID) {
-                return String.valueOf(input);
-            }
-            return null;
-
-        }
-
-        @Override
-        public String serialize(Object input) {
-            String result = convertImpl(input);
-            if (result == null) {
-                throw new CoercingSerializeException(
-                        "Expected type 'ID' but was '" + typeName(input) + "'."
-                );
-            }
-            if (StringUtils.isBlank(result)) {
-                throw new CoercingSerializeException(
-                        "Expected non blank 'ID'."
-                );
-            }
-            return result;
-        }
-
-        @Override
-        public String parseValue(Object input) {
-            String result = convertImpl(input);
-            if (result == null) {
-                throw new CoercingParseValueException(
-                        "Expected type 'ID' but was '" + typeName(input) + "'."
-                );
-            }
-            if (StringUtils.isBlank(result)) {
-                throw new CoercingParseValueException(
-                        "Expected non blank 'ID'."
-                );
-            }
-            return result;
-        }
-
-        @Override
-        public String parseLiteral(Object input) {
-            if (input instanceof StringValue) {
-                if (StringUtils.isBlank(((StringValue) input).getValue())) {
-                    throw new CoercingParseLiteralException(
-                            "Expected non blank 'ID'."
-                    );
-                }
-                return ((StringValue) input).getValue();
-            }
-            if (input instanceof IntValue) {
-                return ((IntValue) input).getValue().toString();
-            }
-            throw new CoercingParseLiteralException(
-                    "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
-            );
-        }
-    });
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
@@ -384,7 +269,7 @@ public class TypeRegistry implements TypeResolver {
         }
 
         GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
-        if (arg.nullability() == NON_NULL || arg.nullability() == NON_BLANK) {
+        if (arg.required()) {
             inputType = new GraphQLNonNull(inputType);
         }
 
@@ -561,9 +446,9 @@ public class TypeRegistry implements TypeResolver {
     }
 
     private GraphQLArgument getGraphQLArgument(GlitrArgument arg) {
-        GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name(), ImmutableMap.of(ARG_NULLABILITY, arg.nullability(), ARG_VIEW_ARGUMENT, true));
+        GraphQLInputType inputType = (GraphQLInputType) convertToGraphQLInputType(arg.type(), arg.name());
 
-        if (arg.nullability() == NON_NULL || arg.nullability() == NON_BLANK || arg.name().equals("id")) {
+        if (arg.required() || arg.name().equals("id")) {
             inputType = new GraphQLNonNull(inputType);
         }
 
@@ -713,10 +598,6 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public Optional<GraphQLType> detectScalar(Type type, String name) {
-        return detectScalar(type, name, null);
-    }
-
-    public Optional<GraphQLType> detectScalar(Type type, String name, Map<String, Object> args) {
         // users can register their own GraphQLScalarTypes for given Java types
         if (type instanceof ParameterizedType) {
             type = ((ParameterizedType)type).getRawType();
@@ -727,14 +608,10 @@ public class TypeRegistry implements TypeResolver {
         }
         // Default scalars
         // `id` keyword is magical, always return this.
-        else if (name != null && name.equals("id") && Optional.ofNullable(args).map(x -> BooleanUtils.isTrue((Boolean) x.get(ARG_VIEW_ARGUMENT))).orElse(false)) {
-            return Optional.of(GraphQLNonBlankID);
-        } else if (name != null && name.equals("id")) {
+        else if (name != null && name.equals("id")) {
             return Optional.of(GraphQLID);
         } else if (type == Integer.class || type == int.class) {
             return Optional.of(GraphQLInt);
-        } else if (type == String.class && Optional.ofNullable(args).map(x -> x.get(ARG_NULLABILITY) == NON_BLANK).orElse(false)) {
-            return Optional.of(GraphQLNonBlankString);
         } else if (type == String.class) {
             return Optional.of(GraphQLString);
         } else if (type == Boolean.class || type == boolean.class) {
@@ -755,11 +632,7 @@ public class TypeRegistry implements TypeResolver {
     }
 
     public GraphQLType convertToGraphQLInputType(Type type, String name) {
-        return convertToGraphQLInputType(type, name, null);
-    }
-
-    public GraphQLType convertToGraphQLInputType(Type type, String name, Map<String, Object> args) {
-        Optional<GraphQLType> scalarType = detectScalar(type, name, args);
+        Optional<GraphQLType> scalarType = detectScalar(type, name);
         if (scalarType.isPresent()) {
             return scalarType.get();
         }
@@ -789,13 +662,5 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<String, GraphQLType> getNameRegistry() {
         return nameRegistry;
-    }
-
-    private static String typeName(Object input) {
-        if (input == null) {
-            return "null";
-        }
-
-        return input.getClass().getSimpleName();
     }
 }

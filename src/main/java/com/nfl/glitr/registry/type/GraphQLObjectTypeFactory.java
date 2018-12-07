@@ -1,5 +1,6 @@
 package com.nfl.glitr.registry.type;
 
+import com.nfl.glitr.annotation.GlitrDeprecated;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
@@ -157,6 +158,8 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
             metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
         });
 
+        Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
@@ -164,8 +167,8 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
                 .type(typeRegistry.retrieveGraphQLOutputType(declaringClass, method))
                 .argument(typeRegistry.retrieveArguments(declaringClass, method))
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
+                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
                 // TODO: static value
-                // TODO: deprecation reason
                 .build();
     }
 }

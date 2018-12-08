@@ -1,6 +1,7 @@
 package com.nfl.glitr.registry.type;
 
 import com.googlecode.gentyref.GenericTypeReflector;
+import com.nfl.glitr.annotation.GlitrDeprecated;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
@@ -95,12 +96,15 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
             metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
         });
 
+        Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
                 .dataFetcher(CompositeDataFetcherFactory.create(Collections.singletonList(new PropertyDataFetcher(name))))
                 .type((GraphQLOutputType) type)
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
+                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
                 .build();
     }
 }

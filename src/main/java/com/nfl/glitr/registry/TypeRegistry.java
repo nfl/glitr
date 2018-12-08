@@ -2,6 +2,7 @@ package com.nfl.glitr.registry;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 import com.nfl.glitr.annotation.GlitrArgument;
+import com.nfl.glitr.annotation.GlitrDeprecated;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.exception.GlitrException;
@@ -237,6 +238,8 @@ public class TypeRegistry implements TypeResolver {
             metaDefinitions.add(new GlitrMetaDefinition(COMPLEXITY_IGNORE_KEY, queryComplexity.ignore()));
         });
 
+        Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
@@ -245,7 +248,7 @@ public class TypeRegistry implements TypeResolver {
                 .dataFetcher(dataFetcher)
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 // TODO: static value
-                // TODO: deprecation reason
+                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
                 .build();
     }
 

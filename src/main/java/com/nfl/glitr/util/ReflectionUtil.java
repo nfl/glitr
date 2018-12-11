@@ -8,6 +8,8 @@ import graphql.schema.DataFetchingEnvironment;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,13 +170,24 @@ public class ReflectionUtil {
         return field;
     }
 
+    /**
+     * Returns {@code Optional} instance by reflect and query method or field for the specified {@code Annotation}.
+     * This method support {@code Annotation} declared in superclass/interfaces
+     *
+     * @param declaringClass - the {@link Class} to reflect
+     * @param method - the {@link Method} to query
+     * @param aClass - the {@link Annotation} class to check
+     * @param <A> - annotation type
+     * @return - {@code Optional} contains annotation, or empty if not found
+     */
     public static <A extends Annotation> Optional<A> getAnnotationOfMethodOrField(Class declaringClass, Method method, Class<A> aClass) {
-        String fieldName = ReflectionUtil.sanitizeMethodName(method.getName());
-        Field field = ReflectionUtil.getFieldByName(declaringClass, fieldName);
-
-        A annotation = method.getAnnotation(aClass);
-        if (annotation == null && field != null) {
-            annotation = field.getAnnotation(aClass);
+        A annotation = MethodUtils.getAnnotation(method, aClass, true, true);
+        if (annotation == null) {
+            String fieldName = ReflectionUtil.sanitizeMethodName(method.getName());
+            Field field = FieldUtils.getField(declaringClass, fieldName, true);
+            if (field != null) {
+                annotation = field.getAnnotation(aClass);
+            }
         }
 
         return Optional.ofNullable(annotation);

@@ -1,6 +1,7 @@
 package com.nfl.glitr.util
 
 import com.nfl.glitr.annotation.GlitrDeprecated
+import com.nfl.glitr.annotation.GlitrDescription
 import com.nfl.glitr.annotation.GlitrIgnore
 import org.apache.commons.lang3.reflect.MethodUtils
 import spock.lang.Specification
@@ -44,6 +45,7 @@ class ReflectionUtilTest extends Specification {
     }
 
     abstract class AbstractContentTest  {
+        @GlitrDescription("Test description declared in abstract class")
         @GlitrDeprecated("Test @GlitrDeprecated. This field is being deprecated.")
         //default private scope
         String description
@@ -65,6 +67,7 @@ class ReflectionUtilTest extends Specification {
     }
 
     class Video extends AbstractContentTest{
+        @GlitrDescription("Test description")
         @GlitrDeprecated("Test @GlitrDeprecated. This field is private")
         private title;
 
@@ -170,5 +173,18 @@ class ReflectionUtilTest extends Specification {
 
             privateFieldAnnotation.isPresent() == true
             publicFieldAnnotation.isPresent() == true
+    }
+
+    def "test getDescriptionFromAnnotatedField on Annotation declared in both child and super class"() {
+        setup :
+            Method descriptionMethod = MethodUtils.getAccessibleMethod(Video.class, "getDescription", null);
+            Method titleMethod = MethodUtils.getAccessibleMethod(Video.class, "getTitle", null);
+        when :
+            String descriptionAnnoDeclaredInParent = ReflectionUtil.getDescriptionFromAnnotatedField(Video.class, descriptionMethod);
+            String descriptionAnnoDeclaredInChild = ReflectionUtil.getDescriptionFromAnnotatedField(Video.class, titleMethod);
+
+        then :
+            descriptionAnnoDeclaredInParent == "Test description declared in abstract class"
+            descriptionAnnoDeclaredInChild == "Test description"
     }
 }

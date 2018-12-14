@@ -66,7 +66,7 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
         if (description != null && description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
-            ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
+            description = ReflectionUtil.getDescriptionFromAnnotatedField(clazz, method);
         }
 
         Type fieldType = GenericTypeReflector.getExactReturnType(method, clazz);

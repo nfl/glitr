@@ -215,7 +215,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.description == "Identifiable interface needed for Relay"
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "id"
-        fieldDef.description == GlitrDescription.DEFAULT_DESCRIPTION
+        fieldDef.description != GlitrDescription.DEFAULT_DESCRIPTION
         fieldDef.type instanceof GraphQLNonNull
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType
@@ -234,7 +234,7 @@ class TypeRegistryIntegrationTest extends Specification {
         type.description == "Identifiable interface needed for Relay"
         def fieldDef = type.fieldDefinitions[0]
         fieldDef.name == "id"
-        fieldDef.description == GlitrDescription.DEFAULT_DESCRIPTION
+        fieldDef.description != GlitrDescription.DEFAULT_DESCRIPTION
         fieldDef.type instanceof GraphQLNonNull
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType

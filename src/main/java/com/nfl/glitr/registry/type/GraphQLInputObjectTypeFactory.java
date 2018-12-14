@@ -62,7 +62,7 @@ public class GraphQLInputObjectTypeFactory implements DelegateTypeFactory {
         String name = ReflectionUtil.sanitizeMethodName(method.getName());
         String description = ReflectionUtil.getDescriptionFromAnnotatedElement(method);
         if (description != null && description.equals(GlitrDescription.DEFAULT_DESCRIPTION)) {
-            ReflectionUtil.getDescriptionFromAnnotatedField(declaringClass, method);
+            description = ReflectionUtil.getDescriptionFromAnnotatedField(declaringClass, method);
         }
 
         GraphQLType graphQLType = typeRegistry.convertToGraphQLInputType(GenericTypeReflector.getExactReturnType(method, declaringClass), name);

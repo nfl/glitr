@@ -231,9 +231,9 @@ public class ReflectionUtil {
 
     public static String getDescriptionFromAnnotatedField(Class clazz, Method method) {
         try {
-            Field field = clazz.getDeclaredField(ReflectionUtil.sanitizeMethodName(method.getName()));
+            Field field = FieldUtils.getField(clazz, ReflectionUtil.sanitizeMethodName(method.getName()), true);
             return ReflectionUtil.getDescriptionFromAnnotatedElement(field);
-        } catch (NoSuchFieldException e) {
+        } catch (Exception e) {
             logger.debug("Could not find a Field associated to the Method [{}]", method.getName());
         }
         return null;

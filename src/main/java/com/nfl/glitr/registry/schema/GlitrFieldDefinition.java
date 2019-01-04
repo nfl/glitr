@@ -1,10 +1,8 @@
 package com.nfl.glitr.registry.schema;
 
-import graphql.language.Directive;
-import graphql.language.FieldDefinition;
-import graphql.language.InputValueDefinition;
-import graphql.language.Type;
+import graphql.language.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,25 +13,16 @@ public class GlitrFieldDefinition extends FieldDefinition {
 
 
     public GlitrFieldDefinition(String name) {
-        super(name);
+        this(name, new TypeName(name));
     }
 
     public GlitrFieldDefinition(String name, Set<GlitrMetaDefinition> metaDefinitions) {
-        super(name);
+        this(name);
         this.metaDefinitions = metaDefinitions;
     }
 
     public GlitrFieldDefinition(String name, Type type) {
         super(name, type);
-    }
-
-    public GlitrFieldDefinition(String name, Type type, List<InputValueDefinition> inputValueDefinitions, List<Directive> directives) {
-        super(name, type, inputValueDefinitions, directives);
-    }
-
-    public GlitrFieldDefinition(String name, Type type, List<InputValueDefinition> inputValueDefinitions, List<Directive> directives, Set<GlitrMetaDefinition> metaDefinitions) {
-        super(name, type, inputValueDefinitions, directives);
-        this.metaDefinitions = metaDefinitions;
     }
 
     public Set<GlitrMetaDefinition> getMetaDefinitions() {

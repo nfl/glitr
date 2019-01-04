@@ -94,9 +94,9 @@ public class ReflectionUtil {
      */
     public static String sanitizeMethodName(String name) {
         String sanitized;
-        if (name.startsWith("is")) {
+        if (name.startsWith("is") && name.length() > 2) {
             sanitized = name.substring(2);
-        } else if (name.startsWith("get")) {
+        } else if (name.startsWith("get") && name.length() > 3) {
             sanitized = name.substring(3);
         } else {
             sanitized = name;

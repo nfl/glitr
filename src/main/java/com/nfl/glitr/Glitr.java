@@ -96,14 +96,16 @@ public class Glitr {
                     .mutation(mutationType)
                     .subscription(subscriptionType)
                     .fieldVisibility(fieldVisibility)
-                    .build(typeRegistry.getTypeDictionary());
+                    .additionalTypes(typeRegistry.getTypeDictionary())
+                    .build();
         }
 
         return GraphQLSchema.newSchema()
                 .query(queryType)
                 .mutation(mutationType)
                 .subscription(subscriptionType)
-                .build(typeRegistry.getTypeDictionary());
+                .additionalTypes(typeRegistry.getTypeDictionary())
+                .build();
     }
 
     public GraphQLSchema reloadSchema(Class queryRoot, Class mutationRoot, Class subscriptionRoot, GraphqlFieldVisibility fieldVisibility) {

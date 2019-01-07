@@ -5,7 +5,7 @@ import com.nfl.glitr.annotation.GlitrDeprecated;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
-import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
+import com.nfl.glitr.registry.datafetcher.query.CompositeDataFetcherFactory;
 import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
 import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.util.ReflectionUtil;

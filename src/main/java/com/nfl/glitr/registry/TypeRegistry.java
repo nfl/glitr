@@ -38,7 +38,9 @@ import java.util.stream.Collectors;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.*;
+import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
@@ -65,11 +67,13 @@ public class TypeRegistry implements TypeResolver {
     private Relay relay;
     private boolean explicitRelayNodeScanEnabled;
 
+    private GraphQLCodeRegistry.Builder codeRegistryBuilder = newCodeRegistry();
+
     private GraphQLTypeFactory graphQLTypeFactory = new GraphQLTypeFactory()
             .withOutputTypeFactory(new GraphQLEnumTypeFactory(), JavaType.ENUM)
-            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this), JavaType.INTERFACE)
-            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this), JavaType.ABSTRACT_CLASS)
-            .withOutputTypeFactory(new GraphQLObjectTypeFactory(this), JavaType.CLASS)
+            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this, codeRegistryBuilder), JavaType.INTERFACE)
+            .withOutputTypeFactory(new GraphQLInterfaceTypeFactory(this, codeRegistryBuilder), JavaType.ABSTRACT_CLASS)
+            .withOutputTypeFactory(new GraphQLObjectTypeFactory(this, codeRegistryBuilder), JavaType.CLASS)
             .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
@@ -203,9 +207,10 @@ public class TypeRegistry implements TypeResolver {
                 .map(pair -> getGraphQLFieldDefinition(clazz, pair))
                 .collect(Collectors.toList());
 
-        if (fields.size() == 0) {
+        if (fields.isEmpty()) {
             // GraphiQL doesn't like objects with no fields, so add an unused field to be safe
-            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).staticValue(false).build());
+            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).build());
+            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), "unused_fields_dead_object"), DataFetcherFactories.useDataFetcher(env -> false));
         }
 
         GraphQLObjectType.Builder builder = newObject()
@@ -240,15 +245,16 @@ public class TypeRegistry implements TypeResolver {
 
         Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
 
+        codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), name), dataFetcher);
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
                 .type(retrieveGraphQLOutputType(declaringClass, method))
                 .argument(createRelayInputArgument(declaringClass, method))
-                .dataFetcher(dataFetcher)
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 // TODO: static value
-                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
+                .deprecate(glitrDeprecated.map(GlitrDeprecated::value).orElse(null))
                 .build();
     }
 
@@ -665,5 +671,9 @@ public class TypeRegistry implements TypeResolver {
 
     public Map<String, GraphQLType> getNameRegistry() {
         return nameRegistry;
+    }
+
+    public GraphQLCodeRegistry.Builder getCodeRegistryBuilder() {
+        return codeRegistryBuilder;
     }
 }

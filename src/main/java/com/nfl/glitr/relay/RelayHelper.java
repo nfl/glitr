@@ -1,20 +1,12 @@
 package com.nfl.glitr.relay;
 
 import com.nfl.glitr.registry.TypeRegistry;
-import graphql.relay.ConnectionCursor;
-import graphql.relay.DefaultConnection;
-import graphql.relay.DefaultConnectionCursor;
-import graphql.relay.DefaultEdge;
-import graphql.relay.Edge;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
+import graphql.relay.*;
+import graphql.schema.*;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +57,7 @@ public class RelayHelper {
         boolean hasPreviousPage = skipItems > 0 && totalCount > 0;
         boolean hasNextPage = skipItems + edges.size() + 1 < totalCount;
 
-        if (edges.size() > 0) {
+        if (!edges.isEmpty()) {
             Edge firstEdge = edges.get(0);
             Edge lastEdge = edges.get(edges.size() - 1);
             startCursor = firstEdge.getCursor();
@@ -96,11 +88,7 @@ public class RelayHelper {
         }
 
         public static String toBase64(String string) {
-            try {
-                return DatatypeConverter.printBase64Binary(string.getBytes("utf-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            return DatatypeConverter.printBase64Binary(string.getBytes(StandardCharsets.UTF_8));
         }
 
         public static String fromBase64(String string) {

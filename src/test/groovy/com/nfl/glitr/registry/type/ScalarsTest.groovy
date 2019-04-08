@@ -16,6 +16,7 @@ import java.time.ZonedDateTime
 
 public class ScalarsTest extends Specification {
 
+    @Unroll
     def "DateTime parse literal"() {
         expect:
             Scalars.GraphQLDateTime.getCoercing().parseLiteral(literal) == result
@@ -24,9 +25,11 @@ public class ScalarsTest extends Specification {
             literal                                     | result
             new StringValue("2016-01-08T00:32:09.132Z") | Instant.parse("2016-01-08T00:32:09.132Z")
             new StringValue("2016-01-08T00:32:09.132Z") | ZonedDateTime.parse("2016-01-08T00:32:09.132Z").toInstant()
+            new StringValue("2016-01-08")               | Instant.parse("2016-01-08T00:00:00.000Z")
             null                                        | null
     }
 
+    @Unroll
     def "DateTime serialize/parseValue object"() {
         expect:
             Scalars.GraphQLDateTime.getCoercing().serialize(value) == result
@@ -38,6 +41,7 @@ public class ScalarsTest extends Specification {
             Instant.ofEpochMilli(1454362550000l)            | "2016-02-01T21:35:50.000Z"
             ZonedDateTime.parse("2016-01-08T00:32:09.132Z") | "2016-01-08T00:32:09.132Z"
             "2016-01-08T00:32:09.132Z"                      | "2016-01-08T00:32:09.132Z"
+            "2016-01-08"                                    | "2016-01-08T00:00:00.000Z"
             null                                            | null
     }
 
@@ -53,7 +57,7 @@ public class ScalarsTest extends Specification {
             e.getMessage() == "Failed to parse/serialize GraphQLDateTime with value " + input + ". Value likely of an unsupported format."
     }
 
-
+    @Unroll
     def "Date parse literal"() {
         expect:
             Scalars.GraphQLDate.getCoercing().parseLiteral(literal) == result
@@ -64,6 +68,7 @@ public class ScalarsTest extends Specification {
             null                          | null
     }
 
+    @Unroll
     def "Date serialize/parseValue object"() {
         expect:
             Scalars.GraphQLDate.getCoercing().serialize(value) == result

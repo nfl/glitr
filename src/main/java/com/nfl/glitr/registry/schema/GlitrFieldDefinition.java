@@ -1,9 +1,10 @@
 package com.nfl.glitr.registry.schema;
 
-import graphql.language.FieldDefinition;
-import graphql.language.Type;
+import graphql.language.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class GlitrFieldDefinition extends FieldDefinition {
@@ -11,18 +12,17 @@ public class GlitrFieldDefinition extends FieldDefinition {
     private Set<GlitrMetaDefinition> metaDefinitions = new HashSet<>();
 
 
-    public GlitrFieldDefinition(String name, Type type) {
-        super(name, type);
+    public GlitrFieldDefinition(String name) {
+        this(name, new TypeName(name));
     }
 
     public GlitrFieldDefinition(String name, Set<GlitrMetaDefinition> metaDefinitions) {
-        super(name, null);
+        this(name);
         this.metaDefinitions = metaDefinitions;
     }
 
-    public GlitrFieldDefinition(String name, Type type, Set<GlitrMetaDefinition> metaDefinitions) {
+    public GlitrFieldDefinition(String name, Type type) {
         super(name, type);
-        this.metaDefinitions = metaDefinitions;
     }
 
     public Set<GlitrMetaDefinition> getMetaDefinitions() {

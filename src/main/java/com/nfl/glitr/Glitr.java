@@ -4,7 +4,6 @@ import com.nfl.glitr.calculator.QueryComplexityCalculator;
 import com.nfl.glitr.registry.TypeRegistry;
 import com.nfl.glitr.relay.RelayHelper;
 import com.nfl.glitr.util.ObjectMapper;
-import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -16,27 +15,24 @@ import static java.util.Objects.nonNull;
 
 public class Glitr {
 
-    private final TypeRegistry typeRegistry;
-    private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
-    private final RelayHelper relayHelper;
+    private TypeRegistry typeRegistry;
+    private RelayHelper relayHelper;
     private GraphQLSchema schema;
     private QueryComplexityCalculator queryComplexityCalculator;
     private static ObjectMapper objectMapper;
 
 
     public Glitr(TypeRegistry typeRegistry,
-                 GraphQLCodeRegistry.Builder codeRegistryBuilder,
                  Class queryRoot,
                  @Nullable GraphqlFieldVisibility fieldVisibility,
                  @Nullable ObjectMapper objectMapper,
                  @Nullable Class mutationRoot,
                  @Nullable Class subscriptionRoot,
                  @Nullable QueryComplexityCalculator queryComplexityCalculator) {
-        this(typeRegistry, codeRegistryBuilder, queryRoot, fieldVisibility, objectMapper, null, mutationRoot, subscriptionRoot, queryComplexityCalculator);
+        this(typeRegistry, queryRoot, fieldVisibility, objectMapper, null, mutationRoot, subscriptionRoot, queryComplexityCalculator);
     }
 
     public Glitr(TypeRegistry typeRegistry,
-                 GraphQLCodeRegistry.Builder codeRegistryBuilder,
                  Class queryRoot,
                  @Nullable GraphqlFieldVisibility fieldVisibility,
                  @Nullable ObjectMapper objectMapper,
@@ -44,9 +40,9 @@ public class Glitr {
                  @Nullable Class mutationRoot,
                  @Nullable Class subscriptionRoot,
                  @Nullable QueryComplexityCalculator queryComplexityCalculator) {
-        this.codeRegistryBuilder = assertNotNull(codeRegistryBuilder, "codeRegistryBuilder can't be null");
-        this.typeRegistry = assertNotNull(typeRegistry, "TypeRegistry can't be null");
+        assertNotNull(typeRegistry, "TypeRegistry can't be null");
         assertNotNull(queryRoot, "queryRoot class can't be null");
+        this.typeRegistry = typeRegistry;
         this.relayHelper = relayHelper;
 
         Glitr.objectMapper = objectMapper;
@@ -95,14 +91,12 @@ public class Glitr {
         GraphQLObjectType queryType = (GraphQLObjectType) typeRegistry.lookup(queryRoot);
 
         if (fieldVisibility != null) {
-            codeRegistryBuilder.fieldVisibility(fieldVisibility);
-
             return GraphQLSchema.newSchema()
                     .query(queryType)
                     .mutation(mutationType)
                     .subscription(subscriptionType)
+                    .fieldVisibility(fieldVisibility)
                     .additionalTypes(typeRegistry.getTypeDictionary())
-                    .codeRegistry(codeRegistryBuilder.build())
                     .build();
         }
 
@@ -111,7 +105,6 @@ public class Glitr {
                 .mutation(mutationType)
                 .subscription(subscriptionType)
                 .additionalTypes(typeRegistry.getTypeDictionary())
-                .codeRegistry(codeRegistryBuilder.build())
                 .build();
     }
 

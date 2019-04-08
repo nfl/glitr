@@ -220,7 +220,8 @@ class TypeRegistryIntegrationTest extends Specification {
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType
         wrappedType.name == "ID"
-        fieldDef.dataFetcher instanceof PropertyDataFetcher
+        fieldDef.dataFetcher instanceof CompositeDataFetcher
+        (fieldDef.dataFetcher as CompositeDataFetcher).fetchers[0] instanceof PropertyDataFetcher
     }
 
     def "Inspect AbstractClass type"() {
@@ -238,7 +239,8 @@ class TypeRegistryIntegrationTest extends Specification {
         (fieldDef.type as GraphQLNonNull).wrappedType instanceof GraphQLScalarType
         def wrappedType = (GraphQLScalarType) (fieldDef.type as GraphQLNonNull).wrappedType
         wrappedType.name == "ID"
-        fieldDef.dataFetcher instanceof PropertyDataFetcher
+        fieldDef.dataFetcher instanceof CompositeDataFetcher
+        (fieldDef.dataFetcher as CompositeDataFetcher).fetchers[0] instanceof PropertyDataFetcher
     }
 
     def "Inspect Interface type that extends another interface"() {

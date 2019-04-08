@@ -15,7 +15,7 @@ class GraphQLEnumTypeFactoryTest extends Specification {
         graphQLType instanceof GraphQLEnumType
         def profileType = (GraphQLEnumType) graphQLType
         profileType.name == ProfileType.simpleName
-        profileType.values.value as Set == ProfileType.values() as Set
+        profileType.values.value == ProfileType.values()
     }
 
 

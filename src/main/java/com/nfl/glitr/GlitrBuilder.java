@@ -179,7 +179,7 @@ public class GlitrBuilder {
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
         Class subscriptionRootClass = subscriptionRoot != null ? subscriptionRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, typeRegistry.getCodeRegistryBuilder(), queryRoot.getClass(), fieldVisibility, objectMapper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
     }
 
     private Glitr buildGlitrWithRelaySupport() {
@@ -217,6 +217,6 @@ public class GlitrBuilder {
         Class mutationRootClass = mutationRoot != null ? mutationRoot.getClass() : null;
         Class subscriptionRootClass = subscriptionRoot != null ? subscriptionRoot.getClass() : null;
 
-        return new Glitr(typeRegistry, typeRegistry.getCodeRegistryBuilder(), queryRoot.getClass(), fieldVisibility, objectMapper, relayHelper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
+        return new Glitr(typeRegistry, queryRoot.getClass(), fieldVisibility, objectMapper, relayHelper, mutationRootClass, subscriptionRootClass, queryComplexityCalculator);
     }
 }

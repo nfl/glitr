@@ -3,7 +3,6 @@ package com.nfl.glitr.registry.type
 import com.nfl.glitr.exception.GlitrException
 import com.nfl.glitr.registry.TypeRegistry
 import com.nfl.glitr.registry.TypeRegistryBuilder
-import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLType;
 import spock.lang.Specification
@@ -25,7 +24,7 @@ public class GraphQLInputObjectTypeFactoryTest extends Specification {
     def "Java class to GraphQLInputType with name already in use"() {
         setup:
         TypeRegistry typeRegistry = TypeRegistryBuilder.newTypeRegistry().build()
-        GraphQLObjectTypeFactory objFactory = new GraphQLObjectTypeFactory(typeRegistry, GraphQLCodeRegistry.newCodeRegistry())
+        GraphQLObjectTypeFactory objFactory = new GraphQLObjectTypeFactory(typeRegistry)
         GraphQLInputObjectTypeFactory inputFactory = new GraphQLInputObjectTypeFactory(typeRegistry)
 
         when:

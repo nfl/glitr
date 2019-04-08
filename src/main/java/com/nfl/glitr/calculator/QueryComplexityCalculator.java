@@ -5,7 +5,6 @@ import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
 import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.registry.schema.GraphQLConnectionList;
 import graphql.language.*;
-import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.schema.*;
@@ -621,14 +620,12 @@ public class QueryComplexityCalculator {
     private Document parseRootNode(String query) {
         try {
             return documentParser.parseDocument(query);
-        } catch (InvalidSyntaxException e) {
-            throw new GlitrException(String.format("Cannot parse query. %s %s", e.getMessage(), query));
         } catch (Exception e) {
             String humanMessage = null;
             if (e.getCause() instanceof InputMismatchException && ((InputMismatchException) e.getCause()).getOffendingToken() instanceof CommonToken) {
                 humanMessage = ((CommonToken) ((InputMismatchException) e.getCause()).getOffendingToken()).toString(new GraphqlLexer(CharStreams.fromString(query)));
             }
-            throw new GlitrException(String.format("Cannot parse query. %s %s", defaultString(humanMessage), query));
+            throw new GlitrException(String.format("Cannot parse query %s %s", defaultString(humanMessage), query));
         }
     }
 

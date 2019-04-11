@@ -27,6 +27,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
  */
 public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
 
+    public static final String UNUSED_FIELDS_DEAD_OBJECT = "unused_fields_dead_object";
     private final TypeRegistry typeRegistry;
     private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
 
@@ -57,11 +58,11 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
                 .map(pair -> getGraphQLFieldDefinition(clazz, pair))
                 .collect(Collectors.toList());
 
-        if (fields.size() == 0) {
-            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), "unused_fields_dead_object"), DataFetcherFactories.useDataFetcher(env -> false));
+        if (fields.isEmpty()) {
+            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), UNUSED_FIELDS_DEAD_OBJECT), DataFetcherFactories.useDataFetcher(env -> false));
             // GraphiQL doesn't like objects with no fields, so add an unused field to be safe.
             fields.add(newFieldDefinition()
-                    .name("unused_fields_dead_object")
+                    .name(UNUSED_FIELDS_DEAD_OBJECT)
                     .type(GraphQLBoolean)
                     .build());
         }

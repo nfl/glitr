@@ -51,6 +51,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class TypeRegistry implements TypeResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeRegistry.class);
+    public static final String UNUSED_FIELDS_DEAD_OBJECT = "unused_fields_dead_object";
 
     private final Map<Class, GraphQLType> registry = new ConcurrentHashMap<>();
     private final Map<String, GraphQLType> nameRegistry = new ConcurrentHashMap<>();
@@ -209,8 +210,8 @@ public class TypeRegistry implements TypeResolver {
 
         if (fields.isEmpty()) {
             // GraphiQL doesn't like objects with no fields, so add an unused field to be safe
-            fields.add(newFieldDefinition().name("unused_fields_dead_object").type(GraphQLBoolean).build());
-            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), "unused_fields_dead_object"), DataFetcherFactories.useDataFetcher(env -> false));
+            fields.add(newFieldDefinition().name(UNUSED_FIELDS_DEAD_OBJECT).type(GraphQLBoolean).build());
+            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), UNUSED_FIELDS_DEAD_OBJECT), DataFetcherFactories.useDataFetcher(env -> false));
         }
 
         GraphQLObjectType.Builder builder = newObject()

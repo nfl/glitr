@@ -3,14 +3,13 @@ package com.nfl.glitr.registry.type;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import graphql.language.*;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +18,8 @@ public class Scalars {
     private static final String UTC = "UTC";
     private static final String SHIELD_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSX";
     private static final String SHIELD_LOCAL_DATE_PATTERN = "yyyy-MM-dd";
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(SHIELD_DATE_TIME_PATTERN).withZone(ZoneId.of(UTC));
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(SHIELD_LOCAL_DATE_PATTERN).withZone(ZoneId.of(UTC));
 
     private static final ObjectMapper om = new ObjectMapper();
 
@@ -33,20 +34,14 @@ public class Scalars {
 
                 @Override
                 public Object serialize(Object input) {
-                    if (input == null) {
-                        return null;
-                    }
-
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(SHIELD_DATE_TIME_PATTERN).withZone(ZoneId.of(UTC));
-
                     if (input instanceof ZonedDateTime) {
                         ZonedDateTime time = (ZonedDateTime) input;
-                        return time.format(formatter);
+                        return time.format(DATE_TIME_FORMATTER);
                     }
 
                     if (input instanceof Instant) {
                         Instant time = (Instant) input;
-                        return formatter.format(time);
+                        return DATE_TIME_FORMATTER.format(time);
                     }
 
                     if (input instanceof String) {
@@ -55,12 +50,12 @@ public class Scalars {
                             obj = formatAsZonedDateTime(input);
                         }
                         if (obj == null) {
-                            throw new IllegalArgumentException("Failed to parse/serialize GraphQLDateTime with value " + input.toString() + ". Value likely of an unsupported format.");
+                            throw new CoercingSerializeException("Failed to parse/serialize GraphQLDateTime with value " + input.toString() + ". Value likely of an unsupported format.");
                         }
                         return serialize(obj);
                     }
 
-                    throw new IllegalArgumentException("Can't serialize type " + input.getClass() + " with value " + input.toString());
+                    throw new CoercingSerializeException("Can't serialize type " + input.getClass() + " with value " + input.toString());
                 }
 
                 @Override
@@ -78,7 +73,13 @@ public class Scalars {
                 public Object parseLiteral(Object input) {
                     if (!(input instanceof StringValue)) return null;
                     String encodedDateTime = ((StringValue) input).getValue();
-                    return Instant.parse(encodedDateTime);
+                    Instant parse;
+                    try {
+                        parse = Instant.parse(encodedDateTime);
+                    } catch (DateTimeParseException e) {
+                        parse = LocalDate.parse(encodedDateTime, DATE_FORMATTER).atStartOfDay().toInstant(ZoneOffset.UTC);
+                    }
+                    return parse;
                 }
             }).build();
 
@@ -94,25 +95,19 @@ public class Scalars {
 
                 @Override
                 public Object serialize(Object input) {
-                    if (input == null) {
-                        return null;
-                    }
-
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(SHIELD_LOCAL_DATE_PATTERN).withZone(ZoneId.of(UTC));
-
                     if (input instanceof LocalDate) {
                         LocalDate time = (LocalDate) input;
-                        return time.format(formatter);
+                        return time.format(DATE_FORMATTER);
                     }
 
                     if (input instanceof ZonedDateTime) {
                         ZonedDateTime time = (ZonedDateTime) input;
-                        return time.format(formatter);
+                        return time.format(DATE_FORMATTER);
                     }
 
                     if (input instanceof Instant) {
                         Instant time = (Instant) input;
-                        return formatter.format(time);
+                        return DATE_FORMATTER.format(time);
                     }
 
                     if (input instanceof String) {
@@ -124,12 +119,12 @@ public class Scalars {
                             obj = formatAsZonedDateTime(input);
                         }
                         if (obj == null) {
-                            throw new IllegalArgumentException("Failed to parse/serialize GraphQLDate with value " + input.toString() + ". Value likely of an unsupported format.");
+                            throw new CoercingSerializeException("Failed to parse/serialize GraphQLDate with value " + input.toString() + ". Value likely of an unsupported format.");
                         }
                         return serialize(obj);
                     }
 
-                    throw new IllegalArgumentException("Can't serialize type " + input.getClass() + " with value " + input.toString());
+                    throw new CoercingSerializeException("Can't serialize type " + input.getClass() + " with value " + input.toString());
                 }
 
                 @Override
@@ -170,11 +165,11 @@ public class Scalars {
                         try {
                             return om.readValue((String) input, Map.class);
                         } catch (IOException e) {
-                            throw new IllegalArgumentException("Can't serialize type " + input.getClass() + " with value " + input.toString());
+                            throw new CoercingSerializeException("Can't serialize type " + input.getClass() + " with value " + input.toString());
                         }
                     }
 
-                    throw new IllegalArgumentException("Can't serialize type " + input.getClass() + " with value " + input.toString());
+                    throw new CoercingSerializeException("Can't serialize type " + input.getClass() + " with value " + input.toString());
                 }
 
                 @Override
@@ -243,7 +238,13 @@ public class Scalars {
     private static Object formatAsInstant(Object input) {
         try {
             String time = (String) input;
-            return Instant.parse(time);
+            Instant parse;
+            try {
+                parse = Instant.parse(time);
+            } catch (DateTimeParseException e) {
+                parse = LocalDate.parse(time, DATE_FORMATTER).atStartOfDay().toInstant(ZoneOffset.UTC);
+            }
+            return parse;
         } catch (RuntimeException ex) {
             return null;
         }

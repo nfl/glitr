@@ -7,6 +7,7 @@ import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
+import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -16,6 +17,7 @@ import java.time.ZonedDateTime
 
 public class ScalarsTest extends Specification {
 
+    @Unroll
     def "DateTime parse literal"() {
         expect:
             Scalars.GraphQLDateTime.getCoercing().parseLiteral(literal) == result
@@ -24,9 +26,10 @@ public class ScalarsTest extends Specification {
             literal                                     | result
             new StringValue("2016-01-08T00:32:09.132Z") | Instant.parse("2016-01-08T00:32:09.132Z")
             new StringValue("2016-01-08T00:32:09.132Z") | ZonedDateTime.parse("2016-01-08T00:32:09.132Z").toInstant()
-            null                                        | null
+            new StringValue("2016-01-08")               | Instant.parse("2016-01-08T00:00:00.000Z")
     }
 
+    @Unroll
     def "DateTime serialize/parseValue object"() {
         expect:
             Scalars.GraphQLDateTime.getCoercing().serialize(value) == result
@@ -38,7 +41,7 @@ public class ScalarsTest extends Specification {
             Instant.ofEpochMilli(1454362550000l)            | "2016-02-01T21:35:50.000Z"
             ZonedDateTime.parse("2016-01-08T00:32:09.132Z") | "2016-01-08T00:32:09.132Z"
             "2016-01-08T00:32:09.132Z"                      | "2016-01-08T00:32:09.132Z"
-            null                                            | null
+            "2016-01-08"                                    | "2016-01-08T00:00:00.000Z"
     }
 
     def "DateTime serialize/parseValue object unknown type"() {
@@ -49,11 +52,11 @@ public class ScalarsTest extends Specification {
             Scalars.GraphQLDateTime.getCoercing().parseValue(input)
 
         then:
-            def e = thrown(IllegalArgumentException)
+            def e = thrown(CoercingSerializeException)
             e.getMessage() == "Failed to parse/serialize GraphQLDateTime with value " + input + ". Value likely of an unsupported format."
     }
 
-
+    @Unroll
     def "Date parse literal"() {
         expect:
             Scalars.GraphQLDate.getCoercing().parseLiteral(literal) == result
@@ -61,9 +64,9 @@ public class ScalarsTest extends Specification {
         where:
             literal                       | result
             new StringValue("2016-01-08") | LocalDate.parse("2016-01-08")
-            null                          | null
     }
 
+    @Unroll
     def "Date serialize/parseValue object"() {
         expect:
             Scalars.GraphQLDate.getCoercing().serialize(value) == result
@@ -77,7 +80,6 @@ public class ScalarsTest extends Specification {
             LocalDate.of(2015, 01, 01)                      | "2015-01-01"
             "2016-01-08T00:32:09.132Z"                      | "2016-01-08"
             "2016-01-08"                                    | "2016-01-08"
-            null                                            | null
     }
 
     def "Date serialize/parseValue object unknown type"() {
@@ -88,7 +90,7 @@ public class ScalarsTest extends Specification {
             Scalars.GraphQLDate.getCoercing().parseValue(input)
 
         then:
-            def e = thrown(IllegalArgumentException)
+            def e = thrown(CoercingSerializeException)
             e.getMessage() == "Failed to parse/serialize GraphQLDate with value " + input + ". Value likely of an unsupported format."
     }
 
@@ -105,7 +107,6 @@ public class ScalarsTest extends Specification {
             new ObjectValue([new ObjectField("test1", new FloatValue(BigDecimal.ZERO)), new ObjectField("test2", new FloatValue(BigDecimal.ONE))]) | [test1: 0F, test2: 1F]
             new ObjectValue([new ObjectField("test1", new BooleanValue(true)), new ObjectField("test2", new BooleanValue(false))])                 | [test1: true, test2: false]
             new ObjectValue([new ObjectField("test1", NullValue.Null), new ObjectField("test2", NullValue.Null)])                                  | [test1: null, test2: null]
-            null                                                                                                                                   | null
     }
 
     @Unroll
@@ -118,7 +119,6 @@ public class ScalarsTest extends Specification {
             value                                  | result
             [test1: "test1", test2: "test2"]       | [test1: "test1", test2: "test2"]
             '{"test1": "test1", "test2": "test2"}' | [test1: "test1", test2: "test2"]
-            null                                   | null
     }
 
     def "Map serialize/parseValue object unknown type"() {
@@ -129,7 +129,7 @@ public class ScalarsTest extends Specification {
             Scalars.GraphQLMap.getCoercing().parseValue(input)
 
         then:
-            def e = thrown(IllegalArgumentException)
+            def e = thrown(CoercingSerializeException)
             e.getMessage() == "Can't serialize type class java.lang.String with value $input"
     }
 }

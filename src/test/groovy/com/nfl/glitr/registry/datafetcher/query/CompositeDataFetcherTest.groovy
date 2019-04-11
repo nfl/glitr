@@ -4,7 +4,7 @@ import graphql.Scalars
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.DataFetchingEnvironmentBuilder
+import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
 
@@ -15,10 +15,9 @@ class CompositeDataFetcherTest extends Specification {
     def execCtx = ExecutionContextBuilder.newExecutionContextBuilder()
                                         .executionId(ExecutionId.generate())
                                         .build();
-    def env = DataFetchingEnvironmentBuilder.newDataFetchingEnvironment()
+    def env = DataFetchingEnvironmentImpl.newDataFetchingEnvironment(execCtx)
                                         .source(new DummyClass())
                                         .fieldType(Scalars.GraphQLString)
-                                        .executionContext(execCtx)
                                         .build()
 
     def "Should iterate over dataFetchers until override gets called & return null when not found"() {

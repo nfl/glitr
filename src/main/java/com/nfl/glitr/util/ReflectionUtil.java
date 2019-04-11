@@ -1,10 +1,6 @@
 package com.nfl.glitr.util;
 
 import com.nfl.glitr.annotation.*;
-import graphql.execution.batched.Batched;
-import graphql.execution.batched.BatchedDataFetcher;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -133,30 +129,6 @@ public class ReflectionUtil {
         GlitrArgument[] singleAnnotationGlitrArguments = field.isAnnotationPresent(GlitrArgument.class) ? field.getAnnotationsByType(GlitrArgument.class) : new GlitrArgument[0];
         GlitrArgument[] groupedAnnotationGlitrArguments = field.isAnnotationPresent(GlitrArguments.class) ? field.getAnnotation(GlitrArguments.class).value() : new GlitrArgument[0];
         return ArrayUtils.addAll(singleAnnotationGlitrArguments, groupedAnnotationGlitrArguments);
-    }
-
-    /**
-     * Tells whether a given data fetcher supports batching
-     *  {code @Batched} on the get method or instance of {code BatchedDataFetcher}
-     *
-     * @param supplied data fetcher
-     * @return true if batched, false otherwise
-     */
-    public static boolean isDataFetcherBatched(DataFetcher supplied) {
-        if (supplied instanceof BatchedDataFetcher) {
-            return true;
-        }
-
-        try {
-            Method getMethod = supplied.getClass().getMethod("get", DataFetchingEnvironment.class);
-            Batched batched = getMethod.getAnnotation(Batched.class);
-            if (batched != null) {
-                return true;
-            }
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(e);
-        }
-        return false;
     }
 
     public static Field getFieldByName(Class declaringClass, String name) {

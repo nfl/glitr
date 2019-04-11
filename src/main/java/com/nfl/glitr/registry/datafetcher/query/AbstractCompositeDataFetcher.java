@@ -22,11 +22,11 @@ public abstract class AbstractCompositeDataFetcher implements DataFetcher {
     }
 
     public AbstractCompositeDataFetcher(List<DataFetcher> fetchers) {
-        this(fetchers.toArray(new DataFetcher[fetchers.size()]));
+        this(fetchers.toArray(new DataFetcher[0]));
     }
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public Object get(DataFetchingEnvironment environment) throws Exception {
         for (DataFetcher fetcher : fetchers) {
             Object result = fetcher.get(environment);
             if (result != null) {

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
@@ -26,11 +27,14 @@ import static graphql.schema.GraphQLObjectType.newObject;
  */
 public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
 
+    public static final String UNUSED_FIELDS_DEAD_OBJECT = "unused_fields_dead_object";
     private final TypeRegistry typeRegistry;
+    private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
 
 
-    public GraphQLObjectTypeFactory(TypeRegistry typeRegistry) {
+    public GraphQLObjectTypeFactory(TypeRegistry typeRegistry, GraphQLCodeRegistry.Builder codeRegistryBuilder) {
         this.typeRegistry = typeRegistry;
+        this.codeRegistryBuilder = codeRegistryBuilder;
     }
 
     @Override
@@ -54,12 +58,12 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
                 .map(pair -> getGraphQLFieldDefinition(clazz, pair))
                 .collect(Collectors.toList());
 
-        if (fields.size() == 0) {
+        if (fields.isEmpty()) {
+            codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), UNUSED_FIELDS_DEAD_OBJECT), DataFetcherFactories.useDataFetcher(env -> false));
             // GraphiQL doesn't like objects with no fields, so add an unused field to be safe.
             fields.add(newFieldDefinition()
-                    .name("unused_fields_dead_object")
+                    .name(UNUSED_FIELDS_DEAD_OBJECT)
                     .type(GraphQLBoolean)
-                    .staticValue(false)
                     .build());
         }
 
@@ -73,7 +77,7 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
         GraphQLObjectType.Builder builder = newObject()
                 .name(clazz.getSimpleName())
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
-                .withInterfaces(graphQLInterfaceTypes.toArray(new GraphQLInterfaceType[graphQLInterfaceTypes.size()]))
+                .withInterfaces(graphQLInterfaceTypes.toArray(new GraphQLInterfaceType[0]))
                 .fields(fields);
 
         // relay is enabled, add Node interface implementation if one of the eligible methods is named getId
@@ -160,15 +164,16 @@ public class GraphQLObjectTypeFactory implements DelegateTypeFactory {
 
         Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
 
+        codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), name), dataFetcher);
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
-                .dataFetcher(dataFetcher)
                 .type(typeRegistry.retrieveGraphQLOutputType(declaringClass, method))
-                .argument(typeRegistry.retrieveArguments(declaringClass, method))
+                .arguments(typeRegistry.retrieveArguments(declaringClass, method))
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
                 // TODO: static value
-                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
+                .deprecate(glitrDeprecated.map(GlitrDeprecated::value).orElse(null))
                 .build();
     }
 }

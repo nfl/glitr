@@ -5,7 +5,6 @@ import com.nfl.glitr.annotation.GlitrDeprecated;
 import com.nfl.glitr.annotation.GlitrDescription;
 import com.nfl.glitr.annotation.GlitrQueryComplexity;
 import com.nfl.glitr.registry.TypeRegistry;
-import com.nfl.glitr.registry.datafetcher.query.batched.CompositeDataFetcherFactory;
 import com.nfl.glitr.registry.schema.GlitrFieldDefinition;
 import com.nfl.glitr.registry.schema.GlitrMetaDefinition;
 import com.nfl.glitr.util.ReflectionUtil;
@@ -20,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_FORMULA_KEY;
 import static com.nfl.glitr.util.NodeUtil.COMPLEXITY_IGNORE_KEY;
+import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 
@@ -29,10 +29,12 @@ import static graphql.schema.GraphQLInterfaceType.newInterface;
 public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
 
     private final TypeRegistry typeRegistry;
+    private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
 
 
-    public GraphQLInterfaceTypeFactory(TypeRegistry typeRegistry) {
+    public GraphQLInterfaceTypeFactory(TypeRegistry typeRegistry, GraphQLCodeRegistry.Builder codeRegistryBuilder) {
         this.typeRegistry = typeRegistry;
+        this.codeRegistryBuilder = codeRegistryBuilder;
     }
 
     @Override
@@ -53,11 +55,12 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
                 .map(method -> getGraphQLFieldDefinition(clazz, method))
                 .collect(Collectors.toList());
 
+        codeRegistryBuilder.typeResolver(clazz.getSimpleName(), typeRegistry);
+
         return newInterface()
                 .name(clazz.getSimpleName())
                 .definition(new InterfaceTypeDefinition(clazz.getCanonicalName()))
                 .description(ReflectionUtil.getDescriptionFromAnnotatedElement(clazz))
-                .typeResolver(typeRegistry)
                 .fields(fields)
                 .build();
     }
@@ -98,13 +101,14 @@ public class GraphQLInterfaceTypeFactory implements DelegateTypeFactory {
 
         Optional<GlitrDeprecated> glitrDeprecated = ReflectionUtil.getAnnotationOfMethodOrField(clazz, method, GlitrDeprecated.class);
 
+        codeRegistryBuilder.dataFetcher(coordinates(clazz.getSimpleName(), name), new PropertyDataFetcher(name));
+
         return newFieldDefinition()
                 .name(name)
                 .description(description)
-                .dataFetcher(CompositeDataFetcherFactory.create(Collections.singletonList(new PropertyDataFetcher(name))))
                 .type((GraphQLOutputType) type)
                 .definition(new GlitrFieldDefinition(name, metaDefinitions))
-                .deprecate(glitrDeprecated.isPresent() ? glitrDeprecated.get().value() : null)
+                .deprecate(glitrDeprecated.map(GlitrDeprecated::value).orElse(null))
                 .build();
     }
 }

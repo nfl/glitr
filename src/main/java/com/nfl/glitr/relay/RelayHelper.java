@@ -54,6 +54,8 @@ public class RelayHelper {
 
         ConnectionCursor startCursor = null;
         ConnectionCursor endCursor = null ;
+        ConnectionCursor previousPageStartCursor = null ;
+
         boolean hasPreviousPage = skipItems > 0 && totalCount > 0;
         boolean hasNextPage = skipItems + edges.size() + 1 < totalCount;
 
@@ -62,17 +64,26 @@ public class RelayHelper {
             Edge lastEdge = edges.get(edges.size() - 1);
             startCursor = firstEdge.getCursor();
             endCursor = lastEdge.getCursor();
+
+            int offsetFromCursor = getOffsetFromCursor(startCursor.getValue(), 0);
+
+            String cursor = createCursor(0);
+            if (offsetFromCursor - edges.size() > 0) {
+                cursor = createCursor(offsetFromCursor - edges.size());
+            }
+
+            previousPageStartCursor = new DefaultConnectionCursor(cursor);
         }
 
-        PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal(startCursor, endCursor,
-                hasPreviousPage, hasNextPage);
+        PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal(startCursor, endCursor, hasPreviousPage, hasNextPage);
         pageInfoWithTotal.setTotal(totalCount);
+        pageInfoWithTotal.setPreviousPageStartCursor(previousPageStartCursor);
 
         return new DefaultConnection<>(edges, pageInfoWithTotal);
     }
 
     public static String createCursor(int offset) {
-        return Base64.toBase64(DUMMY_CURSOR_PREFIX + Integer.toString(offset));
+        return Base64.toBase64(DUMMY_CURSOR_PREFIX + offset);
     }
 
     public static int getOffsetFromCursor(String cursor, int defaultValue) {

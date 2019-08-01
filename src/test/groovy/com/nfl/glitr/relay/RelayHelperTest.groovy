@@ -55,6 +55,12 @@ class RelayHelperTest extends Specification {
         if (resultSize > 0) {
             assert (connection.pageInfo.startCursor?.value == RelayHelper.createCursor(toSkip))
             assert (connection.pageInfo.endCursor?.value == RelayHelper.createCursor(toSkip + resultSize - 1))
+
+            if (toSkip - resultSize > 0) {
+                assert (pageInfoWithTotal.previousPageStartCursor?.value == RelayHelper.createCursor(toSkip - resultSize))
+            } else {
+                assert (pageInfoWithTotal.previousPageStartCursor?.value == RelayHelper.createCursor(0))
+            }
         }
 
         connection.edges.forEach({

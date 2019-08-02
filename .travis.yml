@@ -1,6 +1,6 @@
 sudo: required
 language: java
 jdk:
-  - openjdk10
+  - oraclejdk11
 script:
   - ./travis-build.sh

@@ -6,6 +6,7 @@ import graphql.relay.DefaultPageInfo;
 public class PageInfoWithTotal extends DefaultPageInfo {
 
     private int total;
+    private ConnectionCursor previousPageStartCursor;
 
 
     public PageInfoWithTotal(ConnectionCursor startCursor, ConnectionCursor endCursor,
@@ -19,5 +20,13 @@ public class PageInfoWithTotal extends DefaultPageInfo {
 
     public void setTotal(int total) {
         this.total = total;
+    }
+
+    public ConnectionCursor getPreviousPageStartCursor() {
+        return previousPageStartCursor;
+    }
+
+    public void setPreviousPageStartCursor(ConnectionCursor previousPageStartCursor) {
+        this.previousPageStartCursor = previousPageStartCursor;
     }
 }

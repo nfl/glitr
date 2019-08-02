@@ -13,16 +13,16 @@ import spock.lang.Unroll
 class QueryComplexityCalculatorTest extends Specification {
 
     @Shared
-    def queryComplexityCalculator;
+    def queryComplexityCalculator
 
     def setup() {
-        queryComplexityCalculator = new QueryComplexityCalculator(200, 3, 50, 10);
+        queryComplexityCalculator = new QueryComplexityCalculator(200, 3, 50, 10)
     }
 
     @Unroll
     def "test query character score, case: #name"() {
         expect:
-            int characterScore = queryComplexityCalculator.characterScore(query);
+            int characterScore = queryComplexityCalculator.characterScore(query)
             characterScore == expectedResult
 
         where:
@@ -84,7 +84,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("query cannot be null or empty")
+            exception.getMessage() == "query cannot be null or empty"
 
         where:
             query = '''
@@ -94,7 +94,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query character limit, case: #name"() {
         expect:
-            boolean characterLimitExceeded = queryComplexityCalculator.characterLimitExceeded(query);
+            boolean characterLimitExceeded = queryComplexityCalculator.characterLimitExceeded(query)
             characterLimitExceeded == expectedResult
 
         where:
@@ -151,7 +151,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query depth score, case: #name"() {
         expect:
-            int depthScore = queryComplexityCalculator.depthScore(query);
+            int depthScore = queryComplexityCalculator.depthScore(query)
             depthScore == expectedResult
 
         where:
@@ -221,7 +221,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("query cannot be null or empty")
+            exception.getMessage() == "query cannot be null or empty"
 
         where:
             query = '''
@@ -234,7 +234,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("Cannot parse query. Invalid Syntax : offending token '<EOF>' at line 1 column 22 {playLists{playListId}")
+            exception.getMessage() == "Cannot parse query. Invalid Syntax : offending token '<EOF>' at line 1 column 23 {playLists{playListId}"
 
         where:
             query = '''{playLists{playListId}'''.stripMargin()
@@ -244,7 +244,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query depth limit, case: #name"() {
         expect:
-            boolean depthLimitExceeded = queryComplexityCalculator.depthLimitExceeded(query);
+            boolean depthLimitExceeded = queryComplexityCalculator.depthLimitExceeded(query)
             depthLimitExceeded == expectedResult
 
         where:
@@ -377,7 +377,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 {
                     $query
                 }
-            """);
+            """)
         then:
             depthScore == expectedScore
         where:
@@ -409,7 +409,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 {
                     $query
                 }
-            """);
+            """)
         then:
             depthScore == expectedScore
         where:
@@ -425,7 +425,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query score, case: #name"() {
         expect:
-            int queryScore = queryComplexityCalculator.queryScore(query, null);
+            int queryScore = queryComplexityCalculator.queryScore(query, null)
             queryScore == expectedResult
 
         where:
@@ -569,7 +569,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test query score limit, case: #name"() {
         expect:
-            boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query, null);
+            boolean scoreLimitExceeded = queryComplexityCalculator.scoreLimitExceeded(query, null)
             scoreLimitExceeded == expectedResult
 
         where:
@@ -676,7 +676,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test validate query, case: #name"() {
         expect:
-            queryComplexityCalculator.validate(query, null);
+            queryComplexityCalculator.validate(query, null)
 
         where:
             query                              | name
@@ -728,7 +728,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("query length has exceeded the maximum of 200 characters.")
+            exception.getMessage() == "query length has exceeded the maximum of 200 characters."
 
         where:
             query = '''\
@@ -756,7 +756,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("query depth has exceeded the maximum depth level of 3.")
+            exception.getMessage() == "query depth has exceeded the maximum depth level of 3."
 
         where:
             query = '''\
@@ -782,7 +782,7 @@ class QueryComplexityCalculatorTest extends Specification {
 
         then:
             def exception = thrown(GlitrException)
-            exception.getMessage().equals("query score has exceeded the maximum score level of 50.")
+            exception.getMessage() == "query score has exceeded the maximum score level of 50."
 
         where:
             query = '''\
@@ -802,7 +802,7 @@ class QueryComplexityCalculatorTest extends Specification {
     @Unroll
     def "test check if query is mutation, case: #name"() {
         expect:
-            boolean isMutation = queryComplexityCalculator.isMutation(query);
+            boolean isMutation = queryComplexityCalculator.isMutation(query)
             isMutation == expectedResult
 
         where:
@@ -905,7 +905,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-        """, null);
+        """, null)
         then:
             queryScore == expectedScore
         where:
@@ -946,7 +946,7 @@ class QueryComplexityCalculatorTest extends Specification {
                     }
                 }
             }
-        """, null);
+        """, null)
         then:
             queryScore == expectedScore
         where:
@@ -971,8 +971,8 @@ class QueryComplexityCalculatorTest extends Specification {
                     .build()
 
         when:
+            glitr.getQueryComplexityCalculator().queryScore(query, null)
 
-            glitr.getQueryComplexityCalculator().queryScore(query, null);
         then:
             invocationTimes * queryComplexityCalculator.extractMultiplierFromListField(*_)
 
@@ -1010,7 +1010,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 $variables {
                     $query
                 }
-            """, [limit: 3]);
+            """, [limit: 3])
         then:
             queryScore == expectedScore
         where:
@@ -1047,7 +1047,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 }
 
                 $fragments
-            """, null);
+            """, null)
         then:
             queryScore == 25
         where:
@@ -1094,7 +1094,7 @@ class QueryComplexityCalculatorTest extends Specification {
                 {
                     $query
                 }
-            """, null);
+            """, null)
         then:
             queryScore == expectedScore
         where:

@@ -7,8 +7,6 @@ import com.nfl.glitr.annotation.GlitrQueryComplexity;
 
 import java.util.List;
 
-import static com.nfl.glitr.annotation.GlitrArgument.nullability.NON_NULL;
-
 public class QueryType {
 
     @GlitrForwardPagingArguments

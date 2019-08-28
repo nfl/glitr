@@ -73,12 +73,10 @@ public class RelayHelper {
             startCursor = firstEdge.getCursor();
             endCursor = lastEdge.getCursor();
 
-            String cursor = createCursor(0);
             if (offset - itemsPerPage > 0) {
-                cursor = createCursor(offset - itemsPerPage);
+                String cursor = createCursor(offset - itemsPerPage - 1);
+                previousPageStartCursor = new DefaultConnectionCursor(cursor);
             }
-
-            previousPageStartCursor = new DefaultConnectionCursor(cursor);
         }
 
         PageInfoWithTotal pageInfoWithTotal = new PageInfoWithTotal(startCursor, endCursor, hasPreviousPage, hasNextPage);

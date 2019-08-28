@@ -20,26 +20,27 @@ class RelayHelperTest extends Specification {
     @Unroll
     def "test build connection pagination"() {
         expect:
-            testPaging(offset, totalCount, hasNextPage, hasPrevPage, resultSize)
+            testPaging(offset, totalCount, hasNextPage, hasPrevPage, resultSize, previousPageOffset)
 
         where:
-            offset || totalCount || hasNextPage || hasPrevPage || resultSize
-            0      || 12         || true        || false       || 10
-            1      || 12         || false       || true        || 10
-            2      || 12         || false       || true        || 10
-            7      || 12         || false       || true        || 5
-            69     || 71         || false       || true        || 2
-            70     || 71         || false       || true        || 1
-            1      || 1          || false       || true        || 0
-            50     || 50         || false       || true        || 0
-            11     || 12         || false       || true        || 1
-            0      || 0          || false       || false       || 0
-            0      || 1          || false       || false       || 1
-            1      || 1          || false       || true        || 0
-            25     || 50         || true        || true        || 10
+            offset || totalCount || hasNextPage || hasPrevPage || resultSize || previousPageOffset
+            0      || 12         || true        || false       || 10         || null
+            1      || 12         || false       || true        || 10         || null
+            2      || 12         || false       || true        || 10         || null
+            7      || 12         || false       || true        || 5          || null
+            69     || 71         || false       || true        || 2          || 58
+            70     || 71         || false       || true        || 1          || 59
+            1      || 1          || false       || true        || 0          || null
+            50     || 50         || false       || true        || 0          || 49
+            11     || 12         || false       || true        || 1          || 0
+            0      || 0          || false       || false       || 0          || null
+            0      || 1          || false       || false       || 1          || null
+            1      || 1          || false       || true        || 0          || null
+            25     || 50         || true        || true        || 10         || 14
+            10     || 50         || true        || true        || 10         || null
     }
 
-    void testPaging(def offset, def totalCount, def hasNext, def hasPrev, def resultSize) {
+    void testPaging(def offset, def totalCount, def hasNext, def hasPrev, def resultSize, def previousPageOffset) {
         def items = []
         def skipItem = 10
         for (def i = 0; i < skipItem; i++) {
@@ -60,11 +61,11 @@ class RelayHelperTest extends Specification {
             assert (connection.pageInfo.startCursor?.value == RelayHelper.createCursor(offset))
             assert (connection.pageInfo.endCursor?.value == RelayHelper.createCursor(offset + resultSize - 1))
 
-            if (offset - skipItem > 0) {
-                assert (pageInfoWithTotal.previousPageStartCursor?.value == RelayHelper.createCursor(offset - skipItem))
-            } else {
-                assert (pageInfoWithTotal.previousPageStartCursor?.value == RelayHelper.createCursor(0))
-            }
+
+            assert (pageInfoWithTotal.previousPageStartCursor?.value == (previousPageOffset == null ? null : RelayHelper.createCursor(previousPageOffset)))
+
+
+
         }
 
         connection.edges.forEach({

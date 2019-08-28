@@ -44,9 +44,17 @@ public class RelayHelper {
         return relay.connectionType(simpleName, edgeType, graphQLFieldDefinitions);
     }
 
-    public static graphql.relay.Connection buildConnection(Iterable<?> col, int skipItems, int totalCount) {
+    /**
+     *
+     * @param col - items to be returned
+     * @param offset - identifier of the starting point to return items from a result set
+     * @param itemsPerPage - the limit of items that should be returned per request
+     * @param totalCount - total amount of items
+     * @return {@link graphql.relay.Connection}
+     */
+    public static graphql.relay.Connection buildConnection(Iterable<?> col, int offset, int itemsPerPage, int totalCount) {
         List<Edge<Object>> edges = new ArrayList<>();
-        int ix = skipItems;
+        int ix = offset;
 
         for (Object object : col) {
             edges.add(new DefaultEdge<>(object, new DefaultConnectionCursor(createCursor(ix++))));
@@ -56,8 +64,8 @@ public class RelayHelper {
         ConnectionCursor endCursor = null ;
         ConnectionCursor previousPageStartCursor = null ;
 
-        boolean hasPreviousPage = skipItems > 0 && totalCount > 0;
-        boolean hasNextPage = skipItems + edges.size() + 1 < totalCount;
+        boolean hasPreviousPage = offset > 0 && totalCount > 0;
+        boolean hasNextPage = offset + edges.size() + 1 < totalCount;
 
         if (!edges.isEmpty()) {
             Edge firstEdge = edges.get(0);
@@ -65,11 +73,9 @@ public class RelayHelper {
             startCursor = firstEdge.getCursor();
             endCursor = lastEdge.getCursor();
 
-            int offsetFromCursor = getOffsetFromCursor(startCursor.getValue(), 0);
-
             String cursor = createCursor(0);
-            if (offsetFromCursor - edges.size() > 0) {
-                cursor = createCursor(offsetFromCursor - edges.size());
+            if (offset - itemsPerPage > 0) {
+                cursor = createCursor(offset - itemsPerPage);
             }
 
             previousPageStartCursor = new DefaultConnectionCursor(cursor);

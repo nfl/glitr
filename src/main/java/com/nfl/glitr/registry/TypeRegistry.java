@@ -21,6 +21,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.functions.Func4;
+import rx.functions.Func5;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -58,7 +59,7 @@ public class TypeRegistry implements TypeResolver {
     private final Map<Class, List<Object>> overrides;
 
     private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap;
-    private final Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
+    private final Map<Class<? extends Annotation>, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap;
     private final Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap;
     private final Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap;
     private final Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap;
@@ -78,7 +79,10 @@ public class TypeRegistry implements TypeResolver {
             .withInputTypeFactory(new GraphQLInputObjectTypeFactory(this), JavaType.ABSTRACT_CLASS, JavaType.CLASS, JavaType.INTERFACE);
 
 
-    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap, Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap, Relay relay, boolean explicitRelayNodeScanEnabled) {
+    TypeRegistry(Map<Class, List<Object>> overrides, Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap, Map<Class<? extends Annotation>,
+            DataFetcher> annotationToDataFetcherMap, Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap,
+                 Map<Class<? extends Annotation>, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap,
+                 Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap, Relay relay, boolean explicitRelayNodeScanEnabled) {
         this.overrides = overrides;
         this.annotationToDataFetcherFactoryMap = annotationToDataFetcherFactoryMap;
         this.annotationToDataFetcherMap = annotationToDataFetcherMap;
@@ -518,8 +522,8 @@ public class TypeRegistry implements TypeResolver {
             for (Annotation annotation: fieldAnnotations) {
                 // custom OutputType
                 if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
-                    Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
-                    GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(field, method, declaringClass, annotation);
+                    Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
+                    GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(this, field, method, declaringClass, annotation);
                     if (outputType != null) {
                         graphQLOutputType = outputType;
                         break;
@@ -536,8 +540,8 @@ public class TypeRegistry implements TypeResolver {
         for (Annotation annotation: methodAnnotations) {
             // custom OutputType
             if (annotationToGraphQLOutputTypeMap.containsKey(annotation.annotationType())) {
-                Func4<Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
-                GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(null, method, declaringClass, annotation);
+                Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> customGraphQLOutputTypeFunc = annotationToGraphQLOutputTypeMap.get(annotation.annotationType());
+                GraphQLOutputType outputType = customGraphQLOutputTypeFunc.call(this, null, method, declaringClass, annotation);
                 if (outputType != null) {
                     graphQLOutputType = outputType;
                     break;

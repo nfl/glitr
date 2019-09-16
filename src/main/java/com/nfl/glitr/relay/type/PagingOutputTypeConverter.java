@@ -2,17 +2,17 @@ package com.nfl.glitr.relay.type;
 
 import com.google.common.collect.Lists;
 import com.googlecode.gentyref.GenericTypeReflector;
-import com.nfl.glitr.exception.GlitrException;
-import com.nfl.glitr.relay.RelayHelper;
-import com.nfl.glitr.util.ReflectionUtil;
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments;
 import com.nfl.glitr.annotation.GlitrNonNull;
+import com.nfl.glitr.exception.GlitrException;
 import com.nfl.glitr.registry.TypeRegistry;
+import com.nfl.glitr.relay.RelayHelper;
+import com.nfl.glitr.util.ReflectionUtil;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
-import rx.functions.Func4;
+import rx.functions.Func5;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
@@ -26,14 +26,13 @@ import java.util.Map;
 /**
  *  Output type converter function for paging arguments annotations.
  */
-public class PagingOutputTypeConverter implements Func4<Field, Method, Class, Annotation, GraphQLOutputType> {
+public class PagingOutputTypeConverter implements Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> {
 
     private RelayHelper relayHelper;
-    private TypeRegistry typeRegistry;
 
 
     @Override
-    public GraphQLOutputType call(@Nullable Field field, Method method, Class declaringClass, Annotation annotation) {
+    public GraphQLOutputType call(TypeRegistry typeRegistry, @Nullable Field field, Method method, Class declaringClass, Annotation annotation) {
         if (annotation.annotationType() != GlitrForwardPagingArguments.class) {
             throw new IllegalArgumentException(annotation.annotationType() + " must be " + GlitrForwardPagingArguments.class.getSimpleName());
         }
@@ -85,11 +84,6 @@ public class PagingOutputTypeConverter implements Func4<Field, Method, Class, An
         // add the connection to the registry and return the connection
         nameRegistry.put(connectionType.getName(), connectionType);
         return connectionType;
-    }
-
-    public PagingOutputTypeConverter setTypeRegistry(TypeRegistry typeRegistry) {
-        this.typeRegistry = typeRegistry;
-        return this;
     }
 
     public PagingOutputTypeConverter setRelayHelper(RelayHelper relayHelper) {

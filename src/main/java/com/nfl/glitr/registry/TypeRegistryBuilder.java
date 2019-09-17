@@ -8,6 +8,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import rx.functions.Func4;
+import rx.functions.Func5;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -21,7 +22,7 @@ public class TypeRegistryBuilder {
 
     private Map<Class, List<Object>> overrides = new HashMap<>();
     private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, List<GraphQLArgument>>> annotationToArgumentsProviderMap = new HashMap<>();
-    private Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
+    private Map<Class<? extends Annotation>, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap = new HashMap<>();
     private Map<Class<? extends Annotation>, AnnotationBasedDataFetcherFactory> annotationToDataFetcherFactoryMap = new HashMap<>();
     private Map<Class<? extends Annotation>, DataFetcher> annotationToDataFetcherMap = new HashMap<>();
     private Map<Class, GraphQLType> javaTypeDeclaredAsScalarMap = new HashMap<>();
@@ -49,7 +50,7 @@ public class TypeRegistryBuilder {
         return this;
     }
 
-    public TypeRegistryBuilder withAnnotationToGraphQLOutputTypeMap(Map<Class<? extends Annotation>, Func4<Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap) {
+    public TypeRegistryBuilder withAnnotationToGraphQLOutputTypeMap(Map<Class<? extends Annotation>, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType>> annotationToGraphQLOutputTypeMap) {
         this.annotationToGraphQLOutputTypeMap = annotationToGraphQLOutputTypeMap;
         return this;
     }
@@ -69,8 +70,8 @@ public class TypeRegistryBuilder {
         return this;
     }
 
-    public TypeRegistryBuilder addCustomFieldOutputTypeFunc(Class<? extends Annotation> annotationClass, Func4<Field, Method, Class, Annotation, GraphQLOutputType> argumentsFunc4) {
-        annotationToGraphQLOutputTypeMap.putIfAbsent(annotationClass, argumentsFunc4);
+    public TypeRegistryBuilder addCustomFieldOutputTypeFunc(Class<? extends Annotation> annotationClass, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> argumentsFunc5) {
+        annotationToGraphQLOutputTypeMap.putIfAbsent(annotationClass, argumentsFunc5);
         return this;
     }
 

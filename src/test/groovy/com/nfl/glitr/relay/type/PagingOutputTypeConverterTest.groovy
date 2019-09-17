@@ -4,6 +4,7 @@ import com.nfl.glitr.GlitrBuilder
 import com.nfl.glitr.data.query.QueryType
 import com.nfl.glitr.annotation.GlitrForwardPagingArguments
 import com.nfl.glitr.annotation.GlitrNonNull
+import com.nfl.glitr.registry.TypeRegistry
 import com.nfl.glitr.util.SerializationUtil
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
@@ -23,12 +24,12 @@ class PagingOutputTypeConverterTest extends Specification {
             .build()
     def typeRegistry = glitr.typeRegistry
     def relayHelper = glitr.relayHelper
-    def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter().setRelayHelper(relayHelper).setTypeRegistry(typeRegistry)
+    def PagingOutputTypeConverter pagingOutputTypeConverter = new PagingOutputTypeConverter().setRelayHelper(relayHelper)
 
 
     def "simple string"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("simpleString");
@@ -40,7 +41,7 @@ class PagingOutputTypeConverterTest extends Specification {
 
     def "simple string with non supported annotation"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("simpleString");
@@ -52,7 +53,7 @@ class PagingOutputTypeConverterTest extends Specification {
 
     def "array of strings"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("arrayOfStrings");
@@ -64,7 +65,7 @@ class PagingOutputTypeConverterTest extends Specification {
 
     def "collection of strings"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("collOfStrings");
@@ -76,7 +77,7 @@ class PagingOutputTypeConverterTest extends Specification {
 
     def "list of strings"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("listOfStrings");
@@ -88,7 +89,7 @@ class PagingOutputTypeConverterTest extends Specification {
 
     def "non null list of strings"() throws NoSuchFieldException, NoSuchMethodException {
         expect:
-        testArgumentsOfCall(field, method, declaringClass, annotation, expected)
+        testArgumentsOfCall(typeRegistry, field, method, declaringClass, annotation, expected)
 
         where:
         field = MyTestClass.class.getField("nonNullListOfStrings");
@@ -98,9 +99,9 @@ class PagingOutputTypeConverterTest extends Specification {
         expected = GraphQLObjectType.class
     }
 
-    public void testArgumentsOfCall(Field field, Method method, Class declaringClass, Annotation annotation, Object expected) {
+    public void testArgumentsOfCall(TypeRegistry typeRegistry, Field field, Method method, Class declaringClass, Annotation annotation, Object expected) {
         try {
-            GraphQLOutputType outputType = pagingOutputTypeConverter.call(field, method, declaringClass, annotation);
+            GraphQLOutputType outputType = pagingOutputTypeConverter.call(typeRegistry, field, method, declaringClass, annotation);
             outputType.getClass() == expected
         } catch (IllegalArgumentException e) {
             // test the error message

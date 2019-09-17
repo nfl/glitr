@@ -107,8 +107,8 @@ public class GlitrBuilder {
         return this;
     }
 
-    public GlitrBuilder addCustomFieldOutputTypeFunc(Class<? extends Annotation> annotationClass, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> argumentsFunc4) {
-        annotationToGraphQLOutputTypeMap.putIfAbsent(annotationClass, argumentsFunc4);
+    public GlitrBuilder addCustomFieldOutputTypeFunc(Class<? extends Annotation> annotationClass, Func5<TypeRegistry, Field, Method, Class, Annotation, GraphQLOutputType> argumentsFunc5) {
+        annotationToGraphQLOutputTypeMap.putIfAbsent(annotationClass, argumentsFunc5);
         return this;
     }
 
